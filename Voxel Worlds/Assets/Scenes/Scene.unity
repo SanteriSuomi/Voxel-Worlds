@@ -450,5 +450,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 1374924915}
-  moveSpeed: 5
-  lookSpeed: 7
+  moveSpeed: 4
+  sprintSpeedMultiplier: 1.5
+  lookSpeed: 8
