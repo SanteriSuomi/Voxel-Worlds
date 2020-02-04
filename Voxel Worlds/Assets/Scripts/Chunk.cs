@@ -1,62 +1,78 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Voxel.World
 {
-    public class Chunk : MonoBehaviour
+    public class Chunk
     {
-        [SerializeField]
-        private Material material;
-        [SerializeField]
-        private Vector3 chunkSize = new Vector3(2, 2, 2);
-        private Block[,,] chunkData;
+        private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
+        private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
+
+        private Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
         {
             return chunkData;
         }
 
-        private void Awake()
+        public string ChunkName { get { return chunkGameObject.name; } }
+
+        public Chunk(Vector3 chunkPosition, Material chunkMaterial, Transform chunkParent)
         {
-            StartCoroutine(BuildChunk((int)chunkSize.x, (int)chunkSize.y, (int)chunkSize.z));
+            // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
+            chunkGameObject = new GameObject
+            {
+                name = World.GetChunkID(chunkPosition)
+            };
+            chunkGameObject.transform.position = chunkPosition; // Chunk position in the world
+            chunkGameObject.transform.SetParent(chunkParent); // Set this chunk to be the parent of the world object
+            this.chunkMaterial = chunkMaterial; // Chunk texture (world atlas texture from world)
         }
 
-        private IEnumerator BuildChunk(int sizeX, int sizeY, int sizeZ)
+        // Build all the blocks for this chunk object
+        public void BuildChunk()
         {
-            chunkData = new Block[sizeX, sizeY, sizeZ];
-            // Populate 3D chunk array with new block data
-            for (int z = 0; z < sizeZ; z++)
+            int worldChunkSize = World.Instance.ChunkSize;
+            chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
+            // Populate the voxel chunk data
+            for (int column = 0; column < worldChunkSize; column++)
             {
-                for (int y = 0; y < sizeY; y++)
+                for (int row = 0; row < worldChunkSize; row++)
                 {
-                    for (int x = 0; x < sizeX; x++)
+                    for (int depth = 0; depth < worldChunkSize; depth++)
                     {
-                        Vector3 position = new Vector3(x, y, z);
-                        chunkData[x, y, z] = new Block(BlockType.Dirt, position, gameObject, material);
+                        Vector3 position = new Vector3(column, row, depth);
+                        if (Random.Range(0, 100) < 33)
+                        {
+                            chunkData[column, row, depth] = new Block(BlockType.Air, position, chunkGameObject, this);
+                        }
+                        else
+                        {
+                            chunkData[column, row, depth] = new Block(BlockType.Grass, position, chunkGameObject, this);
+                        }
                     }
                 }
             }
 
-            // Draw the cubes; must be done after populating chunk array, since we need it to be full of data, 
-            // so we can use solid checking (for only quads that are visible).
-            for (int z = 0; z < sizeZ; z++)
+            // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
+            // so we can use the HasSolidNeighbour check (to discard quads that are not visible).
+            for (int column = 0; column < worldChunkSize; column++)
             {
-                for (int y = 0; y < sizeY; y++)
+                for (int row = 0; row < worldChunkSize; row++)
                 {
-                    for (int x = 0; x < sizeX; x++)
+                    for (int depth = 0; depth < worldChunkSize; depth++)
                     {
-                        chunkData[x, y, z].CreateCube();
-                        yield return null;
+                        chunkData[column, row, depth].BuildBlock();
                     }
                 }
             }
 
-            CombineQuads();
+            // Lets finally combine these cubes in to one mesh
+            CombineCubes();
         }
 
-        // Use Unity API CombineInstance for combining meshes (in this case quads) in to one single mesh
-        private void CombineQuads()
+        // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
+        private void CombineCubes()
         {
-            MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
+            MeshFilter[] meshFilters = chunkGameObject.GetComponentsInChildren<MeshFilter>();
             CombineInstance[] combinedMeshes = new CombineInstance[meshFilters.Length];
             for (int i = 0; i < combinedMeshes.Length; i++)
             {
@@ -64,15 +80,15 @@ namespace Voxel.World
                 combinedMeshes[i].transform = meshFilters[i].transform.localToWorldMatrix;
             }
 
-            MeshFilter parentMeshFilter = gameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
+            MeshFilter parentMeshFilter = chunkGameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
             parentMeshFilter.mesh = new Mesh();
             parentMeshFilter.mesh.CombineMeshes(combinedMeshes);
-            MeshRenderer parentMeshRenderer = gameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
-            parentMeshRenderer.material = material;
+            MeshRenderer parentMeshRenderer = chunkGameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
+            parentMeshRenderer.material = chunkMaterial;
 
-            for (int i = 0; i < transform.childCount; i++)
+            for (int i = 0; i < chunkGameObject.transform.childCount; i++)
             {
-                Destroy(transform.GetChild(i).gameObject);
+                Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject); 
             }
         }
     }

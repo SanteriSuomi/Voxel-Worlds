@@ -1,36 +1,70 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using Voxel.Utility;
 
 namespace Voxel.World
 {
-    public class World : MonoBehaviour
+    public class World : Singleton<World>
     {
         [SerializeField]
-        private GameObject block = default;
-        [SerializeField]
-        private int worldSize = 2;
+        private Material worldTextureAtlas = default;
+        public Dictionary<string, Chunk> ChunkDictionary { get; } = new Dictionary<string, Chunk>();
 
-        private void Start()
+        /// <summary>
+        /// Return the ID of the chunk at position as specified in the chunkdictionary
+        /// </summary>
+        /// <param name="atPosition"></param>
+        /// <returns></returns>
+        public static string GetChunkID(Vector3 atPosition)
         {
-            StartCoroutine(BuildWorld());
+            return $"{(int)atPosition.x} {(int)atPosition.y} {(int)atPosition.z}";
         }
 
-        public IEnumerator BuildWorld()
-        {
-            for (int z = 0; z < worldSize; z++)
-            {
-                for (int y = 0; y < worldSize; y++)
-                {
-                    for (int x = 0; x < worldSize; x++)
-                    {
-                        Vector3 position = new Vector3(x, y, z);
-                        GameObject worldBlock = Instantiate(block, position, Quaternion.identity);
-                        worldBlock.name = $"{x} {y} {z}";
-                    }
+        [SerializeField]
+        private int chunkColumnHeight = 8;
+        public int ChunkColumnHeight { get; private set; }
+        [SerializeField]
+        private int chunkRowLength = 8;
+        public int ChunkRowLength { get; private set; }
+        [SerializeField]
+        private int chunkDepthLength = 8;
+        public int ChunkDepthLength { get; private set; }
+        [SerializeField]
+        private int chunkSize = 16;
+        public int ChunkSize { get; private set; }
 
-                    yield return null;
+        protected override void Awake()
+        {
+            base.Awake();
+            ChunkColumnHeight = chunkColumnHeight;
+            ChunkRowLength = chunkRowLength;
+            ChunkDepthLength = chunkDepthLength;
+            ChunkSize = chunkSize;
+            StartCoroutine(BuildChunks());
+        }
+
+        private IEnumerator BuildChunks()
+        {
+            for (int column = 0; column < ChunkColumnHeight; column++)
+            {
+                for (int row = 0; row < ChunkRowLength; row++)
+                {
+                    for (int depth = 0; depth < ChunkDepthLength; depth++)
+                    {
+                        Vector3 chunkPosition = new Vector3(column * ChunkSize, row * ChunkSize, depth * ChunkSize);
+                        Chunk chunk = new Chunk(chunkPosition, worldTextureAtlas, transform);
+                        ChunkDictionary.Add(chunk.ChunkName, chunk);
+                    }
                 }
             }
+
+            foreach (KeyValuePair<string, Chunk> chunk in ChunkDictionary)
+            {
+                chunk.Value.BuildChunk();
+            }
+
+            yield return null;
         }
     }
 }
