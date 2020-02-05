@@ -15,16 +15,16 @@ namespace Voxel.World
 
         public string ChunkName { get { return chunkGameObject.name; } }
 
-        public Chunk(Vector3 chunkPosition, Material chunkMaterial, Transform chunkParent)
+        public Chunk(Vector3 position, Material material, Transform parent)
         {
             // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
             chunkGameObject = new GameObject
             {
-                name = World.GetChunkID(chunkPosition)
+                name = World.GetChunkID(position)
             };
-            chunkGameObject.transform.position = chunkPosition; // Chunk position in the world
-            chunkGameObject.transform.SetParent(chunkParent); // Set this chunk to be the parent of the world object
-            this.chunkMaterial = chunkMaterial; // Chunk texture (world atlas texture from world)
+            chunkGameObject.transform.position = position; // Chunk position in the world
+            chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
+            this.chunkMaterial = material; // Chunk texture (world atlas texture from world)
         }
 
         // Build all the blocks for this chunk object
@@ -33,20 +33,20 @@ namespace Voxel.World
             int worldChunkSize = World.Instance.ChunkSize;
             chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
             // Populate the voxel chunk data
-            for (int column = 0; column < worldChunkSize; column++)
+            for (int x = 0; x < worldChunkSize; x++)
             {
-                for (int row = 0; row < worldChunkSize; row++)
+                for (int y = 0; y < worldChunkSize; y++)
                 {
-                    for (int depth = 0; depth < worldChunkSize; depth++)
+                    for (int z = 0; z < worldChunkSize; z++)
                     {
-                        Vector3 position = new Vector3(column, row, depth);
+                        Vector3 position = new Vector3(x, y, z);
                         if (Random.Range(0, 100) < 33)
                         {
-                            chunkData[column, row, depth] = new Block(BlockType.Air, position, chunkGameObject, this);
+                            chunkData[x, y, z] = new Block(BlockType.Air, position, chunkGameObject, this);
                         }
                         else
                         {
-                            chunkData[column, row, depth] = new Block(BlockType.Grass, position, chunkGameObject, this);
+                            chunkData[x, y, z] = new Block(BlockType.Grass, position, chunkGameObject, this);
                         }
                     }
                 }
@@ -54,23 +54,23 @@ namespace Voxel.World
 
             // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
             // so we can use the HasSolidNeighbour check (to discard quads that are not visible).
-            for (int column = 0; column < worldChunkSize; column++)
+            for (int x = 0; x < worldChunkSize; x++)
             {
-                for (int row = 0; row < worldChunkSize; row++)
+                for (int y = 0; y < worldChunkSize; y++)
                 {
-                    for (int depth = 0; depth < worldChunkSize; depth++)
+                    for (int z = 0; z < worldChunkSize; z++)
                     {
-                        chunkData[column, row, depth].BuildBlock();
+                        chunkData[x, y, z].BuildBlock();
                     }
                 }
             }
 
             // Lets finally combine these cubes in to one mesh
-            CombineCubes();
+            CombineBlocks();
         }
 
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
-        private void CombineCubes()
+        private void CombineBlocks()
         {
             MeshFilter[] meshFilters = chunkGameObject.GetComponentsInChildren<MeshFilter>();
             CombineInstance[] combinedMeshes = new CombineInstance[meshFilters.Length];

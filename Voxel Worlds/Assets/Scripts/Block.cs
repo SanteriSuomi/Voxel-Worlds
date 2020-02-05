@@ -111,12 +111,12 @@ namespace Voxel.World
         {
             Block[,,] chunkData;
             int chunkSize = World.Instance.ChunkSize;
-            // If the neighbour position is out of bounds of the chunk size, it is in a another chunk
+            // If the neighbour position we're checking isn't in the bounds of this chunk, we must be in another one
             if (x < 0 || x >= chunkSize
                 || y < 0 || y >= chunkSize
                 || z < 0 || z >= chunkSize)
             {
-                // Since this chunk doesn't contain this X Y and Z neighbour, we must convert it to the other chunk
+                // Convert the X Y and Z position to the neigbouring chunk
                 Vector3 neighbouringChunkPosition
                     = parentChunk.transform.position
                     + new Vector3((x - (int)blockPosition.x) * chunkSize,
@@ -126,9 +126,9 @@ namespace Voxel.World
                 // Retrive the chunk ID for the dictionary
                 string chunkID = World.GetChunkID(neighbouringChunkPosition);
 
-                x = CheckBlockForEdge(x);
-                y = CheckBlockForEdge(y);
-                z = CheckBlockForEdge(z);
+                x = CheckBlockEdgeCase(x);
+                y = CheckBlockEdgeCase(y);
+                z = CheckBlockEdgeCase(z);
 
                 // Finally check if this chunk exists by consulting the chunk dictionary by it's ID
                 if (World.Instance.ChunkDictionary.TryGetValue(chunkID, out Chunk chunk))
@@ -137,7 +137,7 @@ namespace Voxel.World
                 }
                 else
                 {
-                    // There is no such chunk
+                    // Since we couldn't find a the chunk in the dictionary, there is no chunk at this position
                     return false;
                 }
             }
@@ -147,20 +147,19 @@ namespace Voxel.World
                 chunkData = chunkOwner.GetChunkData();
             }
 
-            int CheckBlockForEdge(int blockIndex)
+            int CheckBlockEdgeCase(int index)
             {
-                if (blockIndex == -1) // If under this chunk's bounds
+                // Since the chunk voxel data is an array, it is zero-indexed and we must account for that
+                if (index == -1) // We must be at the end of another chunk as there is no index -1
                 {
-                    // We're at the top of a chunk
-                    blockIndex = chunkSize - 1;
+                    index = chunkSize - 1;
                 }
-                else if (blockIndex == chunkSize) // If over the bounds
+                else if (index == chunkSize) // We must be at the start of another chunk as there is no index at ChunkSize, only ChunkSize - 1
                 {
-                    // Were at the start of a chunk
-                    blockIndex = 0;
+                    index = 0;
                 }
 
-                return blockIndex;
+                return index;
             }
 
             // Then at last check the neighbour that the neighbour is solid
@@ -176,7 +175,7 @@ namespace Voxel.World
                 return chunkData[x, y, z].IsSolid;
             }
 
-            // We've checked everything, there is no neighbour
+            // We've checked everything absolutely isn't a neighbour
             return false;
         }
 
@@ -208,7 +207,7 @@ namespace Voxel.World
                         leftBottom0, rightBottom0, rightBottom1, leftBottom1
                     };
 
-                    AssignNormalsTo(Vector3.down);
+                    AssignNormals(Vector3.down);
                     break;
                 case CubeSide.Top:
                     vertices = new Vector3[]
@@ -216,7 +215,7 @@ namespace Voxel.World
                         leftTop1, rightTop1, rightTop0, leftTop0
                     };
 
-                    AssignNormalsTo(Vector3.up);
+                    AssignNormals(Vector3.up);
                     break;
                 case CubeSide.Left:
                     vertices = new Vector3[]
@@ -224,7 +223,7 @@ namespace Voxel.World
                         leftTop1, leftTop0, leftBottom0, leftBottom1
                     };
 
-                    AssignNormalsTo(Vector3.left);
+                    AssignNormals(Vector3.left);
                     break;
                 case CubeSide.Right:
                     vertices = new Vector3[]
@@ -232,7 +231,7 @@ namespace Voxel.World
                         rightTop0, rightTop1, rightBottom1, rightBottom0
                     };
 
-                    AssignNormalsTo(Vector3.right);
+                    AssignNormals(Vector3.right);
                     break;
                 case CubeSide.Front:
                     vertices = new Vector3[]
@@ -240,7 +239,7 @@ namespace Voxel.World
                         rightBottom0, leftBottom0, leftTop0, rightTop0
                     };
 
-                    AssignNormalsTo(Vector3.forward);
+                    AssignNormals(Vector3.forward);
                     break;
                 case CubeSide.Back:
                     vertices = new Vector3[]
@@ -248,11 +247,11 @@ namespace Voxel.World
                         rightTop1, leftTop1, leftBottom1, rightBottom1
                     };
 
-                    AssignNormalsTo(Vector3.back);
+                    AssignNormals(Vector3.back);
                     break;
             }
 
-            void AssignNormalsTo(Vector3 direction)
+            void AssignNormals(Vector3 direction)
             {
                 for (int i = 0; i < normals.Length; i++)
                 {
