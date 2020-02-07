@@ -88,7 +88,11 @@ namespace Voxel.World
                     }
                 }
             }
+        }
 
+        public void BuildChunkBlocks()
+        {
+            int worldChunkSize = World.Instance.ChunkSize;
             // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
             // so we can use the HasSolidNeighbour check (to discard quads that are not visible).
             for (int x = 0; x < worldChunkSize; x++)
@@ -111,9 +115,9 @@ namespace Voxel.World
         {
             MeshFilter[] meshFilters = chunkGameObject.GetComponentsInChildren<MeshFilter>();
             CombineInstance[] combinedMeshes = new CombineInstance[meshFilters.Length];
+            int childCount = chunkGameObject.transform.childCount;
             for (int i = 0; i < combinedMeshes.Length; i++)
             {
-
                 combinedMeshes[i].mesh = meshFilters[i].sharedMesh;
                 combinedMeshes[i].transform = meshFilters[i].transform.localToWorldMatrix;
                 Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject);
@@ -124,11 +128,6 @@ namespace Voxel.World
             parentMeshFilter.mesh.CombineMeshes(combinedMeshes, true, true); // Combine meshes with the transform matrix
             MeshRenderer parentMeshRenderer = chunkGameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
             parentMeshRenderer.material = chunkMaterial;
-
-            //for (int i = 0; i < chunkGameObject.transform.childCount; i++)
-            //{
-            //    Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject);
-            //}
         }
     }
 }

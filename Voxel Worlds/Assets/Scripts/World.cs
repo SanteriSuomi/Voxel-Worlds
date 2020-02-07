@@ -36,11 +36,12 @@ namespace Voxel.World
         {
             base.Awake();
             ChunkSize = chunkSize;
-            StartCoroutine(BuildChunks());
+            StartCoroutine(BuildWorld());
         }
 
-        private IEnumerator BuildChunks()
+        private IEnumerator BuildWorld()
         {
+            // Initialise chunks
             for (int x = 0; x < chunkColumnLength; x++)
             {
                 for (int y = 0; y < chunkRowHeight; y++)
@@ -54,9 +55,16 @@ namespace Voxel.World
                 }
             }
 
+            // Build initialised chunks
             foreach (KeyValuePair<string, Chunk> chunk in ChunkDictionary)
             {
                 chunk.Value.BuildChunk();
+            }
+
+            // Build chunk blocks
+            foreach (KeyValuePair<string, Chunk> chunk in ChunkDictionary)
+            {
+                chunk.Value.BuildChunkBlocks();
             }
 
             yield return null;
