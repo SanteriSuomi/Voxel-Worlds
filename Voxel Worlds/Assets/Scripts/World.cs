@@ -30,6 +30,7 @@ namespace Voxel.World
         [SerializeField]
         private int chunkSize = 16;
         public int ChunkSize { get; private set; }
+        public int MaxWorldHeight { get { return chunkColumnHeight * ChunkSize; } }
 
         protected override void Awake()
         {
@@ -48,16 +49,15 @@ namespace Voxel.World
                     {
                         Vector3 chunkPosition = new Vector3(x * ChunkSize, y * ChunkSize, z * ChunkSize);
                         Chunk chunk = new Chunk(chunkPosition, worldTextureAtlas, transform);
-                        ChunkDictionary.Add(chunk.ChunkName, chunk);
-                        chunk.BuildChunk();
+                        ChunkDictionary.Add(GetChunkID(chunkPosition), chunk);
                     }
                 }
             }
 
-            //foreach (KeyValuePair<string, Chunk> chunk in ChunkDictionary)
-            //{
-            //    chunk.Value.BuildChunk();
-            //}
+            foreach (KeyValuePair<string, Chunk> chunk in ChunkDictionary)
+            {
+                chunk.Value.BuildChunk();
+            }
 
             yield return null;
         }

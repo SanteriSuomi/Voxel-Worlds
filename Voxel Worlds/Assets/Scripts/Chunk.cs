@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
+using Voxel.Noise;
 
 namespace Voxel.World
 {
@@ -13,18 +15,17 @@ namespace Voxel.World
             return chunkData;
         }
 
-        public string ChunkName { get { return chunkGameObject.name; } }
-
         public Chunk(Vector3 position, Material material, Transform parent)
         {
             // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
             chunkGameObject = new GameObject
             {
-                name = World.GetChunkID(position)
+                name = position.ToString()
             };
+
             chunkGameObject.transform.position = position; // Chunk position in the world
             chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
-            this.chunkMaterial = material; // Chunk texture (world atlas texture from world)
+            chunkMaterial = material; // Chunk texture (world atlas texture from world)
         }
 
         // Build all the blocks for this chunk object
@@ -39,14 +40,29 @@ namespace Voxel.World
                 {
                     for (int z = 0; z < worldChunkSize; z++)
                     {
-                        Vector3 position = new Vector3(x, y, z);
-                        if (Random.Range(0, 100) < 33)
+                        Vector3 localPosition = new Vector3(x, y, z);
+
+                        int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
+                        int worldPositionY = (int)(y + chunkGameObject.transform.position.y);
+                        int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
+
+                        int minHeightForSurfaceBlocks = World.Instance.MaxWorldHeight - 1;
+                        int noise = (int)(Utils.fBm2D(worldPositionX, worldPositionZ) * World.Instance.MaxWorldHeight);
+
+                        if (worldPositionY <= noise)
                         {
-                            chunkData[x, y, z] = new Block(BlockType.Air, position, chunkGameObject, this);
+                            if (hasGrass)
+                            {
+                                chunkData[x, y, z] = new Block(BlockType.Dirt, localPosition, chunkGameObject, this);
+                            }
+                            else
+                            {
+                                chunkData[x, y, z] = new Block(BlockType.Grass, localPosition, chunkGameObject, this);
+                            }
                         }
                         else
                         {
-                            chunkData[x, y, z] = new Block(BlockType.Grass, position, chunkGameObject, this);
+                            chunkData[x, y, z] = new Block(BlockType.Air, localPosition, chunkGameObject, this);
                         }
                     }
                 }
@@ -82,13 +98,13 @@ namespace Voxel.World
 
             MeshFilter parentMeshFilter = chunkGameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
             parentMeshFilter.mesh = new Mesh();
-            parentMeshFilter.mesh.CombineMeshes(combinedMeshes);
+            parentMeshFilter.mesh.CombineMeshes(combinedMeshes, true, true); // Combine meshes with the transform matrix
             MeshRenderer parentMeshRenderer = chunkGameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
             parentMeshRenderer.material = chunkMaterial;
 
             for (int i = 0; i < chunkGameObject.transform.childCount; i++)
             {
-                Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject); 
+                Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject);
             }
         }
     }

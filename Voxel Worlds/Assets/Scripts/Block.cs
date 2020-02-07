@@ -150,11 +150,11 @@ namespace Voxel.World
             int CheckBlockEdgeCase(int index)
             {
                 // Since the chunk voxel data is an array, it is zero-indexed and we must account for that
-                if (index == -1) // We must be at the end of another chunk as there is no index -1
+                if (index <= -1) // We must be at the end of another chunk as there is no index -1
                 {
                     index = chunkSize - 1;
                 }
-                else if (index == chunkSize) // We must be at the start of another chunk as there is no index at ChunkSize, only ChunkSize - 1
+                else if (index >= chunkSize) // We must be at the start of another chunk as there is no index at ChunkSize, only ChunkSize - 1
                 {
                     index = 0;
                 }
