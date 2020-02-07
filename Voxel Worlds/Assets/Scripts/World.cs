@@ -22,15 +22,15 @@ namespace Voxel.World
         }
 
         [SerializeField]
-        private int chunkColumnHeight = 8;
+        private int chunkColumnLength = 8;
         [SerializeField]
-        private int chunkRowLength = 8;
+        private int chunkRowHeight = 8;
         [SerializeField]
         private int chunkDepthLength = 8;
         [SerializeField]
         private int chunkSize = 16;
         public int ChunkSize { get; private set; }
-        public int MaxWorldHeight { get { return chunkColumnHeight * ChunkSize; } }
+        public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
 
         protected override void Awake()
         {
@@ -41,9 +41,9 @@ namespace Voxel.World
 
         private IEnumerator BuildChunks()
         {
-            for (int x = 0; x < chunkColumnHeight; x++)
+            for (int x = 0; x < chunkColumnLength; x++)
             {
-                for (int y = 0; y < chunkRowLength; y++)
+                for (int y = 0; y < chunkRowHeight; y++)
                 {
                     for (int z = 0; z < chunkDepthLength; z++)
                     {

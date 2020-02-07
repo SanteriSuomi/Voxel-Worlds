@@ -4,36 +4,59 @@
     {
         private static readonly FastNoise noiseGenerator = new FastNoise();
 
-        public static float fBm2D(float x, float y)
+        public static float fBm2D(float x, float z)
         {
-            int octaves = 2;
+            int octaves = 3;
             float frequency = 1;
-            float amplitude = 1;
-            float lacunarity = 2;
-            float gain = 0.5f;
+            float amplitude = 0.4f;
+            float lacunarity = 3;
+            float gain = 0.25f;
 
-            float scale = 1;
-            float clampMax = 1;
+            float finalScale = 0.75f;
+            //float clampMax = 1;
+            //float clampMin = 0;
 
             float finalValue = 0;
             for (int i = 0; i < octaves; i++)
             {
-                finalValue += Absolute(noiseGenerator.GetNoise(x * frequency, y * frequency, 1)) * amplitude;
+                finalValue += Abs(noiseGenerator.GetSimplex(x * frequency, 1, z * frequency) * amplitude);
                 frequency *= lacunarity;
                 amplitude *= gain;
             }
 
-            float Absolute(float value)
+            return 0.2f + (finalValue * finalScale);
+
+            //float Clamp(float value)
+            //{
+            //    if (value >= clampMin && value <= clampMax) return value;
+            //    else return value <= clampMin ? clampMin : clampMax;
+            //}
+        }
+
+        public static float fBm3D(float x, float y, float z)
+        {
+            int octaves = 3;
+            float frequency = 1;
+            float amplitude = 0.4f;
+            float lacunarity = 3;
+            float gain = 0.25f;
+
+            float finalScale = 1;
+
+            float finalValue = 0;
+            for (int i = 0; i < octaves; i++)
             {
-                return (value >= 0) ? value : -value;
+                finalValue += Abs(noiseGenerator.GetSimplex(x * frequency, y * frequency, z * frequency) * amplitude);
+                frequency *= lacunarity;
+                amplitude *= gain;
             }
 
-            float Clamp(float value)
-            {
-                return value <= clampMax ? value : clampMax;
-            }
+            return finalValue * finalScale;
+        }
 
-            return Clamp(finalValue * scale);
+        private static float Abs(float value)
+        {
+            return value >= 0 ? value : -value;
         }
     }
 }

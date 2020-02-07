@@ -37,20 +37,36 @@ namespace Voxel.World
             {
                 for (int z = 0; z < worldChunkSize; z++)
                 {
-                    bool topBlockPlaced = false;
+                    bool topBlockPlaced = false; // Bool to determine is the top block of a certain column has been placed in this Y loop
                     for (int y = worldChunkSize - 1; y >= 0; y--) // Start height Y from top so we can easily place the top block
                     {
                         Vector3 localPosition = new Vector3(x, y, z);
-
                         int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
                         int worldPositionY = (int)(y + chunkGameObject.transform.position.y);
                         int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
 
-                        int noise = (int)(Utils.fBm2D(worldPositionX, worldPositionZ) * World.Instance.MaxWorldHeight);
-
-                        if (worldPositionY <= noise)
+                        // Multiply to match noise scale to world height scale
+                        int noise2D = (int)(Utils.fBm2D(worldPositionX, worldPositionZ) * (World.Instance.MaxWorldHeight * 2));
+                        if (worldPositionY <= noise2D)
                         {
-                            if (topBlockPlaced)
+                            int undergroundLayer = Random.Range(4, 8);
+                            if (worldPositionY <= noise2D - undergroundLayer)
+                            {
+                                float noise3D = Utils.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
+                                if (noise3D >= 0 && noise3D <= 0.01f)
+                                {
+                                    chunkData[x, y, z] = new Block(BlockType.Diamond, localPosition, chunkGameObject, this);
+                                }
+                                else if (noise3D <= 0.1f)
+                                {
+                                    chunkData[x, y, z] = new Block(BlockType.Air, localPosition, chunkGameObject, this);
+                                }
+                                else
+                                {
+                                    chunkData[x, y, z] = new Block(BlockType.Stone, localPosition, chunkGameObject, this);
+                                }
+                            }
+                            else if (topBlockPlaced)
                             {
                                 chunkData[x, y, z] = new Block(BlockType.Dirt, localPosition, chunkGameObject, this);
                             }
@@ -81,7 +97,7 @@ namespace Voxel.World
                 }
             }
 
-            // Lets finally combine these cubes in to one mesh
+            // Lets finally combine these cubes in to one mesh to "complete" the chunk
             CombineBlocks();
         }
 

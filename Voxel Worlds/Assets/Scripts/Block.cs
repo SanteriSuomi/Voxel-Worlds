@@ -7,7 +7,8 @@ namespace Voxel.World
         Grass,
         Dirt,
         Stone,
-        Air
+        Air,
+        Diamond
     }
 
     public class Block
@@ -38,7 +39,6 @@ namespace Voxel.World
                 new Vector2(0, 1),
                 new Vector2(0.0625f, 1)
             },
-
             // Dirt (also grass sides)
             {
                 new Vector2(0.25f, 0.875f),
@@ -46,13 +46,19 @@ namespace Voxel.World
                 new Vector2(0.25f, 0.9375f),
                 new Vector2(0.3125f, 0.9375f)
             },
-
             // Stone
             {
                 new Vector2(0, 0.875f),
                 new Vector2(0.0625f, 0.875f),
                 new Vector2(0, 0.9375f),
                 new Vector2(0.0625f, 0.9375f)
+            },
+            // Diamond
+            {
+                new Vector2(0.125f, 0.75f),
+                new Vector2(0.1875f, 0.75f),
+                new Vector2(0.125f, 0.8125f),
+                new Vector2(0.1875f, 0.8125f)
             }
         };
 
@@ -282,8 +288,16 @@ namespace Voxel.World
                 uvs[2] = uvAtlasMap[2, 2];
                 uvs[3] = uvAtlasMap[2, 3];
             }
+            else if (blockType == BlockType.Diamond)
+            {
+                uvs[0] = uvAtlasMap[3, 0];
+                uvs[1] = uvAtlasMap[3, 1];
+                uvs[2] = uvAtlasMap[3, 2];
+                uvs[3] = uvAtlasMap[3, 3];
+            }
             else
             {
+                Debug.LogWarning("Probably shouldn't be here.");
                 int typeToInt = (int)blockType;
                 uvs[0] = uvAtlasMap[typeToInt, 0];
                 uvs[1] = uvAtlasMap[typeToInt, 1];
