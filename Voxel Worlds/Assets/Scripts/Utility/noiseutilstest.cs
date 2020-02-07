@@ -12,7 +12,7 @@ public class noiseutilstest : MonoBehaviour
         {
             for (int j = 0; j < terrainheightmap.GetLength(1); j++)
             {
-                terrainheightmap[i, j] = Utils.fBm2D(i, j);
+                terrainheightmap[i, j] = Utility.fBm2D(i, j);
             }
         }
 

@@ -8,7 +8,8 @@ namespace Voxel.World
         Dirt,
         Stone,
         Air,
-        Diamond
+        Diamond,
+        Bedrock
     }
 
     public class Block
@@ -59,6 +60,13 @@ namespace Voxel.World
                 new Vector2(0.1875f, 0.75f),
                 new Vector2(0.125f, 0.8125f),
                 new Vector2(0.1875f, 0.8125f)
+            },
+            // Bedrock
+            {
+                new Vector2(0.5f, 0.5625f),
+                new Vector2(0.5625f, 0.5625f),
+                new Vector2(0.5f, 0.625f),
+                new Vector2(0.5625f, 0.625f)
             }
         };
 
@@ -155,7 +163,6 @@ namespace Voxel.World
 
             int CheckBlockEdgeCase(int index)
             {
-                // Since the chunk voxel data is an array, it is zero-indexed and we must account for that
                 if (index <= -1) // We must be at the end of another chunk as there is no index -1
                 {
                     index = chunkSize - 1;
@@ -266,7 +273,7 @@ namespace Voxel.World
             }
 
             Vector2[] uvs = new Vector2[4];
-            // Assign UVs from the atlas map
+            // Assign UVs from the atlas map depending on the blocktype
             if (blockType == BlockType.Grass && side == CubeSide.Top)
             {
                 uvs[0] = uvAtlasMap[0, 0];
@@ -294,6 +301,13 @@ namespace Voxel.World
                 uvs[1] = uvAtlasMap[3, 1];
                 uvs[2] = uvAtlasMap[3, 2];
                 uvs[3] = uvAtlasMap[3, 3];
+            }
+            else if (blockType == BlockType.Bedrock)
+            {
+                uvs[0] = uvAtlasMap[4, 0];
+                uvs[1] = uvAtlasMap[4, 1];
+                uvs[2] = uvAtlasMap[4, 2];
+                uvs[3] = uvAtlasMap[4, 3];
             }
             else
             {

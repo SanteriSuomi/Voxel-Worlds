@@ -44,20 +44,25 @@ namespace Voxel.World
                         int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
                         int worldPositionY = (int)(y + chunkGameObject.transform.position.y);
                         int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
-
-                        // Multiply to match noise scale to world height scale
-                        int noise2D = (int)(Utils.fBm2D(worldPositionX, worldPositionZ) * (World.Instance.MaxWorldHeight * 2));
-                        if (worldPositionY <= noise2D)
+                        
+                        if (worldPositionY == 0) // If we're at the bottom
                         {
-                            int undergroundLayer = Random.Range(4, 8);
-                            if (worldPositionY <= noise2D - undergroundLayer)
+                            chunkData[x, y, z] = new Block(BlockType.Bedrock, localPosition, chunkGameObject, this);
+                            continue;
+                        }
+                        
+                        int noise2D = (int)(Noise.Utility.fBm2D(worldPositionX, worldPositionZ) 
+                            * (World.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
+                        if (worldPositionY <= noise2D) // Apply noise when current height is below or equal to noise
+                        {
+                            if (worldPositionY <= noise2D - Random.Range(4, 8)) // Certain range below the surface
                             {
-                                float noise3D = Utils.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
-                                if (noise3D >= 0 && noise3D <= 0.01f)
+                                float noise3D = Noise.Utility.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
+                                if (noise3D >= 0.12f && noise3D <= Random.Range(0.12f, 0.121f))
                                 {
                                     chunkData[x, y, z] = new Block(BlockType.Diamond, localPosition, chunkGameObject, this);
                                 }
-                                else if (noise3D <= 0.1f)
+                                else if (noise3D < Random.Range(0.10f, 0.12f)) // Caves are applied below this noise level
                                 {
                                     chunkData[x, y, z] = new Block(BlockType.Air, localPosition, chunkGameObject, this);
                                 }
@@ -66,11 +71,11 @@ namespace Voxel.World
                                     chunkData[x, y, z] = new Block(BlockType.Stone, localPosition, chunkGameObject, this);
                                 }
                             }
-                            else if (topBlockPlaced)
+                            else if (topBlockPlaced) // Dirt will only be placed below grass blocks
                             {
                                 chunkData[x, y, z] = new Block(BlockType.Dirt, localPosition, chunkGameObject, this);
                             }
-                            else
+                            else // If top block of this row hasn't been placed yet, we shall build one on top
                             {
                                 chunkData[x, y, z] = new Block(BlockType.Grass, localPosition, chunkGameObject, this);
                                 topBlockPlaced = true;
@@ -108,8 +113,10 @@ namespace Voxel.World
             CombineInstance[] combinedMeshes = new CombineInstance[meshFilters.Length];
             for (int i = 0; i < combinedMeshes.Length; i++)
             {
+
                 combinedMeshes[i].mesh = meshFilters[i].sharedMesh;
                 combinedMeshes[i].transform = meshFilters[i].transform.localToWorldMatrix;
+                Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject);
             }
 
             MeshFilter parentMeshFilter = chunkGameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
@@ -118,10 +125,10 @@ namespace Voxel.World
             MeshRenderer parentMeshRenderer = chunkGameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
             parentMeshRenderer.material = chunkMaterial;
 
-            for (int i = 0; i < chunkGameObject.transform.childCount; i++)
-            {
-                Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject);
-            }
+            //for (int i = 0; i < chunkGameObject.transform.childCount; i++)
+            //{
+            //    Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject);
+            //}
         }
     }
 }
