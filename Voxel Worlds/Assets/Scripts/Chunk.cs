@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Voxel.Noise;
 
 namespace Voxel.World
@@ -36,9 +35,10 @@ namespace Voxel.World
             // Populate the voxel chunk data
             for (int x = 0; x < worldChunkSize; x++)
             {
-                for (int y = 0; y < worldChunkSize; y++)
+                for (int z = 0; z < worldChunkSize; z++)
                 {
-                    for (int z = 0; z < worldChunkSize; z++)
+                    bool topBlockPlaced = false;
+                    for (int y = worldChunkSize - 1; y >= 0; y--) // Start height Y from top so we can easily place the top block
                     {
                         Vector3 localPosition = new Vector3(x, y, z);
 
@@ -46,18 +46,18 @@ namespace Voxel.World
                         int worldPositionY = (int)(y + chunkGameObject.transform.position.y);
                         int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
 
-                        int minHeightForSurfaceBlocks = World.Instance.MaxWorldHeight - 1;
                         int noise = (int)(Utils.fBm2D(worldPositionX, worldPositionZ) * World.Instance.MaxWorldHeight);
 
                         if (worldPositionY <= noise)
                         {
-                            if (hasGrass)
+                            if (topBlockPlaced)
                             {
                                 chunkData[x, y, z] = new Block(BlockType.Dirt, localPosition, chunkGameObject, this);
                             }
                             else
                             {
                                 chunkData[x, y, z] = new Block(BlockType.Grass, localPosition, chunkGameObject, this);
+                                topBlockPlaced = true;
                             }
                         }
                         else
