@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using Voxel.Noise;
 
 namespace Voxel.World
 {
@@ -37,53 +36,66 @@ namespace Voxel.World
             {
                 for (int z = 0; z < worldChunkSize; z++)
                 {
-                    bool topBlockPlaced = false; // Bool to determine is the top block of a certain column has been placed in this Y loop
+                    bool surfaceBlockAlreadyPlaced = false; // Bool to determine is the top block of a certain column has been placed in this Y loop
                     for (int y = worldChunkSize - 1; y >= 0; y--) // Start height Y from top so we can easily place the top block
                     {
                         Vector3 localPosition = new Vector3(x, y, z);
-                        int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
                         int worldPositionY = (int)(y + chunkGameObject.transform.position.y);
-                        int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
-                        
-                        if (worldPositionY == 0) // If we're at the bottom
+
+                        // Bedrock
+                        if (worldPositionY == 0)
                         {
-                            chunkData[x, y, z] = new Block(BlockType.Bedrock, localPosition, chunkGameObject, this);
+                            NewBlock(BlockType.Bedrock);
                             continue;
                         }
-                        
-                        int noise2D = (int)(Noise.Utility.fBm2D(worldPositionX, worldPositionZ) 
+
+                        int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
+                        int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
+                        int noise2D = (int)(Noise.Utility.fBm2D(worldPositionX, worldPositionZ)
                             * (World.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
-                        if (worldPositionY <= noise2D) // Apply noise when current height is below or equal to noise
+                        // Air
+                        if (worldPositionY >= noise2D)
                         {
-                            if (worldPositionY <= noise2D - Random.Range(4, 8)) // Certain range below the surface
+                            NewBlock(BlockType.Air);
+                            continue;
+                        }
+
+                        // Underground (stone, diamond, etc)
+                        int undergroundLayerStart = noise2D - Random.Range(4, 8);
+                        if (worldPositionY <= undergroundLayerStart) // If we're certain range below the surface
+                        {
+                            float noise3D = Noise.Utility.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
+                            if (noise3D >= 0.135f && noise3D <= Random.Range(0.135f, 0.1355f))
                             {
-                                float noise3D = Noise.Utility.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
-                                if (noise3D >= 0.12f && noise3D <= Random.Range(0.12f, 0.121f))
-                                {
-                                    chunkData[x, y, z] = new Block(BlockType.Diamond, localPosition, chunkGameObject, this);
-                                }
-                                else if (noise3D < Random.Range(0.10f, 0.12f)) // Caves are applied below this noise level
-                                {
-                                    chunkData[x, y, z] = new Block(BlockType.Air, localPosition, chunkGameObject, this);
-                                }
-                                else
-                                {
-                                    chunkData[x, y, z] = new Block(BlockType.Stone, localPosition, chunkGameObject, this);
-                                }
+                                NewBlock(BlockType.Diamond);
                             }
-                            else if (topBlockPlaced) // Dirt will only be placed below grass blocks
+                            // Caves are applied below this noise level but must be above certain range from the bottom
+                            else if (worldPositionY >= Random.Range(3, 5) && noise3D < Random.Range(0.125f, 0.135f)) 
                             {
-                                chunkData[x, y, z] = new Block(BlockType.Dirt, localPosition, chunkGameObject, this);
+                                NewBlock(BlockType.Air);
                             }
-                            else // If top block of this row hasn't been placed yet, we shall build one on top
+                            else
                             {
-                                chunkData[x, y, z] = new Block(BlockType.Grass, localPosition, chunkGameObject, this);
-                                topBlockPlaced = true;
+                                NewBlock(BlockType.Stone);
                             }
+
+                            continue;
+                        }
+
+                        // Surface (grass, dirt, etc)
+                        if (surfaceBlockAlreadyPlaced)
+                        {
+                            NewBlock(BlockType.Dirt);
                         }
                         else
                         {
-                            chunkData[x, y, z] = new Block(BlockType.Air, localPosition, chunkGameObject, this);
+                            NewBlock(BlockType.Grass);
+                            surfaceBlockAlreadyPlaced = true;
+                        }
+
+                        void NewBlock(BlockType type)
+                        {
+                            chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
                         }
                     }
                 }
@@ -113,13 +125,13 @@ namespace Voxel.World
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
         private void CombineBlocks()
         {
-            MeshFilter[] meshFilters = chunkGameObject.GetComponentsInChildren<MeshFilter>();
-            CombineInstance[] combinedMeshes = new CombineInstance[meshFilters.Length];
             int childCount = chunkGameObject.transform.childCount;
-            for (int i = 0; i < combinedMeshes.Length; i++)
+            CombineInstance[] combinedMeshes = new CombineInstance[childCount];
+            for (int i = 0; i < childCount; i++)
             {
-                combinedMeshes[i].mesh = meshFilters[i].sharedMesh;
-                combinedMeshes[i].transform = meshFilters[i].transform.localToWorldMatrix;
+                MeshFilter childMeshFilter = chunkGameObject.transform.GetChild(i).GetComponent<MeshFilter>();
+                combinedMeshes[i].mesh = childMeshFilter.sharedMesh;
+                combinedMeshes[i].transform = childMeshFilter.transform.localToWorldMatrix;
                 Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject);
             }
 

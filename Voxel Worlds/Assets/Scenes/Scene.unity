@@ -151,9 +151,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   worldTextureAtlas: {fileID: 2100000, guid: c17e763c77fbfbc4d92a1c37437e2d60, type: 2}
-  chunkColumnLength: 2
+  chunkColumnLength: 4
   chunkRowHeight: 8
-  chunkDepthLength: 2
+  chunkDepthLength: 4
   chunkSize: 16
 --- !u!4 &185304116
 Transform:
