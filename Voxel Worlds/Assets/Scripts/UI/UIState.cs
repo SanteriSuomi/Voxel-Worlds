@@ -15,7 +15,7 @@ namespace Voxel.UI
         }
 
         /// <summary>
-        /// What happens OnEnable
+        /// What happens when a state gets enabled
         /// </summary>
         protected virtual void OnStateEnable()
         {
@@ -24,6 +24,14 @@ namespace Voxel.UI
         public void Disable()
         {
             LoopComponents(enable: false);
+            OnStateDisable();
+        }
+
+        /// <summary>
+        /// What happens when a state gets disabled
+        /// </summary>
+        protected virtual void OnStateDisable()
+        {
         }
 
         private void LoopComponents(bool enable)

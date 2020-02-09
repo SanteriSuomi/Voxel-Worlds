@@ -25,7 +25,7 @@ namespace Voxel.UI
 
         public void ActivateState(UIState newState)
         {
-            for (int i = 0; i < uiStates.Count ; i++)
+            for (int i = 0; i < uiStates.Count; i++)
             {
                 UIState currentState = uiStates[i];
                 if (newState == currentState)

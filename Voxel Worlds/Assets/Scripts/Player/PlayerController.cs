@@ -3,23 +3,35 @@ using UnityEngine.InputSystem;
 
 namespace Voxel.Player
 {
-    public class CameraController : MonoBehaviour
+    public class PlayerController : MonoBehaviour
     {
         private InputActions inputActions;
 
+        [Header("Transforms")]
         [SerializeField]
-        private Transform player = default;
-        private Transform playerCamera;
+        private Transform playerCamera = default;
+        private Transform player;
 
+        [Header("Grounding and Gravity")]
+        [SerializeField]
+        private LayerMask groundedLayerMask = default;
+        [SerializeField]
+        private float groundedRayMaxDistance = 100;
+        [SerializeField]
+        private float isGroundedDistance = 0.1f;
+        [SerializeField]
+        private float gravityMultiplier = 2;
+
+        [Header("Moving")]
         private Vector2 moveValue;
         [SerializeField]
         private float moveSpeed = 5;
         private float originalMoveSpeed;
         private bool move;
-
         [SerializeField]
         private float sprintSpeedMultiplier = 1.5f;
 
+        [Header("Looking")]
         private Vector2 lookValue;
         [SerializeField]
         private float lookSpeed = 5;
@@ -27,9 +39,8 @@ namespace Voxel.Player
 
         private void Awake()
         {
-            Cursor.lockState = CursorLockMode.Locked;
             inputActions = new InputActions();
-            playerCamera = transform;
+            player = transform;
             originalMoveSpeed = moveSpeed;
         }
 
@@ -78,8 +89,25 @@ namespace Voxel.Player
 
         private void Update()
         {
+            Gravity();
+            Jump();
             Move();
             Look();
+        }
+
+        private void Gravity()
+        {
+            Physics.Raycast(player.position, Vector3.down, out RaycastHit hitInfo, groundedRayMaxDistance, groundedLayerMask);
+            if (hitInfo.collider == null || hitInfo.distance > isGroundedDistance)
+            {
+                Debug.Log("gravity");
+                player.position += new Vector3(0, (Physics.gravity / Mathf.Pow(hitInfo.distance, 2) * gravityMultiplier).y, 0);
+            }
+        }
+
+        private void Jump()
+        {
+
         }
 
         private void Move()

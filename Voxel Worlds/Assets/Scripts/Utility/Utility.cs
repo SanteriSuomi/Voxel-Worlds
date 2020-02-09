@@ -3,7 +3,7 @@
     #pragma warning disable IDE1006 // Methods correctly named
     public static class Utility
     {
-        private static readonly FastNoise noise = new FastNoise();
+        private static readonly FastNoise noise = new FastNoise(UnityEngine.Random.Range(0, 1000000)); // Remove random seed later probably
 
         private const int octaves2D = 2;
         private const float baseFrequency2D = 0.75f;

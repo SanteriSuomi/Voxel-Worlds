@@ -33,7 +33,7 @@ namespace Voxel.vWorld
         [SerializeField]
         private Material worldTextureAtlas = default;
         [SerializeField]
-        private Transform playerTransform = default;
+        private GameObject player = default;
 
         [Header("Chunk and World Settings")]
         [SerializeField]
@@ -46,7 +46,6 @@ namespace Voxel.vWorld
 
         public int Radius { get { return radius; } }
         public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
-        public int TotalChunks { get { return (radius * 2 + 1) * 2 * chunkRowHeight * 2; } }
         public int BuildWorldProgress { get; private set; } // Used for loading bar
 
         protected override void Awake()
@@ -58,14 +57,18 @@ namespace Voxel.vWorld
 
         public void StartWorldBuild()
         {
+            BuildWorldProgress = 0;
             StartCoroutine(BuildWorld());
         }
 
         private IEnumerator BuildWorld()
         {
-            int playerPositionX = Mathf.FloorToInt(playerTransform.position.x / ChunkSize);
-            int playerPositionZ = Mathf.FloorToInt(playerTransform.position.z / ChunkSize);
+            int playerPositionX = Mathf.FloorToInt(player.transform.position.x / ChunkSize);
+            int playerPositionZ = Mathf.FloorToInt(player.transform.position.z / ChunkSize);
 
+            BuildWorldProgress += 10;
+
+            Vector3 playerSpawnPosition = Vector3.zero;
             // Initialise chunks around player
             for (int x = -Radius; x <= Radius; x++)
             {
@@ -73,34 +76,54 @@ namespace Voxel.vWorld
                 {
                     for (int y = 0; y < chunkRowHeight; y++)
                     {
+
+
                         Vector3 chunkPosition = new Vector3((x + playerPositionX) * ChunkSize,
                                                              y * ChunkSize,
                                                             (z + playerPositionZ) * ChunkSize);
+
+                        SetPlayerSpawnPosition(y, chunkPosition);
+
                         Chunk chunk = new Chunk(chunkPosition, worldTextureAtlas, transform);
                         chunkDictionary.Add(GetChunkID(chunkPosition), chunk);
-                        BuildWorldProgress++;
                         yield return null;
                     }
                 }
             }
 
+            void SetPlayerSpawnPosition(int currentChunkY, Vector3 chunkPosition)
+            {
+                if (currentChunkY == chunkRowHeight - 1)
+                {
+                    playerSpawnPosition = chunkPosition + Vector3.up * 2;
+                }
+            }
+
+            BuildWorldProgress += 30;
+
             // Build initialised chunks
             foreach (KeyValuePair<string, Chunk> chunk in chunkDictionary)
             {
                 chunk.Value.BuildChunk();
-                BuildWorldProgress++;
                 yield return null;
             }
+
+            BuildWorldProgress += 30;
 
             // Build chunk blocks
             foreach (KeyValuePair<string, Chunk> chunk in chunkDictionary)
             {
                 chunk.Value.BuildChunkBlocks();
-                BuildWorldProgress++;
                 yield return null;
             }
 
-            BuildWorldProgress = 0;
+            BuildWorldProgress = 100;
+            SpawnPlayer(playerSpawnPosition);
+        }
+
+        private void SpawnPlayer(Vector3 position)
+        {
+            Instantiate(player, position, Quaternion.identity);
         }
     }
 }

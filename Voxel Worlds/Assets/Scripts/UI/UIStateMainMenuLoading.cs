@@ -7,10 +7,12 @@ namespace Voxel.UI
 {
     public class UIStateMainMenuLoading : UIState
     {
+        [SerializeField]
+        private UIStateGameMenu gameMenuState = default;
         private Slider loadingBar;
         private WaitForSeconds loadingWaitForSeconds;
         [SerializeField]
-        private float loadingUpdateInterval = 0.25f;
+        private float loadingUpdateInterval = 1;
 
         private void Awake()
         {
@@ -20,19 +22,22 @@ namespace Voxel.UI
 
         protected override void OnStateEnable()
         {
-            StartCoroutine(WorldBuildLoading());
+            StartCoroutine(BuildWorldLoading());
         }
 
-        private IEnumerator WorldBuildLoading()
+        private IEnumerator BuildWorldLoading()
         {
             while (loadingBar.value < 100)
             {
-                loadingBar.value = World.Instance.BuildWorldProgress
-                                 / World.Instance.TotalChunks
-                                 * 100;
+                loadingBar.value = World.Instance.BuildWorldProgress;
                 yield return loadingWaitForSeconds;
             }
+            
+            UIManager.Instance.ActivateState(gameMenuState);
+        }
 
+        protected override void OnStateDisable()
+        {
             loadingBar.value = 0;
             loadingBar.gameObject.SetActive(false);
         }
