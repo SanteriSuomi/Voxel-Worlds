@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Voxel.World
+namespace Voxel.vWorld
 {
     public class Chunk
     {
@@ -70,7 +70,7 @@ namespace Voxel.World
                                 NewBlock(BlockType.Diamond);
                             }
                             // Caves are applied below this noise level but must be above certain range from the bottom
-                            else if (worldPositionY >= Random.Range(3, 5) && noise3D < Random.Range(0.125f, 0.135f)) 
+                            else if (worldPositionY >= Random.Range(3, 5) && noise3D < Random.Range(0.125f, 0.135f))
                             {
                                 NewBlock(BlockType.Air);
                             }
@@ -119,11 +119,12 @@ namespace Voxel.World
             }
 
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
-            CombineBlocks();
+            MeshFilter chunkMeshFilter = CombineBlocks();
+            AddCollider(chunkMeshFilter);
         }
 
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
-        private void CombineBlocks()
+        private MeshFilter CombineBlocks()
         {
             int childCount = chunkGameObject.transform.childCount;
             CombineInstance[] combinedMeshes = new CombineInstance[childCount];
@@ -132,14 +133,21 @@ namespace Voxel.World
                 MeshFilter childMeshFilter = chunkGameObject.transform.GetChild(i).GetComponent<MeshFilter>();
                 combinedMeshes[i].mesh = childMeshFilter.sharedMesh;
                 combinedMeshes[i].transform = childMeshFilter.transform.localToWorldMatrix;
-                Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject);
+                Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject); // Get rid of redundant children
             }
 
             MeshFilter parentMeshFilter = chunkGameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
             parentMeshFilter.mesh = new Mesh();
-            parentMeshFilter.mesh.CombineMeshes(combinedMeshes, true, true); // Combine meshes with the transform matrix
+            parentMeshFilter.mesh.CombineMeshes(combinedMeshes, true, true);
             MeshRenderer parentMeshRenderer = chunkGameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
             parentMeshRenderer.material = chunkMaterial;
+            return parentMeshFilter; // Return chunk mesh filter for further processing
+        }
+
+        private void AddCollider(MeshFilter chunkMeshFilter)
+        {
+            MeshCollider chunkMeshCollider = chunkGameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
+            chunkMeshCollider.sharedMesh = chunkMeshFilter.mesh;
         }
     }
 }

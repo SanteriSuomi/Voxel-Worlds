@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Voxel.World
+namespace Voxel.vWorld
 {
     public enum BlockType
     {
@@ -137,15 +137,13 @@ namespace Voxel.World
                                   (y - (int)blockPosition.y) * chunkSize,
                                   (z - (int)blockPosition.z) * chunkSize);
 
-                // Retrive the chunk ID for the dictionary
-                string chunkID = World.GetChunkID(neighbouringChunkPosition);
-
                 x = CheckBlockEdgeCase(x);
                 y = CheckBlockEdgeCase(y);
                 z = CheckBlockEdgeCase(z);
 
-                // Finally check if this chunk exists by consulting the chunk dictionary by it's ID
-                if (World.Instance.ChunkDictionary.TryGetValue(chunkID, out Chunk chunk))
+                // Finally check if this chunk exists by consulting the chunk dictionary from it's ID
+                Chunk chunk = World.Instance.GetChunk(World.GetChunkID(neighbouringChunkPosition));
+                if (chunk != null)
                 {
                     chunkData = chunk.GetChunkData();
                 }

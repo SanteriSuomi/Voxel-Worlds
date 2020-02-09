@@ -3,71 +3,104 @@ using System.Collections.Generic;
 using UnityEngine;
 using Voxel.Utility;
 
-namespace Voxel.World
+namespace Voxel.vWorld
 {
     public class World : Singleton<World>
     {
-        [SerializeField]
-        private Material worldTextureAtlas = default;
-        public Dictionary<string, Chunk> ChunkDictionary { get; } = new Dictionary<string, Chunk>();
+        private Dictionary<string, Chunk> chunkDictionary;
 
         /// <summary>
         /// Return the ID of a chunk at position as specified in the ChunkDictionary.
         /// </summary>
-        /// <param name="atPosition"></param>
+        /// <param name="fromPosition"></param>
         /// <returns></returns>
-        public static string GetChunkID(Vector3 atPosition)
+        public static string GetChunkID(Vector3 fromPosition)
         {
-            return $"{(int)atPosition.x} {(int)atPosition.y} {(int)atPosition.z}";
+            return $"{(int)fromPosition.x} {(int)fromPosition.y} {(int)fromPosition.z}";
         }
 
+        public Chunk GetChunk(string chunkID)
+        {
+            if (chunkDictionary.TryGetValue(chunkID, out Chunk chunk))
+            {
+                return chunk;
+            }
+
+            return null;
+        }
+
+        [Header("Misc. Dependencies")]
         [SerializeField]
-        private int chunkColumnLength = 8;
+        private Material worldTextureAtlas = default;
+        [SerializeField]
+        private Transform playerTransform = default;
+
+        [Header("Chunk and World Settings")]
         [SerializeField]
         private int chunkRowHeight = 8;
         [SerializeField]
-        private int chunkDepthLength = 8;
-        [SerializeField]
         private int chunkSize = 16;
         public int ChunkSize { get; private set; }
+        [SerializeField]
+        private int radius = 1;
+
+        public int Radius { get { return radius; } }
         public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
+        public int TotalChunks { get { return (radius * 2 + 1) * 2 * chunkRowHeight * 2; } }
+        public int BuildWorldProgress { get; private set; } // Used for loading bar
 
         protected override void Awake()
         {
             base.Awake();
+            chunkDictionary = new Dictionary<string, Chunk>();
             ChunkSize = chunkSize;
+        }
+
+        public void StartWorldBuild()
+        {
             StartCoroutine(BuildWorld());
         }
 
         private IEnumerator BuildWorld()
         {
-            // Initialise chunks
-            for (int x = 0; x < chunkColumnLength; x++)
+            int playerPositionX = Mathf.FloorToInt(playerTransform.position.x / ChunkSize);
+            int playerPositionZ = Mathf.FloorToInt(playerTransform.position.z / ChunkSize);
+
+            // Initialise chunks around player
+            for (int x = -Radius; x <= Radius; x++)
             {
-                for (int y = 0; y < chunkRowHeight; y++)
+                for (int z = -Radius; z <= Radius; z++)
                 {
-                    for (int z = 0; z < chunkDepthLength; z++)
+                    for (int y = 0; y < chunkRowHeight; y++)
                     {
-                        Vector3 chunkPosition = new Vector3(x * ChunkSize, y * ChunkSize, z * ChunkSize);
+                        Vector3 chunkPosition = new Vector3((x + playerPositionX) * ChunkSize,
+                                                             y * ChunkSize,
+                                                            (z + playerPositionZ) * ChunkSize);
                         Chunk chunk = new Chunk(chunkPosition, worldTextureAtlas, transform);
-                        ChunkDictionary.Add(GetChunkID(chunkPosition), chunk);
+                        chunkDictionary.Add(GetChunkID(chunkPosition), chunk);
+                        BuildWorldProgress++;
+                        yield return null;
                     }
                 }
             }
 
             // Build initialised chunks
-            foreach (KeyValuePair<string, Chunk> chunk in ChunkDictionary)
+            foreach (KeyValuePair<string, Chunk> chunk in chunkDictionary)
             {
                 chunk.Value.BuildChunk();
+                BuildWorldProgress++;
+                yield return null;
             }
 
             // Build chunk blocks
-            foreach (KeyValuePair<string, Chunk> chunk in ChunkDictionary)
+            foreach (KeyValuePair<string, Chunk> chunk in chunkDictionary)
             {
                 chunk.Value.BuildChunkBlocks();
+                BuildWorldProgress++;
+                yield return null;
             }
 
-            yield return null;
+            BuildWorldProgress = 0;
         }
     }
 }
