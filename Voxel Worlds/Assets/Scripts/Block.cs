@@ -25,7 +25,6 @@ namespace Voxel.vWorld
             Back
         }
 
-        public Mesh BlockMesh { get; private set; }
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
@@ -195,7 +194,6 @@ namespace Voxel.vWorld
         private void CreateQuad(CubeSide side)
         {
             List<Vector3> vertices = new List<Vector3>();
-            //Vector3[] vertices = new Vector3[4];
             Vector3[] normals = new Vector3[4];
 
             // All possible points on a cube made out of quads with clockwise ordering
@@ -216,51 +214,27 @@ namespace Voxel.vWorld
             switch (side)
             {
                 case CubeSide.Bottom:
-                    vertices = new Vector3[]
-                    {
-                        leftBottom0, rightBottom0, rightBottom1, leftBottom1
-                    };
-
+                    AssignVertices(new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 } );
                     AssignNormals(Vector3.down);
                     break;
                 case CubeSide.Top:
-                    vertices = new Vector3[]
-                    {
-                        leftTop1, rightTop1, rightTop0, leftTop0
-                    };
-
+                    AssignVertices(new Vector3[] { leftTop1, rightTop1, rightTop0, leftTop0 } );
                     AssignNormals(Vector3.up);
                     break;
                 case CubeSide.Left:
-                    vertices = new Vector3[]
-                    {
-                        leftTop1, leftTop0, leftBottom0, leftBottom1
-                    };
-
+                    AssignVertices(new Vector3[] { leftTop1, leftTop0, leftBottom0, leftBottom1 } );
                     AssignNormals(Vector3.left);
                     break;
                 case CubeSide.Right:
-                    vertices = new Vector3[]
-                    {
-                        rightTop0, rightTop1, rightBottom1, rightBottom0
-                    };
-
+                    AssignVertices(new Vector3[] { rightTop0, rightTop1, rightBottom1, rightBottom0 } );
                     AssignNormals(Vector3.right);
                     break;
                 case CubeSide.Front:
-                    vertices = new Vector3[]
-                    {
-                        rightBottom0, leftBottom0, leftTop0, rightTop0
-                    };
-
+                    AssignVertices(new Vector3[] { rightBottom0, leftBottom0, leftTop0, rightTop0 } );
                     AssignNormals(Vector3.forward);
                     break;
                 case CubeSide.Back:
-                    vertices = new Vector3[]
-                    {
-                        rightTop1, leftTop1, leftBottom1, rightBottom1
-                    };
-
+                    AssignVertices(new Vector3[] { rightTop1, leftTop1, leftBottom1, rightBottom1 } );
                     AssignNormals(Vector3.back);
                     break;
             }
@@ -339,14 +313,12 @@ namespace Voxel.vWorld
                 name = $"Quad {side} Mesh"
             };
 
-            MarchingCubes.MarchingCubes marchingCubes = new MarchingCubes.MarchingCubes();
-            List<int> indices = new List<int>();
-            marchingCubes.Generate(chunkOwner.GetChunkBlockValues(), chunkOwner.GetChunkData().GetLength(0), chunkOwner.GetChunkData().GetLength(1), chunkOwner.GetChunkData().GetLength(2), vertices, indices);
-
-            mesh.vertices = vertices.ToArray();
+            mesh.SetVertices(vertices);
+            //mesh.vertices = vertices;
             mesh.normals = normals;
             mesh.uv = uvs;
-            mesh.triangles = triangles;
+            //mesh.triangles = triangles;
+            mesh.SetTriangles(triangles, 0);
 
             mesh.RecalculateBounds();
 
@@ -355,7 +327,6 @@ namespace Voxel.vWorld
             quad.transform.SetParent(parentChunk.transform);
             MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
             meshFilter.mesh = mesh;
-            BlockMesh = mesh;
         }
     }
 }
