@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
+using Voxel.Utility;
 
 namespace Voxel.vWorld
 {
@@ -7,6 +9,11 @@ namespace Voxel.vWorld
         private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
         private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
 
+        private float[] chunkBlockValues; // For marching cubes
+        public float[] GetChunkBlockValues()
+        {
+            return chunkBlockValues;
+        }
         private Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
         {
@@ -30,6 +37,7 @@ namespace Voxel.vWorld
         public void BuildChunk()
         {
             int worldChunkSize = World.Instance.ChunkSize;
+            chunkBlockValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
             // Populate the voxel chunk data
             for (int x = 0; x < worldChunkSize; x++)
@@ -51,7 +59,7 @@ namespace Voxel.vWorld
 
                         int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
                         int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
-                        int noise2D = (int)(Noise.Utility.fBm2D(worldPositionX, worldPositionZ)
+                        int noise2D = (int)(Utils.fBm2D(worldPositionX, worldPositionZ)
                             * (World.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
                         // Air
                         if (worldPositionY >= noise2D)
@@ -64,7 +72,7 @@ namespace Voxel.vWorld
                         int undergroundLayerStart = noise2D - Random.Range(4, 8);
                         if (worldPositionY <= undergroundLayerStart) // If we're certain range below the surface
                         {
-                            float noise3D = Noise.Utility.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
+                            float noise3D = Utils.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
                             if (noise3D >= 0.135f && noise3D <= Random.Range(0.135f, 0.1355f))
                             {
                                 NewBlock(BlockType.Diamond);
@@ -95,6 +103,16 @@ namespace Voxel.vWorld
 
                         void NewBlock(BlockType type)
                         {
+                            int chunkBlockIndex = x * worldChunkSize + z * worldChunkSize + y * worldChunkSize;
+                            if (type != BlockType.Air)
+                            {
+                                chunkBlockValues[chunkBlockIndex] = 1;
+                            }
+                            else
+                            {
+                                chunkBlockValues[chunkBlockIndex] = 0;
+                            }
+
                             chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
                         }
                     }

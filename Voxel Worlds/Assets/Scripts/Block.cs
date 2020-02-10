@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Voxel.vWorld
 {
@@ -24,6 +25,7 @@ namespace Voxel.vWorld
             Back
         }
 
+        public Mesh BlockMesh { get; private set; }
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
@@ -192,7 +194,8 @@ namespace Voxel.vWorld
 
         private void CreateQuad(CubeSide side)
         {
-            Vector3[] vertices = new Vector3[4];
+            List<Vector3> vertices = new List<Vector3>();
+            //Vector3[] vertices = new Vector3[4];
             Vector3[] normals = new Vector3[4];
 
             // All possible points on a cube made out of quads with clockwise ordering
@@ -262,6 +265,14 @@ namespace Voxel.vWorld
                     break;
             }
 
+            void AssignVertices(Vector3[] verticesToAssign)
+            {
+                for (int i = 0; i < verticesToAssign.Length; i++)
+                {
+                    vertices.Add(verticesToAssign[i]);
+                }
+            }
+
             void AssignNormals(Vector3 direction)
             {
                 for (int i = 0; i < normals.Length; i++)
@@ -328,7 +339,11 @@ namespace Voxel.vWorld
                 name = $"Quad {side} Mesh"
             };
 
-            mesh.vertices = vertices;
+            MarchingCubes.MarchingCubes marchingCubes = new MarchingCubes.MarchingCubes();
+            List<int> indices = new List<int>();
+            marchingCubes.Generate(chunkOwner.GetChunkBlockValues(), chunkOwner.GetChunkData().GetLength(0), chunkOwner.GetChunkData().GetLength(1), chunkOwner.GetChunkData().GetLength(2), vertices, indices);
+
+            mesh.vertices = vertices.ToArray();
             mesh.normals = normals;
             mesh.uv = uvs;
             mesh.triangles = triangles;
@@ -340,6 +355,7 @@ namespace Voxel.vWorld
             quad.transform.SetParent(parentChunk.transform);
             MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
             meshFilter.mesh = mesh;
+            BlockMesh = mesh;
         }
     }
 }
