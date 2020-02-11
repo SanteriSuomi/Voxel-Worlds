@@ -25,6 +25,11 @@ namespace Voxel.vWorld
             Back
         }
 
+        private float[] cube; // Used for marching cubes
+        public float[] GetCube()
+        {
+            return cube;
+        }
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
@@ -314,13 +319,9 @@ namespace Voxel.vWorld
             };
 
             mesh.SetVertices(vertices);
-            //mesh.vertices = vertices;
             mesh.normals = normals;
             mesh.uv = uvs;
-            //mesh.triangles = triangles;
             mesh.SetTriangles(triangles, 0);
-
-            mesh.RecalculateBounds();
 
             GameObject quad = new GameObject($"Quad {side}");
             quad.transform.position = blockPosition;

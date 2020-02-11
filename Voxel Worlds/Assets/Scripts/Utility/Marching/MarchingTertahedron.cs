@@ -1,20 +1,13 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-
 using UnityEngine;
 
-namespace MarchingCubes
+namespace Voxel.Utility
 {
     public class MarchingTertrahedron : Marching
     {
-
         private Vector3[] EdgeVertex { get; set; }
-
         private Vector3[] CubePosition { get; set; }
-
         private Vector3[] TetrahedronPosition { get; set; }
-
         private float[] TetrahedronValue { get; set; }
 
         public MarchingTertrahedron(float surface = 0.5f)
@@ -173,7 +166,5 @@ namespace MarchingCubes
             { 2,  3,  0, -1, -1, -1, -1},
             {-1, -1, -1, -1, -1, -1, -1}
 	    };
-
     }
-
 }

@@ -1,9 +1,13 @@
-﻿namespace Voxel.Utility
+﻿using System.Collections.Generic;
+using UnityEngine;
+
+namespace Voxel.Utility
 {
 	#pragma warning disable IDE1006 // Methods correctly named
 	public static class Utils
 	{
-		private static readonly FastNoise noise = new FastNoise(UnityEngine.Random.Range(0, 1000000)); // Remove random seed later probably
+		private static readonly FastNoise noise = new FastNoise(UnityEngine.Random.Range(0, 1000000)); // Remove random seed later //
+		private static readonly MarchingCubes marchingCubes = new MarchingCubes(surface: 0);
 
 		private const int octaves2D = 2;
 		private const float baseFrequency2D = 0.75f;
@@ -55,6 +59,11 @@
 		private static float Abs(float value)
 		{
 			return value >= 0 ? value : -value;
+		}
+
+		public static void MarchingCubes(IList<float> voxels, int width, int height, int depth, IList<Vector3> verts, IList<int> indices)
+		{
+			marchingCubes.Generate(voxels, width, height, depth, verts, indices);
 		}
 	}
 }

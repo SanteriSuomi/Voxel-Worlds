@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-
 using UnityEngine;
 
-namespace MarchingCubes
+namespace Voxel.Utility
 {
     public class MarchingCubes : Marching
     {
@@ -20,7 +19,6 @@ namespace MarchingCubes
         {
             int i, j, vert, idx;
             int flagIndex = 0;
-            float offset = 0.0f;
 
             //Find which vertices are inside of the surface and which are outside
             for (i = 0; i < 8; i++) if (cube[i] <= Surface) flagIndex |= 1 << i;
@@ -37,7 +35,7 @@ namespace MarchingCubes
                 //if there is an intersection on this edge
                 if ((edgeFlags & (1 << i)) != 0)
                 {
-                    offset = GetOffset(cube[EdgeConnection[i, 0]], cube[EdgeConnection[i, 1]]);
+                    float offset = GetOffset(cube[EdgeConnection[i, 0]], cube[EdgeConnection[i, 1]]);
 
                     EdgeVertex[i].x = x + (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
                     EdgeVertex[i].y = y + (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
@@ -385,5 +383,4 @@ namespace MarchingCubes
 	    {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 	    };
     }
-
 }

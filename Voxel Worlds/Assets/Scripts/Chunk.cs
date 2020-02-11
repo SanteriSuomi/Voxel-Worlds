@@ -22,9 +22,9 @@ namespace Voxel.vWorld
             // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
             chunkGameObject = new GameObject
             {
-                name = position.ToString()
+                name = position.ToString(),
             };
-
+             
             chunkGameObject.transform.position = position; // Chunk position in the world
             chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
@@ -101,14 +101,14 @@ namespace Voxel.vWorld
                         void NewBlock(BlockType type)
                         {
                             ////////////////////////////////////////////////To-do
-                            int chunkBlockIndex = x * worldChunkSize + z * worldChunkSize + y * worldChunkSize;
+                            int chunkBlockIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
                             if (type != BlockType.Air)
                             {
-                                chunkDataValues[chunkBlockIndex] = 1;
+                                chunkDataValues[chunkBlockIndex] = -1;
                             }
                             else
                             {
-                                chunkDataValues[chunkBlockIndex] = -1;
+                                chunkDataValues[chunkBlockIndex] = 1;
                             }
 
                             chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
@@ -136,27 +136,8 @@ namespace Voxel.vWorld
 
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
             MeshFilter chunkMeshFilter = CombineBlocks();
-
-            //////////////////////////To-do
-            MarchingCubes.MarchingCubes marchingCubes = new MarchingCubes.MarchingCubes
-            {
-                Surface = -1
-            };
-
-            List<Vector3> vertices = chunkMeshFilter.mesh.vertices.ToList();
-            List<int> indices = chunkMeshFilter.mesh.triangles.ToList();
-            Debug.Log(vertices.Count);
-            marchingCubes.Generate(chunkDataValues, worldChunkSize, worldChunkSize, worldChunkSize, vertices, indices);
-            Debug.Log(vertices.Count);
-            //Mesh marchedMesh = new Mesh();
-            //marchedMesh.SetVertices(vertices);
-            //marchedMesh.SetTriangles(indices, 0);
-            //chunkMeshFilter.mesh = marchedMesh;
-            chunkMeshFilter.mesh.SetVertices(vertices);
-            chunkMeshFilter.mesh.SetTriangles(indices, 0);
-            chunkMeshFilter.mesh.RecalculateBounds();
-
-            AddCollider(chunkMeshFilter);
+            MarchBlocks(worldChunkSize, chunkMeshFilter);
+            chunkGameObject.AddComponent(typeof(MeshCollider));
         }
 
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
@@ -180,10 +161,17 @@ namespace Voxel.vWorld
             return parentMeshFilter; // Return chunk mesh filter for further processing
         }
 
-        private void AddCollider(MeshFilter chunkMeshFilter)
+        private void MarchBlocks(int worldChunkSize, MeshFilter chunkMeshFilter)
         {
-            MeshCollider chunkMeshCollider = chunkGameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
-            chunkMeshCollider.sharedMesh = chunkMeshFilter.mesh;
+            List<Vector3> vertices = chunkMeshFilter.mesh.vertices.ToList();
+            List<int> indices = chunkMeshFilter.mesh.triangles.ToList();
+            Utils.MarchingCubes(chunkDataValues, worldChunkSize, worldChunkSize, worldChunkSize, vertices, indices);
+            Mesh marchedMesh = new Mesh();
+            marchedMesh.SetVertices(vertices);
+            marchedMesh.SetTriangles(indices, 0);
+            chunkMeshFilter.mesh = marchedMesh;
+            chunkMeshFilter.mesh.RecalculateNormals();
+            chunkMeshFilter.mesh.RecalculateBounds();
         }
     }
 }

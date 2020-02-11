@@ -1,16 +1,11 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-
 using UnityEngine;
 
-namespace MarchingCubes
+namespace Voxel.Utility
 {
     public abstract class Marching : IMarching
     {
-
         public float Surface { get; set; }
-
         private float[] Cube { get; set; }
 
         /// <summary>
@@ -18,7 +13,7 @@ namespace MarchingCubes
         /// </summary>
         protected int[] WindingOrder { get; private set; }
 
-        public Marching(float surface = 0.5f)
+        protected Marching(float surface = 0.5f)
         {
             Surface = surface;
             Cube = new float[8];
@@ -92,7 +87,5 @@ namespace MarchingCubes
 	        {0, 0, 0},{1, 0, 0},{1, 1, 0},{0, 1, 0},
 	        {0, 0, 1},{1, 0, 1},{1, 1, 1},{0, 1, 1}
 	    };
-
     }
-
 }
