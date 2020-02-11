@@ -61,9 +61,9 @@ namespace Voxel.Utility
 			return value >= 0 ? value : -value;
 		}
 
-		public static void MarchingCubes(IList<float> voxels, int width, int height, int depth, IList<Vector3> verts, IList<int> indices)
+		public static void MarchingCubes(float[,,][] voxels, int size, IList<Vector3> verts, IList<int> indices)
 		{
-			marchingCubes.Generate(voxels, width, height, depth, verts, indices);
+			marchingCubes.Generate(voxels, size, verts, indices);
 		}
 	}
 }

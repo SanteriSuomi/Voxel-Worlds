@@ -10,7 +10,7 @@ namespace Voxel.vWorld
         private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
         private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
 
-        private float[] chunkDataValues; // For marching cubes
+        private float[,,][] chunkCubeVoxel; // For marching cubes
         private Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
         {
@@ -34,7 +34,7 @@ namespace Voxel.vWorld
         public void BuildChunk()
         {
             int worldChunkSize = World.Instance.ChunkSize;
-            chunkDataValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
+            chunkCubeVoxel = new float[worldChunkSize, worldChunkSize, worldChunkSize][]; // Voxel data for marching cubes
             chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
             // Populate the voxel chunk data
             for (int x = 0; x < worldChunkSize; x++)
@@ -101,18 +101,18 @@ namespace Voxel.vWorld
                         void NewBlock(BlockType type)
                         {
                             ////////////////////////////////////////////////To-do
-                            int chunkBlockIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
-                            if (type != BlockType.Air)
-                            {
-                                chunkDataValues[chunkBlockIndex] = -1;
-                            }
-                            else
-                            {
-                                chunkDataValues[chunkBlockIndex] = 1;
-                            }
+                            int chunkBlockIndex = x * worldChunkSize + y * worldChunkSize + z * worldChunkSize;
+                            //if (type != BlockType.Air)
+                            //{
+                            //    chunkDataValues[chunkBlockIndex] = -1;
+                            //}
+                            //else
+                            //{
+                            //    chunkDataValues[chunkBlockIndex] = 1;
+                            //}
 
                             chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
-                            chunkDataValues[chunkData[x, y, z].GetCube()];
+                            chunkCubeVoxel[x, y, z] = chunkData[x, y, z].GetCube();
                         }
                     }
                 }
@@ -138,7 +138,7 @@ namespace Voxel.vWorld
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
             MeshFilter chunkMeshFilter = CombineBlocks();
             MarchBlocks(worldChunkSize, chunkMeshFilter);
-            chunkGameObject.AddComponent(typeof(MeshCollider));
+            AaddCollider();
         }
 
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
@@ -166,13 +166,18 @@ namespace Voxel.vWorld
         {
             List<Vector3> vertices = chunkMeshFilter.mesh.vertices.ToList();
             List<int> indices = chunkMeshFilter.mesh.triangles.ToList();
-            Utils.MarchingCubes(chunkDataValues, worldChunkSize, worldChunkSize, worldChunkSize, vertices, indices);
+            Utils.MarchingCubes(chunkCubeVoxel, worldChunkSize, vertices, indices);
             Mesh marchedMesh = new Mesh();
             marchedMesh.SetVertices(vertices);
             marchedMesh.SetTriangles(indices, 0);
             chunkMeshFilter.mesh = marchedMesh;
             chunkMeshFilter.mesh.RecalculateNormals();
             chunkMeshFilter.mesh.RecalculateBounds();
+        }
+
+        private void AaddCollider()
+        {
+            chunkGameObject.AddComponent(typeof(MeshCollider));
         }
     }
 }

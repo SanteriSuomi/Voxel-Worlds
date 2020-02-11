@@ -102,41 +102,48 @@ namespace Voxel.vWorld
             int positionY = (int)blockPosition.y;
             int positionZ = (int)blockPosition.z;
 
+            // Create a new cube of float values for use in marching cube algorithm
             cube = new float[6];
-            // If there is no neighbour, create a specified side of the cube
             if (!HasSolidNeighbour(positionX, positionY, positionZ + 1))
             {
                 front = true;
                 cube[0] = -1;
             }
+            else { cube[0] = 1; }
             if (!HasSolidNeighbour(positionX, positionY, positionZ - 1))
             {
                 back = true;
                 cube[1] = -1;
             }
+            else { cube[1] = 1; }
             if (!HasSolidNeighbour(positionX - 1, positionY, positionZ))
             {
                 left = true;
                 cube[2] = -1;
             }
+            else { cube[2] = 1; }
             if (!HasSolidNeighbour(positionX + 1, positionY, positionZ))
             {
                 right = true;
                 cube[3] = -1;
             }
+            else { cube[3] = 1; }
             if (!HasSolidNeighbour(positionX, positionY + 1, positionZ))
             {
                 top = true;
                 cube[4] = -1;
             }
+            else { cube[4] = 1; }
             if (!HasSolidNeighbour(positionX, positionY - 1, positionZ))
             {
                 bottom = true;
                 cube[5]  = -1;
             }
+            else { cube[5] = 1; }
 
             if (blockType != BlockType.Air) // If block is any of these types, do not create it
             {
+                // If there is no neighbour, create a specified side of the cube
                 if (front)
                 {
                     CreateQuad(CubeSide.Front);
