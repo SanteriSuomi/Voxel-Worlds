@@ -24,7 +24,7 @@ namespace Voxel.vWorld
             {
                 name = position.ToString(),
             };
-             
+
             chunkGameObject.transform.position = position; // Chunk position in the world
             chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
@@ -100,19 +100,7 @@ namespace Voxel.vWorld
 
                         void NewBlock(BlockType type)
                         {
-                            ////////////////////////////////////////////////To-do
-                            int chunkBlockIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
-                            if (type != BlockType.Air)
-                            {
-                                chunkDataValues[chunkBlockIndex] = -1;
-                            }
-                            else
-                            {
-                                chunkDataValues[chunkBlockIndex] = 1;
-                            }
-
                             chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
-                            //chunkDataValues[chunkBlockIndex] = chunkData[x, y, z].GetCube();
                         }
                     }
                 }
@@ -131,6 +119,17 @@ namespace Voxel.vWorld
                     for (int z = 0; z < worldChunkSize; z++)
                     {
                         chunkData[x, y, z].BuildBlock();
+                        int chunkBlockIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
+                        if (chunkData[x, y, z].IsSolid)
+                        {
+                            chunkDataValues[chunkBlockIndex] = -1;
+                        }
+                        else
+                        {
+                            chunkDataValues[chunkBlockIndex] = 1;
+                        }
+
+                        //chunkDataValues[chunkBlockIndex] = chunkData[x, y, z].GetVoxelCube();
                     }
                 }
             }
@@ -138,7 +137,7 @@ namespace Voxel.vWorld
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
             MeshFilter chunkMeshFilter = CombineBlocks();
             MarchBlocks(worldChunkSize, chunkMeshFilter);
-            chunkGameObject.AddComponent(typeof(MeshCollider));
+            AddCollider();
         }
 
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
@@ -173,6 +172,11 @@ namespace Voxel.vWorld
             chunkMeshFilter.mesh = marchedMesh;
             chunkMeshFilter.mesh.RecalculateNormals();
             chunkMeshFilter.mesh.RecalculateBounds();
+        }
+
+        private void AddCollider()
+        {
+            chunkGameObject.AddComponent(typeof(MeshCollider));
         }
     }
 }

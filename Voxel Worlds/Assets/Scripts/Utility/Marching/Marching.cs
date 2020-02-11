@@ -22,7 +22,6 @@ namespace Voxel.Utility
 
         public virtual void Generate(IList<float> voxels, int width, int height, int depth, IList<Vector3> verts, IList<int> indices)
         {
-
             if (Surface > 0.0f)
             {
                 WindingOrder[0] = 0;
@@ -44,13 +43,12 @@ namespace Voxel.Utility
                 {
                     for (z = 0; z < depth - 1; z++)
                     {
-                        //Get the values in the 8 neighbours which make up a cube
+                        // Get the values in the 8 neighbours which make up a cube
                         for (i = 0; i < 8; i++)
                         {
                             ix = x + VertexOffset[i, 0];
                             iy = y + VertexOffset[i, 1];
                             iz = z + VertexOffset[i, 2];
-
                             Cube[i] = voxels[ix + iy * width + iz * width * height];
                         }
 
@@ -59,10 +57,9 @@ namespace Voxel.Utility
                     }
                 }
             }
-
         }
 
-         /// <summary>
+        /// <summary>
         /// MarchCube performs the Marching algorithm on a single cube
         /// </summary>
         protected abstract void March(float x, float y, float z, float[] cube, IList<Vector3> vertList, IList<int> indexList);
@@ -83,9 +80,9 @@ namespace Voxel.Utility
         /// vertexOffset[8][3]
         /// </summary>
         protected static readonly int[,] VertexOffset = new int[,]
-	    {
-	        {0, 0, 0},{1, 0, 0},{1, 1, 0},{0, 1, 0},
-	        {0, 0, 1},{1, 0, 1},{1, 1, 1},{0, 1, 1}
-	    };
+        {
+            {0, 0, 0},{1, 0, 0},{1, 1, 0},{0, 1, 0},
+            {0, 0, 1},{1, 0, 1},{1, 1, 1},{0, 1, 1}
+        };
     }
 }

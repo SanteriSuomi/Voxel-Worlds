@@ -25,10 +25,10 @@ namespace Voxel.vWorld
             Back
         }
 
-        private float[] cube; // Used for marching cubes
-        public float[] GetCube()
+        private float[] voxelCube; // Used for marching cubes
+        public float[] GetVoxelCube()
         {
-            return cube;
+            return voxelCube;
         }
 
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
@@ -103,38 +103,46 @@ namespace Voxel.vWorld
             int positionY = (int)blockPosition.y;
             int positionZ = (int)blockPosition.z;
 
-            cube = new float[6];
+            voxelCube = new float[8];
             // If there is no neighbour, create a specified side of the cube
             if (!HasSolidNeighbour(positionX, positionY, positionZ + 1))
             {
                 front = true;
-                cube[0] = -1;
+                voxelCube[0] = -1;
             }
+            else { voxelCube[0] = 1; }
             if (!HasSolidNeighbour(positionX, positionY, positionZ - 1))
             {
                 back = true;
-                cube[1] = -1;
+                voxelCube[1] = -1;
             }
+            else { voxelCube[1] = 1; }
             if (!HasSolidNeighbour(positionX - 1, positionY, positionZ))
             {
                 left = true;
-                cube[2] = -1;
+                voxelCube[2] = -1;
             }
+            else { voxelCube[2] = 1; }
             if (!HasSolidNeighbour(positionX + 1, positionY, positionZ))
             {
                 right = true;
-                cube[3] = -1;
+                voxelCube[3] = -1;
             }
+            else { voxelCube[3] = 1; }
             if (!HasSolidNeighbour(positionX, positionY + 1, positionZ))
             {
                 top = true;
-                cube[4] = -1;
+                voxelCube[4] = -1;
             }
+            else { voxelCube[4] = 1; }
             if (!HasSolidNeighbour(positionX, positionY - 1, positionZ))
             {
                 bottom = true;
-                cube[5]  = -1;
+                voxelCube[5]  = -1;
             }
+            else { voxelCube[5] = 1; }
+            voxelCube[6] = -1;
+            voxelCube[7] = -1;
 
             if (blockType != BlockType.Air) // If block is any of these types, do not create it
             {
