@@ -112,6 +112,7 @@ namespace Voxel.vWorld
                             }
 
                             chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
+                            chunkDataValues[chunkData[x, y, z].GetCube()];
                         }
                     }
                 }

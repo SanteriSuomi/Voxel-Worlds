@@ -94,36 +94,73 @@ namespace Voxel.vWorld
 
         public void BuildBlock()
         {
-            if (blockType == BlockType.Air) return; // If block is any of these types, do not create it
+            bool front = false, back = false,
+                 left = false, right = false,
+                 top = false, bottom = false;
 
             int positionX = (int)blockPosition.x;
             int positionY = (int)blockPosition.y;
             int positionZ = (int)blockPosition.z;
 
+            cube = new float[6];
             // If there is no neighbour, create a specified side of the cube
             if (!HasSolidNeighbour(positionX, positionY, positionZ + 1))
             {
-                CreateQuad(CubeSide.Front);
+                front = true;
+                cube[0] = -1;
             }
             if (!HasSolidNeighbour(positionX, positionY, positionZ - 1))
             {
-                CreateQuad(CubeSide.Back);
+                back = true;
+                cube[1] = -1;
             }
             if (!HasSolidNeighbour(positionX - 1, positionY, positionZ))
             {
-                CreateQuad(CubeSide.Left);
+                left = true;
+                cube[2] = -1;
             }
             if (!HasSolidNeighbour(positionX + 1, positionY, positionZ))
             {
-                CreateQuad(CubeSide.Right);
+                right = true;
+                cube[3] = -1;
             }
             if (!HasSolidNeighbour(positionX, positionY + 1, positionZ))
             {
-                CreateQuad(CubeSide.Top);
+                top = true;
+                cube[4] = -1;
             }
             if (!HasSolidNeighbour(positionX, positionY - 1, positionZ))
             {
-                CreateQuad(CubeSide.Bottom);
+                bottom = true;
+                cube[5]  = -1;
+            }
+
+            if (blockType != BlockType.Air) // If block is any of these types, do not create it
+            {
+                if (front)
+                {
+                    CreateQuad(CubeSide.Front);
+                }
+                if (back)
+                {
+                    CreateQuad(CubeSide.Back);
+                }
+                if (left)
+                {
+                    CreateQuad(CubeSide.Left);
+                }
+                if (right)
+                {
+                    CreateQuad(CubeSide.Right);
+                }
+                if (top)
+                {
+                    CreateQuad(CubeSide.Top);
+                }
+                if (bottom)
+                {
+                    CreateQuad(CubeSide.Bottom);
+                }
             }
         }
 
@@ -219,27 +256,27 @@ namespace Voxel.vWorld
             switch (side)
             {
                 case CubeSide.Bottom:
-                    AssignVertices(new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 } );
+                    AssignVertices(new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 });
                     AssignNormals(Vector3.down);
                     break;
                 case CubeSide.Top:
-                    AssignVertices(new Vector3[] { leftTop1, rightTop1, rightTop0, leftTop0 } );
+                    AssignVertices(new Vector3[] { leftTop1, rightTop1, rightTop0, leftTop0 });
                     AssignNormals(Vector3.up);
                     break;
                 case CubeSide.Left:
-                    AssignVertices(new Vector3[] { leftTop1, leftTop0, leftBottom0, leftBottom1 } );
+                    AssignVertices(new Vector3[] { leftTop1, leftTop0, leftBottom0, leftBottom1 });
                     AssignNormals(Vector3.left);
                     break;
                 case CubeSide.Right:
-                    AssignVertices(new Vector3[] { rightTop0, rightTop1, rightBottom1, rightBottom0 } );
+                    AssignVertices(new Vector3[] { rightTop0, rightTop1, rightBottom1, rightBottom0 });
                     AssignNormals(Vector3.right);
                     break;
                 case CubeSide.Front:
-                    AssignVertices(new Vector3[] { rightBottom0, leftBottom0, leftTop0, rightTop0 } );
+                    AssignVertices(new Vector3[] { rightBottom0, leftBottom0, leftTop0, rightTop0 });
                     AssignNormals(Vector3.forward);
                     break;
                 case CubeSide.Back:
-                    AssignVertices(new Vector3[] { rightTop1, leftTop1, leftBottom1, rightBottom1 } );
+                    AssignVertices(new Vector3[] { rightTop1, leftTop1, leftBottom1, rightBottom1 });
                     AssignNormals(Vector3.back);
                     break;
             }
