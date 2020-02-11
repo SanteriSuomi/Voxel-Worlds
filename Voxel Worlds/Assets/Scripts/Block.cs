@@ -30,6 +30,7 @@ namespace Voxel.vWorld
         {
             return cube;
         }
+
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
