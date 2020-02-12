@@ -10,7 +10,11 @@ namespace Voxel.vWorld
         private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
         private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
 
+<<<<<<< HEAD
         private float[,,][] chunkCubeVoxel; // For marching cubes
+=======
+        private float[] chunkVoxelValues; // For marching cubes
+>>>>>>> branchtemp
         private Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
         {
@@ -24,7 +28,7 @@ namespace Voxel.vWorld
             {
                 name = position.ToString(),
             };
-             
+
             chunkGameObject.transform.position = position; // Chunk position in the world
             chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
@@ -34,15 +38,19 @@ namespace Voxel.vWorld
         public void BuildChunk()
         {
             int worldChunkSize = World.Instance.ChunkSize;
+<<<<<<< HEAD
             chunkCubeVoxel = new float[worldChunkSize, worldChunkSize, worldChunkSize][]; // Voxel data for marching cubes
+=======
+>>>>>>> branchtemp
             chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
             // Populate the voxel chunk data
             for (int x = 0; x < worldChunkSize; x++)
             {
                 for (int z = 0; z < worldChunkSize; z++)
                 {
+                    int chunkTopIndex = worldChunkSize - 1;
                     bool surfaceBlockAlreadyPlaced = false; // Bool to determine is the top block of a certain column has been placed in this Y loop
-                    for (int y = worldChunkSize - 1; y >= 0; y--) // Start height Y from top so we can easily place the top block
+                    for (int y = chunkTopIndex; y >= 0; y--) // Start height Y from top so we can easily place the top block
                     {
                         Vector3 localPosition = new Vector3(x, y, z);
                         int worldPositionY = (int)(y + chunkGameObject.transform.position.y);
@@ -100,6 +108,7 @@ namespace Voxel.vWorld
 
                         void NewBlock(BlockType type)
                         {
+<<<<<<< HEAD
                             ////////////////////////////////////////////////To-do
                             int chunkBlockIndex = x * worldChunkSize + y * worldChunkSize + z * worldChunkSize;
                             //if (type != BlockType.Air)
@@ -113,6 +122,9 @@ namespace Voxel.vWorld
 
                             chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
                             chunkCubeVoxel[x, y, z] = chunkData[x, y, z].GetCube();
+=======
+                            chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
+>>>>>>> branchtemp
                         }
                     }
                 }
@@ -122,6 +134,7 @@ namespace Voxel.vWorld
         public void BuildChunkBlocks()
         {
             int worldChunkSize = World.Instance.ChunkSize;
+            //chunkVoxelValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
             // so we can use the HasSolidNeighbour check (to discard quads that are not visible).
             for (int x = 0; x < worldChunkSize; x++)
@@ -131,14 +144,33 @@ namespace Voxel.vWorld
                     for (int z = 0; z < worldChunkSize; z++)
                     {
                         chunkData[x, y, z].BuildBlock();
+                        //int chunkVoxelIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
+                        //SetChunkVoxelValues(x, y, z, chunkVoxelIndex);
                     }
                 }
             }
 
+            //void SetChunkVoxelValues(int x, int y, int z, int index) // Set the voxel array values for marching 
+            //{
+            //    if (chunkData[x, y, z].IsSolid)
+            //    {
+            //        chunkVoxelValues[index] = -1;
+            //    }
+            //    else
+            //    {
+            //        chunkVoxelValues[index] = 1;
+            //    }
+            //}
+
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
             MeshFilter chunkMeshFilter = CombineBlocks();
+<<<<<<< HEAD
             MarchBlocks(worldChunkSize, chunkMeshFilter);
             AaddCollider();
+=======
+            //MarchBlocks(worldChunkSize, chunkMeshFilter);
+            AddCollider();
+>>>>>>> branchtemp
         }
 
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
@@ -166,16 +198,26 @@ namespace Voxel.vWorld
         {
             List<Vector3> vertices = chunkMeshFilter.mesh.vertices.ToList();
             List<int> indices = chunkMeshFilter.mesh.triangles.ToList();
+<<<<<<< HEAD
             Utils.MarchingCubes(chunkCubeVoxel, worldChunkSize, vertices, indices);
             Mesh marchedMesh = new Mesh();
             marchedMesh.SetVertices(vertices);
             marchedMesh.SetTriangles(indices, 0);
             chunkMeshFilter.mesh = marchedMesh;
+=======
+            Utils.MarchingTertrahedron(chunkVoxelValues, worldChunkSize, vertices, indices);
+            chunkMeshFilter.mesh.SetVertices(vertices);
+            chunkMeshFilter.mesh.SetTriangles(indices, 0);
+>>>>>>> branchtemp
             chunkMeshFilter.mesh.RecalculateNormals();
             chunkMeshFilter.mesh.RecalculateBounds();
         }
 
+<<<<<<< HEAD
         private void AaddCollider()
+=======
+        private void AddCollider()
+>>>>>>> branchtemp
         {
             chunkGameObject.AddComponent(typeof(MeshCollider));
         }

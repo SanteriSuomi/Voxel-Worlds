@@ -25,11 +25,6 @@ namespace Voxel.vWorld
             Back
         }
 
-        private float[] cube; // Used for marching cubes
-        public float[] GetCube()
-        {
-            return cube;
-        }
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
@@ -94,48 +89,46 @@ namespace Voxel.vWorld
 
         public void BuildBlock()
         {
-            bool front = false, back = false,
-                 left = false, right = false,
-                 top = false, bottom = false;
+            if (blockType == BlockType.Air) return; // If block is any of these types, do not create it
 
             int positionX = (int)blockPosition.x;
             int positionY = (int)blockPosition.y;
             int positionZ = (int)blockPosition.z;
 
+<<<<<<< HEAD
             // Create a new cube of float values for use in marching cube algorithm
             cube = new float[6];
+=======
+            // If there is no neighbour, create a specified side of the cube
+>>>>>>> branchtemp
             if (!HasSolidNeighbour(positionX, positionY, positionZ + 1))
             {
-                front = true;
-                cube[0] = -1;
+                CreateQuad(CubeSide.Front);
             }
             else { cube[0] = 1; }
             if (!HasSolidNeighbour(positionX, positionY, positionZ - 1))
             {
-                back = true;
-                cube[1] = -1;
+                CreateQuad(CubeSide.Back);
             }
             else { cube[1] = 1; }
             if (!HasSolidNeighbour(positionX - 1, positionY, positionZ))
             {
-                left = true;
-                cube[2] = -1;
+                CreateQuad(CubeSide.Left);
             }
             else { cube[2] = 1; }
             if (!HasSolidNeighbour(positionX + 1, positionY, positionZ))
             {
-                right = true;
-                cube[3] = -1;
+                CreateQuad(CubeSide.Right);
             }
             else { cube[3] = 1; }
             if (!HasSolidNeighbour(positionX, positionY + 1, positionZ))
             {
-                top = true;
-                cube[4] = -1;
+                CreateQuad(CubeSide.Top);
             }
             else { cube[4] = 1; }
             if (!HasSolidNeighbour(positionX, positionY - 1, positionZ))
             {
+<<<<<<< HEAD
                 bottom = true;
                 cube[5]  = -1;
             }
@@ -168,6 +161,9 @@ namespace Voxel.vWorld
                 {
                     CreateQuad(CubeSide.Bottom);
                 }
+=======
+                CreateQuad(CubeSide.Bottom);
+>>>>>>> branchtemp
             }
         }
 

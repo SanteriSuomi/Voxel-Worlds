@@ -260,7 +260,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   worldTextureAtlas: {fileID: 2100000, guid: c17e763c77fbfbc4d92a1c37437e2d60, type: 2}
-  player: {fileID: 9171768461920612256, guid: c68f0e5ef5db7fa44a1747f2a1d6305b, type: 3}
+  playerTransform: {fileID: 9171768461920612257, guid: c68f0e5ef5db7fa44a1747f2a1d6305b,
+    type: 3}
   chunkRowHeight: 8
   chunkSize: 16
   radius: 1
@@ -276,7 +277,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &255885223
 GameObject:
@@ -494,7 +495,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 463446702}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &463446706
 Camera:
   m_ObjectHideFlags: 0
@@ -1166,6 +1167,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uiStateComponents:
   - {fileID: 255885223}
+--- !u!1 &1590055905
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1590055906}
+  - component: {fileID: 1590055907}
+  m_Layer: 0
+  m_Name: PlayerManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1590055906
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1590055905}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1590055907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1590055905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a024396f13fa242baf13c70850ed56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerPrefab: {fileID: 9171768461920612256, guid: c68f0e5ef5db7fa44a1747f2a1d6305b,
+    type: 3}
 --- !u!1 &1603585366
 GameObject:
   m_ObjectHideFlags: 0
