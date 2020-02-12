@@ -34,7 +34,7 @@ namespace Voxel.vWorld
         public void BuildChunk()
         {
             int worldChunkSize = World.Instance.ChunkSize;
-            chunkDataValues = new float[(worldChunkSize * worldChunkSize * worldChunkSize) * 8]; // Voxel data for marching cubes
+            chunkDataValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
             // Populate the voxel chunk data
             for (int x = 0; x < worldChunkSize; x++)
@@ -119,13 +119,7 @@ namespace Voxel.vWorld
                     for (int z = 0; z < worldChunkSize; z++)
                     {
                         chunkData[x, y, z].BuildBlock();
-                        /*
                         int chunkBlockIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
-                        //float[] voxelCube = chunkData[x, y, z].GetVoxelCube();
-                        //for (int i = 0; i < voxelCube.GetUpperBound(0); i++)
-                        //{
-                        //    chunkDataValues[chunkBlockIndex + i] = voxelCube[i];
-                        //}
                         if (chunkData[x, y, z].IsSolid)
                         {
                             chunkDataValues[chunkBlockIndex] = -1;
@@ -134,14 +128,13 @@ namespace Voxel.vWorld
                         {
                             chunkDataValues[chunkBlockIndex] = 1;
                         }
-                        */
                     }
                 }
             }
 
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
             MeshFilter chunkMeshFilter = CombineBlocks();
-            //MarchBlocks(worldChunkSize, chunkMeshFilter);
+            MarchBlocks(worldChunkSize, chunkMeshFilter);
             AddCollider();
         }
 
