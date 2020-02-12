@@ -34,7 +34,6 @@ namespace Voxel.vWorld
         public void BuildChunk()
         {
             int worldChunkSize = World.Instance.ChunkSize;
-            chunkDataValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
             // Populate the voxel chunk data
             for (int x = 0; x < worldChunkSize; x++)
@@ -110,6 +109,7 @@ namespace Voxel.vWorld
         public void BuildChunkBlocks()
         {
             int worldChunkSize = World.Instance.ChunkSize;
+            chunkDataValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
             // so we can use the HasSolidNeighbour check (to discard quads that are not visible).
             for (int x = 0; x < worldChunkSize; x++)
