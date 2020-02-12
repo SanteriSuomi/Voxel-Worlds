@@ -53,7 +53,7 @@ namespace Voxel.Utility
 				for (j = 0; j < 3; j++)
 				{
 					vert = TriangleConnectionTable[flagIndex, 3 * i + j];
-					indexList.Add(idx + WindingOrder[j]);
+					indexList.Add(idx + GetWindingOrder()[j]);
 					vertList.Add(EdgeVertex[vert]);
 				}
 			}

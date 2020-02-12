@@ -25,12 +25,6 @@ namespace Voxel.vWorld
             Back
         }
 
-        private float[] voxelCube; // Used for marching cubes
-        public float[] GetVoxelCube()
-        {
-            return voxelCube;
-        }
-
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
@@ -95,82 +89,37 @@ namespace Voxel.vWorld
 
         public void BuildBlock()
         {
-            bool front = false, back = false,
-                 left = false, right = false,
-                 top = false, bottom = false;
+            if (blockType == BlockType.Air) return; // If block is any of these types, do not create it
 
             int positionX = (int)blockPosition.x;
             int positionY = (int)blockPosition.y;
             int positionZ = (int)blockPosition.z;
 
-            voxelCube = new float[8];
             // If there is no neighbour, create a specified side of the cube
             if (!HasSolidNeighbour(positionX, positionY, positionZ + 1))
             {
-                front = true;
-                voxelCube[0] = -1;
+                CreateQuad(CubeSide.Front);
             }
-            else { voxelCube[0] = 1; }
             if (!HasSolidNeighbour(positionX, positionY, positionZ - 1))
             {
-                back = true;
-                voxelCube[1] = -1;
+                CreateQuad(CubeSide.Back);
             }
-            else { voxelCube[1] = 1; }
             if (!HasSolidNeighbour(positionX - 1, positionY, positionZ))
             {
-                left = true;
-                voxelCube[2] = -1;
+                CreateQuad(CubeSide.Left);
             }
-            else { voxelCube[2] = 1; }
             if (!HasSolidNeighbour(positionX + 1, positionY, positionZ))
             {
-                right = true;
-                voxelCube[3] = -1;
+                CreateQuad(CubeSide.Right);
             }
-            else { voxelCube[3] = 1; }
             if (!HasSolidNeighbour(positionX, positionY + 1, positionZ))
             {
-                top = true;
-                voxelCube[4] = -1;
+                CreateQuad(CubeSide.Top);
             }
-            else { voxelCube[4] = 1; }
             if (!HasSolidNeighbour(positionX, positionY - 1, positionZ))
             {
-                bottom = true;
-                voxelCube[5]  = -1;
+                CreateQuad(CubeSide.Bottom);
             }
-            else { voxelCube[5] = 1; }
-            voxelCube[6] = -1;
-            voxelCube[7] = -1;
-
-            //if (blockType != BlockType.Air) // If block is any of these types, do not create it
-            //{
-            //    if (front)
-            //    {
-            //        CreateQuad(CubeSide.Front);
-            //    }
-            //    if (back)
-            //    {
-            //        CreateQuad(CubeSide.Back);
-            //    }
-            //    if (left)
-            //    {
-            //        CreateQuad(CubeSide.Left);
-            //    }
-            //    if (right)
-            //    {
-            //        CreateQuad(CubeSide.Right);
-            //    }
-            //    if (top)
-            //    {
-            //        CreateQuad(CubeSide.Top);
-            //    }
-            //    if (bottom)
-            //    {
-            //        CreateQuad(CubeSide.Bottom);
-            //    }
-            //}
         }
 
         private bool HasSolidNeighbour(int x, int y, int z)

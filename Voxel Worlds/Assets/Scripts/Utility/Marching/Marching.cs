@@ -11,37 +11,42 @@ namespace Voxel.Utility
         /// <summary>
         /// Winding order of triangles use 2,1,0 or 0,1,2
         /// </summary>
-        protected int[] WindingOrder { get; private set; }
+        private int[] windingOrder;
+        public int[] GetWindingOrder()
+        {
+            return windingOrder;
+        }
 
         protected Marching(float surface = 0.5f)
         {
             Surface = surface;
             Cube = new float[8];
-            WindingOrder = new int[] { 0, 1, 2 };
+            windingOrder = new int[] { 0, 1, 2 };
         }
 
-        public virtual void Generate(IList<float> voxels, int width, int height, int depth, IList<Vector3> verts, IList<int> indices)
+        public virtual void Generate(IList<float> voxels, int size, IList<Vector3> verts, IList<int> indices)
         {
+             windingOrder = new int[3];
             if (Surface > 0.0f)
             {
-                WindingOrder[0] = 0;
-                WindingOrder[1] = 1;
-                WindingOrder[2] = 2;
+                windingOrder[0] = 0;
+                windingOrder[1] = 1;
+                windingOrder[2] = 2;
             }
             else
             {
-                WindingOrder[0] = 2;
-                WindingOrder[1] = 1;
-                WindingOrder[2] = 0;
+                windingOrder[0] = 2;
+                windingOrder[1] = 1;
+                windingOrder[2] = 0;
             }
 
             int x, y, z, i;
             int ix, iy, iz;
-            for (x = 0; x < width - 1; x++)
+            for (x = 0; x < size - 1; x++)
             {
-                for (y = 0; y < height - 1; y++)
+                for (y = 0; y < size - 1; y++)
                 {
-                    for (z = 0; z < depth - 1; z++)
+                    for (z = 0; z < size - 1; z++)
                     {
                         // Get the values in the 8 neighbours which make up a cube
                         for (i = 0; i < 8; i++)
@@ -49,7 +54,7 @@ namespace Voxel.Utility
                             ix = x + VertexOffset[i, 0];
                             iy = y + VertexOffset[i, 1];
                             iz = z + VertexOffset[i, 2];
-                            Cube[i] = voxels[ix + iy * width + iz * width * height];
+                            Cube[i] = voxels[ix + iy * size + iz * size * size];
                         }
 
                         //Perform algorithm

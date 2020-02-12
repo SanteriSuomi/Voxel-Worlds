@@ -14,13 +14,10 @@ namespace Voxel.Player
 
         [Header("Grounding and Gravity")]
         [SerializeField]
-        private LayerMask groundedLayerMask = default;
-        [SerializeField]
-        private float groundedRayMaxDistance = 100;
-        [SerializeField]
-        private float isGroundedDistance = 0.1f;
+        private float rayDistance = 1;
         [SerializeField]
         private float gravityMultiplier = 2;
+        private bool isGrounded;
 
         [Header("Moving")]
         private Vector2 moveValue;
@@ -61,10 +58,8 @@ namespace Voxel.Player
             move = true;
         }
 
-        private void OnMoveCanceled(InputAction.CallbackContext context)
-        {
-            move = false;
-        }
+        private void OnMoveCanceled(InputAction.CallbackContext context) 
+            => move = false;
 
         private void OnLookPerformed(InputAction.CallbackContext context)
         {
@@ -72,37 +67,40 @@ namespace Voxel.Player
             look = true;
         }
 
-        private void OnLookCanceled(InputAction.CallbackContext context)
-        {
-            look = false;
-        }
+        private void OnLookCanceled(InputAction.CallbackContext context) 
+            => look = false;
 
-        private void OnSprintPerformed(InputAction.CallbackContext context)
-        {
-            moveSpeed *= sprintSpeedMultiplier;
-        }
+        private void OnSprintPerformed(InputAction.CallbackContext context) 
+            => moveSpeed *= sprintSpeedMultiplier;
 
-        private void OnSprintCanceled(InputAction.CallbackContext context)
-        {
-            moveSpeed = originalMoveSpeed;
-        }
+        private void OnSprintCanceled(InputAction.CallbackContext context) 
+            => moveSpeed = originalMoveSpeed;
 
         private void Update()
         {
-            Gravity();
+            Ground();
             Jump();
             Move();
             Look();
         }
 
-        private void Gravity()
+        private void Ground()
         {
-            Physics.Raycast(player.position, Vector3.down, out RaycastHit hitInfo, groundedRayMaxDistance, groundedLayerMask);
-            if (hitInfo.collider == null || hitInfo.distance > isGroundedDistance)
+            bool hit = Physics.Raycast(player.position, Vector3.down, out RaycastHit hitInfo, rayDistance);
+            if (hit)
             {
-                Debug.Log("gravity");
-                player.position += new Vector3(0, (Physics.gravity / Mathf.Pow(hitInfo.distance, 2) * gravityMultiplier).y, 0);
+                isGrounded = true;
             }
+            else
+            {
+                isGrounded = false;
+                Gravity(hitInfo.distance);
+            }
+        }
+
+        private void Gravity(float distaceFromGround)
+        {
+            player.position += new Vector3(0, (Physics.gravity / Mathf.Pow(distaceFromGround, 2) * gravityMultiplier).y, 0);
         }
 
         private void Jump()

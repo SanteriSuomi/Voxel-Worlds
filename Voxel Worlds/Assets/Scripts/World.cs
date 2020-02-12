@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Voxel.Player;
 using Voxel.Utility;
 
 namespace Voxel.vWorld
@@ -33,7 +34,7 @@ namespace Voxel.vWorld
         [SerializeField]
         private Material worldTextureAtlas = default;
         [SerializeField]
-        private GameObject player = default;
+        private Transform playerTransform = default;
 
         [Header("Chunk and World Settings")]
         [SerializeField]
@@ -63,12 +64,11 @@ namespace Voxel.vWorld
 
         private IEnumerator BuildWorld()
         {
-            int playerPositionX = Mathf.FloorToInt(player.transform.position.x / ChunkSize);
-            int playerPositionZ = Mathf.FloorToInt(player.transform.position.z / ChunkSize);
+            int playerPositionX = Mathf.FloorToInt(playerTransform.position.x / ChunkSize);
+            int playerPositionZ = Mathf.FloorToInt(playerTransform.position.z / ChunkSize);
 
             BuildWorldProgress += 10;
 
-            Vector3 playerSpawnPosition = Vector3.zero;
             // Initialise chunks around player
             for (int x = -Radius; x <= Radius; x++)
             {
@@ -82,20 +82,10 @@ namespace Voxel.vWorld
                                                              y * ChunkSize,
                                                             (z + playerPositionZ) * ChunkSize);
 
-                        SetPlayerSpawnPosition(y, chunkPosition);
-
                         Chunk chunk = new Chunk(chunkPosition, worldTextureAtlas, transform);
                         chunkDictionary.Add(GetChunkID(chunkPosition), chunk);
                         yield return null;
                     }
-                }
-            }
-
-            void SetPlayerSpawnPosition(int currentChunkY, Vector3 chunkPosition)
-            {
-                if (currentChunkY == chunkRowHeight - 1)
-                {
-                    playerSpawnPosition = chunkPosition + Vector3.up * 2;
                 }
             }
 
@@ -118,12 +108,12 @@ namespace Voxel.vWorld
             }
 
             BuildWorldProgress = 100;
-            SpawnPlayer(playerSpawnPosition);
-        }
 
-        private void SpawnPlayer(Vector3 position)
-        {
-            Instantiate(player, position, Quaternion.identity);
+            if (PlayerManager.Instance.ActivePlayer != null)
+            {
+                PlayerManager.Instance.SpawnPlayer();
+                playerTransform = PlayerManager.Instance.ActivePlayer;
+            }
         }
     }
 }

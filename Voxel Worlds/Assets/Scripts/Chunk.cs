@@ -10,7 +10,7 @@ namespace Voxel.vWorld
         private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
         private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
 
-        private float[] chunkDataValues; // For marching cubes
+        private float[] chunkVoxelValues; // For marching cubes
         private Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
         {
@@ -40,8 +40,9 @@ namespace Voxel.vWorld
             {
                 for (int z = 0; z < worldChunkSize; z++)
                 {
+                    int chunkTopIndex = worldChunkSize - 1;
                     bool surfaceBlockAlreadyPlaced = false; // Bool to determine is the top block of a certain column has been placed in this Y loop
-                    for (int y = worldChunkSize - 1; y >= 0; y--) // Start height Y from top so we can easily place the top block
+                    for (int y = chunkTopIndex; y >= 0; y--) // Start height Y from top so we can easily place the top block
                     {
                         Vector3 localPosition = new Vector3(x, y, z);
                         int worldPositionY = (int)(y + chunkGameObject.transform.position.y);
@@ -109,7 +110,7 @@ namespace Voxel.vWorld
         public void BuildChunkBlocks()
         {
             int worldChunkSize = World.Instance.ChunkSize;
-            chunkDataValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
+            //chunkVoxelValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
             // so we can use the HasSolidNeighbour check (to discard quads that are not visible).
             for (int x = 0; x < worldChunkSize; x++)
@@ -119,23 +120,26 @@ namespace Voxel.vWorld
                     for (int z = 0; z < worldChunkSize; z++)
                     {
                         chunkData[x, y, z].BuildBlock();
-                        int chunkBlockIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
-                        if (chunkData[x, y, z].IsSolid)
-                        {
-                            chunkDataValues[chunkBlockIndex] = -1;
-                        }
-                        else
-                        {
-                            chunkDataValues[chunkBlockIndex] = 1;
-                        }
+                        //int chunkVoxelIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
+                        //SetChunkVoxelValues(x, y, z, chunkVoxelIndex);
                     }
                 }
             }
 
-            chunkGameObject.AddComponent<MeshRenderer>();
-            MarchBlocks(worldChunkSize, chunkGameObject.AddComponent<MeshFilter>());
+            //void SetChunkVoxelValues(int x, int y, int z, int index) // Set the voxel array values for marching 
+            //{
+            //    if (chunkData[x, y, z].IsSolid)
+            //    {
+            //        chunkVoxelValues[index] = -1;
+            //    }
+            //    else
+            //    {
+            //        chunkVoxelValues[index] = 1;
+            //    }
+            //}
+
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
-            //MeshFilter chunkMeshFilter = CombineBlocks();
+            MeshFilter chunkMeshFilter = CombineBlocks();
             //MarchBlocks(worldChunkSize, chunkMeshFilter);
             AddCollider();
         }
@@ -163,15 +167,11 @@ namespace Voxel.vWorld
 
         private void MarchBlocks(int worldChunkSize, MeshFilter chunkMeshFilter)
         {
-            //List<Vector3> vertices = chunkMeshFilter.mesh.vertices.ToList();
-            //List<int> indices = chunkMeshFilter.mesh.triangles.ToList();
-            List<Vector3> vertices = new List<Vector3>();
-            List<int> indices = new List<int>();
-            Utils.MarchingCubes(chunkDataValues, worldChunkSize, worldChunkSize, worldChunkSize, vertices, indices);
-            Mesh marchedMesh = new Mesh();
-            marchedMesh.SetVertices(vertices);
-            marchedMesh.SetTriangles(indices, 0);
-            chunkMeshFilter.mesh = marchedMesh;
+            List<Vector3> vertices = chunkMeshFilter.mesh.vertices.ToList();
+            List<int> indices = chunkMeshFilter.mesh.triangles.ToList();
+            Utils.MarchingTertrahedron(chunkVoxelValues, worldChunkSize, vertices, indices);
+            chunkMeshFilter.mesh.SetVertices(vertices);
+            chunkMeshFilter.mesh.SetTriangles(indices, 0);
             chunkMeshFilter.mesh.RecalculateNormals();
             chunkMeshFilter.mesh.RecalculateBounds();
         }

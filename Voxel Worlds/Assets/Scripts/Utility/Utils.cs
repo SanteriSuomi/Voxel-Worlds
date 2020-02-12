@@ -8,7 +8,9 @@ namespace Voxel.Utility
 	{
 		private static readonly FastNoise noise = new FastNoise(UnityEngine.Random.Range(0, 1000000)); // Remove random seed later //
 		private static readonly MarchingCubes marchingCubes = new MarchingCubes(surface: 0);
+		private static readonly MarchingTertrahedron marchingTertrahedron = new MarchingTertrahedron(surface: 0);
 
+		// Values for 2D fractal brownian motion
 		private const int octaves2D = 2;
 		private const float baseFrequency2D = 0.75f;
 		private const float baseAmplitude2D = 0.35f;
@@ -16,6 +18,14 @@ namespace Voxel.Utility
 		private const float gain2D = 0.25f;
 		private const float scale2D = 0.7f;
 		private const float baseValue = 0.2f;
+
+		// Values for 3D fractral brownian motion
+		private const int octaves3D = 2;
+		private const float baseFrequency3D = 1;
+		private const float baseAmplitude3D = 0.4f;
+		private const float lacunarity3D = 3;
+		private const float gain3D = 0.25f;
+		private const float scale3D = 1.2f;
 
 		public static float fBm2D(float x, float z)
 		{
@@ -25,20 +35,13 @@ namespace Voxel.Utility
 			float value = 0;
 			for (int i = 0; i < octaves2D; i++)
 			{
-				value += Abs(noise.GetSimplex(x * frequency, 1, z * frequency) * amplitude);
+				value += FastAbs(noise.GetSimplex(x * frequency, 1, z * frequency) * amplitude);
 				frequency *= lacunarity2D;
 				amplitude *= gain2D;
 			}
 
 			return baseValue + (value * scale2D);
 		}
-
-		private const int octaves3D = 2;
-		private const float baseFrequency3D = 1;
-		private const float baseAmplitude3D = 0.4f;
-		private const float lacunarity3D = 3;
-		private const float gain3D = 0.25f;
-		private const float scale3D = 1.2f;
 
 		public static float fBm3D(float x, float y, float z)
 		{
@@ -48,7 +51,7 @@ namespace Voxel.Utility
 			float value = 0;
 			for (int i = 0; i < octaves3D; i++)
 			{
-				value += Abs(noise.GetSimplex(x * frequency, y * frequency, z * frequency) * amplitude);
+				value += FastAbs(noise.GetSimplex(x * frequency, y * frequency, z * frequency) * amplitude);
 				frequency *= lacunarity3D;
 				amplitude *= gain3D;
 			}
@@ -56,14 +59,19 @@ namespace Voxel.Utility
 			return value * scale3D;
 		}
 
-		private static float Abs(float value)
+		public static void MarchingCubes(IList<float> voxels, int size, IList<Vector3> verts, IList<int> indices)
 		{
-			return value >= 0 ? value : -value;
+			marchingCubes.Generate(voxels, size, verts, indices);
 		}
 
-		public static void MarchingCubes(IList<float> voxels, int width, int height, int depth, IList<Vector3> verts, IList<int> indices)
+		public static void MarchingTertrahedron(IList<float> voxels, int size, IList<Vector3> verts, IList<int> indices)
 		{
-			marchingCubes.Generate(voxels, width, height, depth, verts, indices);
+			marchingTertrahedron.Generate(voxels, size, verts, indices);
+		}
+
+		private static float FastAbs(float value)
+		{
+			return value >= 0 ? value : -value;
 		}
 	}
 }
