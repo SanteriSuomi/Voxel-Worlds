@@ -144,33 +144,33 @@ namespace Voxel.vWorld
             voxelCube[6] = -1;
             voxelCube[7] = -1;
 
-            if (blockType != BlockType.Air) // If block is any of these types, do not create it
-            {
-                if (front)
-                {
-                    CreateQuad(CubeSide.Front);
-                }
-                if (back)
-                {
-                    CreateQuad(CubeSide.Back);
-                }
-                if (left)
-                {
-                    CreateQuad(CubeSide.Left);
-                }
-                if (right)
-                {
-                    CreateQuad(CubeSide.Right);
-                }
-                if (top)
-                {
-                    CreateQuad(CubeSide.Top);
-                }
-                if (bottom)
-                {
-                    CreateQuad(CubeSide.Bottom);
-                }
-            }
+            //if (blockType != BlockType.Air) // If block is any of these types, do not create it
+            //{
+            //    if (front)
+            //    {
+            //        CreateQuad(CubeSide.Front);
+            //    }
+            //    if (back)
+            //    {
+            //        CreateQuad(CubeSide.Back);
+            //    }
+            //    if (left)
+            //    {
+            //        CreateQuad(CubeSide.Left);
+            //    }
+            //    if (right)
+            //    {
+            //        CreateQuad(CubeSide.Right);
+            //    }
+            //    if (top)
+            //    {
+            //        CreateQuad(CubeSide.Top);
+            //    }
+            //    if (bottom)
+            //    {
+            //        CreateQuad(CubeSide.Bottom);
+            //    }
+            //}
         }
 
         private bool HasSolidNeighbour(int x, int y, int z)

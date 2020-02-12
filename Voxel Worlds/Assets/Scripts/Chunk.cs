@@ -132,9 +132,11 @@ namespace Voxel.vWorld
                 }
             }
 
+            chunkGameObject.AddComponent<MeshRenderer>();
+            MarchBlocks(worldChunkSize, chunkGameObject.AddComponent<MeshFilter>());
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
-            MeshFilter chunkMeshFilter = CombineBlocks();
-            MarchBlocks(worldChunkSize, chunkMeshFilter);
+            //MeshFilter chunkMeshFilter = CombineBlocks();
+            //MarchBlocks(worldChunkSize, chunkMeshFilter);
             AddCollider();
         }
 
@@ -161,8 +163,10 @@ namespace Voxel.vWorld
 
         private void MarchBlocks(int worldChunkSize, MeshFilter chunkMeshFilter)
         {
-            List<Vector3> vertices = chunkMeshFilter.mesh.vertices.ToList();
-            List<int> indices = chunkMeshFilter.mesh.triangles.ToList();
+            //List<Vector3> vertices = chunkMeshFilter.mesh.vertices.ToList();
+            //List<int> indices = chunkMeshFilter.mesh.triangles.ToList();
+            List<Vector3> vertices = new List<Vector3>();
+            List<int> indices = new List<int>();
             Utils.MarchingCubes(chunkDataValues, worldChunkSize, worldChunkSize, worldChunkSize, vertices, indices);
             Mesh marchedMesh = new Mesh();
             marchedMesh.SetVertices(vertices);
