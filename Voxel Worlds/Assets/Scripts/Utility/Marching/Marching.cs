@@ -24,9 +24,15 @@ namespace Voxel.Utility
             windingOrder = new int[] { 0, 1, 2 };
         }
 
+<<<<<<< HEAD
         public virtual void Generate(IList<float> voxels, int size, IList<Vector3> verts, IList<int> indices)
         {
              windingOrder = new int[3];
+=======
+        public virtual void Generate(float[,,][] voxels, int size, IList<Vector3> verts, IList<int> indices)
+        {
+            Debug.Log(voxels[0, 0, 0]);
+>>>>>>> master
             if (Surface > 0.0f)
             {
                 windingOrder[0] = 0;
@@ -42,6 +48,7 @@ namespace Voxel.Utility
 
             int x, y, z, i;
             int ix, iy, iz;
+<<<<<<< HEAD
             for (x = 0; x < size - 1; x++)
             {
                 for (y = 0; y < size - 1; y++)
@@ -56,7 +63,24 @@ namespace Voxel.Utility
                             iz = z + VertexOffset[i, 2];
                             Cube[i] = voxels[ix + iy * size + iz * size * size];
                         }
+=======
+            for (x = 0; x < size; x++)
+            {
+                for (y = 0; y < size; y++)
+                {
+                    for (z = 0; z < size; z++)
+                    {
+                        //Get the values in the 8 neighbours which make up a cube
+                        //for (i = 0; i < 8; i++)
+                        //{
+                        //    ix = x + VertexOffset[i, 0];
+                        //    iy = y + VertexOffset[i, 1];
+                        //    iz = z + VertexOffset[i, 2];
+>>>>>>> master
 
+                        //    Cube = voxels[ix + iy * width + iz * width * height];
+                        //}
+                        Cube = voxels[x, y, z];
                         //Perform algorithm
                         March(x, y, z, Cube, verts, indices);
                     }

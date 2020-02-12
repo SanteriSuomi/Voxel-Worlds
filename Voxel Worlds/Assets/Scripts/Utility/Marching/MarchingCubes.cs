@@ -20,8 +20,14 @@ namespace Voxel.Utility
 			int i, j, vert, idx;
 			int flagIndex = 0;
 
+<<<<<<< HEAD
 			//Find which vertices are inside of the surface and which are outside
 			for (i = 0; i < cube.GetUpperBound(0); i++) if (cube[i] <= Surface) flagIndex |= 1 << i;
+=======
+			if (cube == null) return;
+            //Find which vertices are inside of the surface and which are outside
+            for (i = 0; i < cube.GetUpperBound(0); i++) if (cube[i] <= Surface) flagIndex |= 1 << i;
+>>>>>>> master
 
 			//Find which edges are intersected by the surface
 			int edgeFlags = CubeEdgeFlags[flagIndex];

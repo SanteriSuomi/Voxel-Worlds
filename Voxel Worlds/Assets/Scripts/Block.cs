@@ -95,30 +95,75 @@ namespace Voxel.vWorld
             int positionY = (int)blockPosition.y;
             int positionZ = (int)blockPosition.z;
 
+<<<<<<< HEAD
             // If there is no neighbour, create a specified side of the cube
+=======
+            // Create a new cube of float values for use in marching cube algorithm
+            cube = new float[6];
+>>>>>>> master
             if (!HasSolidNeighbour(positionX, positionY, positionZ + 1))
             {
                 CreateQuad(CubeSide.Front);
             }
+            else { cube[0] = 1; }
             if (!HasSolidNeighbour(positionX, positionY, positionZ - 1))
             {
                 CreateQuad(CubeSide.Back);
             }
+            else { cube[1] = 1; }
             if (!HasSolidNeighbour(positionX - 1, positionY, positionZ))
             {
                 CreateQuad(CubeSide.Left);
             }
+            else { cube[2] = 1; }
             if (!HasSolidNeighbour(positionX + 1, positionY, positionZ))
             {
                 CreateQuad(CubeSide.Right);
             }
+            else { cube[3] = 1; }
             if (!HasSolidNeighbour(positionX, positionY + 1, positionZ))
             {
                 CreateQuad(CubeSide.Top);
             }
+            else { cube[4] = 1; }
             if (!HasSolidNeighbour(positionX, positionY - 1, positionZ))
             {
+<<<<<<< HEAD
                 CreateQuad(CubeSide.Bottom);
+=======
+                bottom = true;
+                cube[5]  = -1;
+            }
+            else { cube[5] = 1; }
+
+            if (blockType != BlockType.Air) // If block is any of these types, do not create it
+            {
+                // If there is no neighbour, create a specified side of the cube
+                if (front)
+                {
+                    CreateQuad(CubeSide.Front);
+                }
+                if (back)
+                {
+                    CreateQuad(CubeSide.Back);
+                }
+                if (left)
+                {
+                    CreateQuad(CubeSide.Left);
+                }
+                if (right)
+                {
+                    CreateQuad(CubeSide.Right);
+                }
+                if (top)
+                {
+                    CreateQuad(CubeSide.Top);
+                }
+                if (bottom)
+                {
+                    CreateQuad(CubeSide.Bottom);
+                }
+>>>>>>> master
             }
         }
 

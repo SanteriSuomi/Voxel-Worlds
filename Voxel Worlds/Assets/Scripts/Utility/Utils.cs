@@ -64,6 +64,7 @@ namespace Voxel.Utility
 			marchingCubes.Generate(voxels, size, verts, indices);
 		}
 
+<<<<<<< HEAD
 		public static void MarchingTertrahedron(IList<float> voxels, int size, IList<Vector3> verts, IList<int> indices)
 		{
 			marchingTertrahedron.Generate(voxels, size, verts, indices);
@@ -72,6 +73,11 @@ namespace Voxel.Utility
 		private static float FastAbs(float value)
 		{
 			return value >= 0 ? value : -value;
+=======
+		public static void MarchingCubes(float[,,][] voxels, int size, IList<Vector3> verts, IList<int> indices)
+		{
+			marchingCubes.Generate(voxels, size, verts, indices);
+>>>>>>> master
 		}
 	}
 }
