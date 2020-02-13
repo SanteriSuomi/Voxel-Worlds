@@ -259,9 +259,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 318e9d4f4068b6d40901ddfbf8354661, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerCamera: {fileID: 9171768461707996300}
-  rayDistance: 1.1
-  gravityMultiplier: 4
+  rayDistance: 1
+  gravityMultiplier: 2
   moveSpeed: 5
   sprintSpeedMultiplier: 1.5
   lookSpeed: 5
+  jumpMaxHeight: 1.6
+  jumpMaxTime: 1
+  jumpStartSpeed: 10
+  jumpSpeedReduction: 7

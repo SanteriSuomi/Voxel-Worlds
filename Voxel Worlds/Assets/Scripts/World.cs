@@ -108,12 +108,8 @@ namespace Voxel.vWorld
             }
 
             BuildWorldProgress = 100;
-
-            if (PlayerManager.Instance.ActivePlayer != null)
-            {
-                PlayerManager.Instance.SpawnPlayer();
-                playerTransform = PlayerManager.Instance.ActivePlayer;
-            }
+            
+            playerTransform = PlayerManager.Instance.SpawnPlayer(MaxWorldHeight);
         }
     }
 }
