@@ -35,6 +35,8 @@ namespace Voxel.Player
         private PlayerLookStateVariable lookState = default;
         [SerializeField]
         private float lookSpeedMultiplier = 5;
+        [SerializeField]
+        private float lookVerticalClampRange = 75;
         private float lookValueX;
         private float lookValueY;
 
@@ -175,6 +177,7 @@ namespace Voxel.Player
             if (lookState.Value == PlayerLookState.IsLooking)
             {
                 player.localRotation = Quaternion.Euler(0, lookValueX, 0);
+                lookValueY = Utils.FastClamp(lookValueY, -lookVerticalClampRange, lookVerticalClampRange);
                 playerCamera.localRotation = Quaternion.Euler(lookValueY, 0, 0);
             }
         }

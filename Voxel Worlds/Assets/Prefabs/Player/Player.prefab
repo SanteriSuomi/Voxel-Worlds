@@ -266,7 +266,7 @@ MonoBehaviour:
   moveSpeed: 4
   sprintSpeedMultiplier: 1.6
   lookState: {fileID: 11400000, guid: 57b033d6c1fd7824bba28883e2d43541, type: 2}
-  lookSpeedMultiplier: 4
+  lookSpeedMultiplier: 3.5
   jumpState: {fileID: 11400000, guid: c18e0274860fb74479677f3f0bb6346b, type: 2}
   jumpMaxHeight: 1.35
   jumpMaxTime: 0.75

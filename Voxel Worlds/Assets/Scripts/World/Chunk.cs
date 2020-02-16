@@ -5,6 +5,14 @@ using Voxel.Utility;
 
 namespace Voxel.World
 {
+    public enum ChunkStatus
+    {
+        None,
+        Draw,
+        Done,
+        Keep
+    }
+
     public class Chunk
     {
         private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
@@ -16,6 +24,8 @@ namespace Voxel.World
         {
             return chunkData;
         }
+
+        public ChunkStatus ChunkStatus { get; set; }
 
         public Chunk(Vector3 position, Material material, Transform parent)
         {
@@ -105,6 +115,8 @@ namespace Voxel.World
                     }
                 }
             }
+
+            ChunkStatus = ChunkStatus.Draw;
         }
 
         public void BuildChunkBlocks()

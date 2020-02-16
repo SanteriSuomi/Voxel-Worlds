@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UnityEngine;
 using Voxel.Player;
@@ -6,12 +7,18 @@ using Voxel.Utility;
 
 namespace Voxel.World
 {
+    public enum WorldStatus
+    {
+        None,
+        Building
+    }
+
     public class WorldManager : Singleton<WorldManager>
     {
-        private Dictionary<string, Chunk> chunkDictionary;
+        private Dictionary<string, Chunk> chunkDatabase;
 
         /// <summary>
-        /// Return the ID of a chunk at position as specified in the ChunkDictionary.
+        /// Return the ID (as a string) of a chunk at position as specified in the ChunkDictionary.
         /// </summary>
         /// <param name="fromPosition"></param>
         /// <returns></returns>
@@ -20,9 +27,14 @@ namespace Voxel.World
             return $"{(int)fromPosition.x} {(int)fromPosition.y} {(int)fromPosition.z}";
         }
 
+        /// <summary>
+        /// Get the chunk by it's ID (string) normally used with the GetChunkID method.
+        /// </summary>
+        /// <param name="chunkID"></param>
+        /// <returns></returns>
         public Chunk GetChunk(string chunkID)
         {
-            if (chunkDictionary.TryGetValue(chunkID, out Chunk chunk))
+            if (chunkDatabase.TryGetValue(chunkID, out Chunk chunk))
             {
                 return chunk;
             }
@@ -45,29 +57,42 @@ namespace Voxel.World
         [SerializeField]
         private int radius = 1;
 
+        public WorldStatus WorldStatus { get; private set; }
         public int Radius { get { return radius; } }
         public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
         public int BuildWorldProgress { get; private set; } // Used for loading bar
 
+        private bool isInitialBuild = true; // Is this build the first one?
+
         protected override void Awake()
         {
             base.Awake();
-            chunkDictionary = new Dictionary<string, Chunk>();
+            chunkDatabase = new Dictionary<string, Chunk>();
             ChunkSize = chunkSize;
         }
 
-        public void StartWorldBuild()
+        public void StartInitialBuildWorld() // This is when the player enters to the game the first time
         {
             BuildWorldProgress = 0;
             StartCoroutine(BuildWorld());
         }
 
+        private void Update()
+        {
+            if (WorldStatus != WorldStatus.Building && !isInitialBuild)
+            {
+                StartCoroutine(BuildWorld());
+            }
+        }
+
         private IEnumerator BuildWorld()
         {
+            WorldStatus = WorldStatus.Building;
+
             int playerPositionX = Mathf.FloorToInt(playerTransform.position.x / ChunkSize);
             int playerPositionZ = Mathf.FloorToInt(playerTransform.position.z / ChunkSize);
 
-            BuildWorldProgress += 10;
+            UpdateProgress(10);
 
             // Initialise chunks around player
             for (int x = -Radius; x <= Radius; x++)
@@ -82,34 +107,91 @@ namespace Voxel.World
                                                              y * ChunkSize,
                                                             (z + playerPositionZ) * ChunkSize);
 
-                        Chunk chunk = new Chunk(chunkPosition, worldTextureAtlas, transform);
-                        chunkDictionary.Add(GetChunkID(chunkPosition), chunk);
+
+                        string chunkID = GetChunkID(chunkPosition);
+                        Chunk currentChunk = GetChunk(chunkID);
+                        // Chunk already exists, keep it
+                        if (currentChunk != null)
+                        {
+                            currentChunk.ChunkStatus = ChunkStatus.Keep;
+                            break;
+                        }
+                        // Chunk doesn't exist, draw it
+                        else
+                        {
+                            currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
+                            {
+                                ChunkStatus = ChunkStatus.Draw
+                            };
+
+                            chunkDatabase.Add(chunkID, currentChunk);
+                        }
+
                         yield return null;
                     }
                 }
             }
 
-            BuildWorldProgress += 30;
+            UpdateProgress(30);
 
             // Build initialised chunks
-            foreach (KeyValuePair<string, Chunk> chunk in chunkDictionary)
+            foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
             {
-                chunk.Value.BuildChunk();
+                if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+                {
+                    chunk.Value.BuildChunk();
+                }
+
                 yield return null;
             }
 
-            BuildWorldProgress += 30;
+            UpdateProgress(30);
 
             // Build chunk blocks
-            foreach (KeyValuePair<string, Chunk> chunk in chunkDictionary)
+            foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
             {
-                chunk.Value.BuildChunkBlocks();
+                if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+                {
+                    chunk.Value.BuildChunkBlocks();
+                    chunk.Value.ChunkStatus = ChunkStatus.Keep;
+                }
+
+                // TODO delete old chunks
+
+                chunk.Value.ChunkStatus = ChunkStatus.Done;
+
                 yield return null;
             }
 
-            BuildWorldProgress = 100;
-            
-            playerTransform = PlayerManager.Instance.SpawnPlayer(MaxWorldHeight);
+            CurrentBuildComplete();
+        }
+
+        private void CurrentBuildComplete()
+        {
+            SpawnPlayer();
+            UpdateProgress(30);
+
+            WorldStatus = WorldStatus.None;
+            if (isInitialBuild)
+            {
+                isInitialBuild = false; // We've already built the initial (start) world
+            }
+        }
+
+        private void SpawnPlayer()
+        {
+            if (isInitialBuild)
+            {
+                playerTransform = PlayerManager.Instance.SpawnPlayer(MaxWorldHeight);
+            }
+        }
+
+        private void UpdateProgress(int progress)
+        {
+            if (isInitialBuild)
+            {
+                BuildWorldProgress += progress;
+            }
         }
     }
 }
