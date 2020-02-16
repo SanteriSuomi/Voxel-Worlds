@@ -1,12 +1,12 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Voxel.Utility;
 
 namespace Voxel.Player
 {
     public class PlayerController : MonoBehaviour
     {
-        [Header("Misc. Dependencies")]
         private InputActions inputActions;
         private CharacterController characterController;
         private Transform playerCamera;
@@ -14,27 +14,33 @@ namespace Voxel.Player
 
         [Header("Grounding and Gravity")]
         [SerializeField]
+        private PlayerGroundStateVariable groundState = default;
+        [SerializeField]
         private float rayDistance = 1;
         [SerializeField]
         private float gravityMultiplier = 2;
-        private bool isGrounded;
 
         [Header("Moving")]
+        [SerializeField]
+        private PlayerMoveStateVariable moveState = default;
         private Vector2 moveValue;
         [SerializeField]
         private float moveSpeed = 5;
         [SerializeField]
         private float sprintSpeedMultiplier = 1.5f;
         private float originalMoveSpeed;
-        private bool move;
 
         [Header("Looking")]
-        private Vector2 lookValue;
         [SerializeField]
-        private float lookSpeed = 5;
-        private bool look;
+        private PlayerLookStateVariable lookState = default;
+        [SerializeField]
+        private float lookSpeedMultiplier = 5;
+        private float lookValueX;
+        private float lookValueY;
 
         [Header("Jumping")]
+        [SerializeField]
+        private PlayerJumpStateVariable jumpState = default;
         private Coroutine jumpCoroutine;
         [SerializeField]
         private float jumpMaxHeight = 2;
@@ -44,7 +50,6 @@ namespace Voxel.Player
         private float jumpStartSpeed = 10;
         [SerializeField]
         private float jumpSpeedReduction = 5;
-        private bool isJumping;
 
         private void Awake()
         {
@@ -70,20 +75,23 @@ namespace Voxel.Player
         private void OnMovePerformed(InputAction.CallbackContext context)
         {
             moveValue = context.ReadValue<Vector2>();
-            move = true;
+            moveState.Value = PlayerMoveState.IsMoving;
         }
 
         private void OnMoveCanceled(InputAction.CallbackContext context)
-            => move = false;
+            => moveState.Value = PlayerMoveState.None;
 
         private void OnLookPerformed(InputAction.CallbackContext context)
         {
-            lookValue = context.ReadValue<Vector2>();
-            look = true;
+            Vector2 lookValue = context.ReadValue<Vector2>();
+            lookValue *= lookSpeedMultiplier * Time.deltaTime;
+            lookValueX += lookValue.x;
+            lookValueY -= lookValue.y;
+            lookState.Value = PlayerLookState.IsLooking;
         }
 
         private void OnLookCanceled(InputAction.CallbackContext context)
-            => look = false;
+            => lookState.Value = PlayerLookState.None;
 
         private void OnSprintPerformed(InputAction.CallbackContext context)
             => moveSpeed *= sprintSpeedMultiplier;
@@ -108,11 +116,11 @@ namespace Voxel.Player
             bool hit = Physics.Raycast(player.position, Vector3.down, out RaycastHit hitInfo, rayDistance);
             if (hit)
             {
-                isGrounded = true;
+                groundState.Value = PlayerGroundState.IsGrounded;
             }
             else
             {
-                isGrounded = false;
+                groundState.Value = PlayerGroundState.None;
                 Gravity(hitInfo.distance);
             }
         }
@@ -125,7 +133,7 @@ namespace Voxel.Player
 
         private void Jump()
         {
-            if (isJumping) return;
+            if (jumpState.Value == PlayerJumpState.IsJumping) return;
             else if (jumpCoroutine != null)
             {
                 StopCoroutine(jumpCoroutine);
@@ -136,7 +144,7 @@ namespace Voxel.Player
 
         private IEnumerator JumpCoroutine()
         {
-            isJumping = true;
+            jumpState.Value = PlayerJumpState.IsJumping;
             float goalPlayerHeight = player.position.y + jumpMaxHeight;
             float jumpMaxTimeLength = Time.realtimeSinceStartup + jumpMaxTime;
             float jumpMoveSpeed = jumpStartSpeed;
@@ -148,12 +156,12 @@ namespace Voxel.Player
                 yield return null;
             }
 
-            isJumping = false;
+            jumpState.Value = PlayerJumpState.None;
         }
 
         private void Move()
         {
-            if (move)
+            if (moveState.Value == PlayerMoveState.IsMoving)
             {
                 Vector3 moveX = playerCamera.right * moveValue.x;
                 Vector3 moveY = playerCamera.forward * moveValue.y;
@@ -164,12 +172,10 @@ namespace Voxel.Player
 
         private void Look()
         {
-            if (look)
+            if (lookState.Value == PlayerLookState.IsLooking)
             {
-                Quaternion cameraRotation = playerCamera.rotation * Quaternion.Euler(new Vector3(-lookValue.y, 0, 0));
-                playerCamera.rotation = Quaternion.Slerp(playerCamera.rotation, cameraRotation, lookSpeed * Time.deltaTime);
-                Quaternion playerRotation = player.rotation * Quaternion.Euler(new Vector3(0, lookValue.x, 0));
-                player.rotation = Quaternion.Slerp(player.rotation, playerRotation, lookSpeed * Time.deltaTime);
+                player.localRotation = Quaternion.Euler(0, lookValueX, 0);
+                playerCamera.localRotation = Quaternion.Euler(lookValueY, 0, 0);
             }
         }
 

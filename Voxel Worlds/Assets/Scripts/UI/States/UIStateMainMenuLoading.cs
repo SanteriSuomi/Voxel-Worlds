@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using Voxel.vWorld;
+using Voxel.World;
 
 namespace Voxel.UI
 {
@@ -29,7 +29,7 @@ namespace Voxel.UI
         {
             while (loadingBar.value < 100)
             {
-                loadingBar.value = World.Instance.BuildWorldProgress;
+                loadingBar.value = WorldManager.Instance.BuildWorldProgress;
                 yield return loadingWaitForSeconds;
             }
             

@@ -69,7 +69,7 @@ namespace Voxel.Utility
 			marchingTertrahedron.Generate(voxels, size, verts, indices);
 		}
 
-		private static float FastAbs(float value)
+		public static float FastAbs(float value)
 		{
 			return value >= 0 ? value : -value;
 		}

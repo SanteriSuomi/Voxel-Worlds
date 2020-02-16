@@ -259,12 +259,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 318e9d4f4068b6d40901ddfbf8354661, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  groundState: {fileID: 11400000, guid: aed401ad1553d3d448638c114dd240a3, type: 2}
   rayDistance: 1
-  gravityMultiplier: 2
-  moveSpeed: 5
-  sprintSpeedMultiplier: 1.5
-  lookSpeed: 5
-  jumpMaxHeight: 1.6
-  jumpMaxTime: 1
-  jumpStartSpeed: 10
-  jumpSpeedReduction: 7
+  gravityMultiplier: 3
+  moveState: {fileID: 11400000, guid: 2ee9d5f9c3f8e794c881b48635f13e92, type: 2}
+  moveSpeed: 4
+  sprintSpeedMultiplier: 1.6
+  lookState: {fileID: 11400000, guid: 57b033d6c1fd7824bba28883e2d43541, type: 2}
+  lookSpeedMultiplier: 4
+  jumpState: {fileID: 11400000, guid: c18e0274860fb74479677f3f0bb6346b, type: 2}
+  jumpMaxHeight: 1.35
+  jumpMaxTime: 0.75
+  jumpStartSpeed: 17.5
+  jumpSpeedReduction: 30

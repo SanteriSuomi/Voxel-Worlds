@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace Voxel.vWorld
+namespace Voxel.World
 {
     public enum BlockType
     {
@@ -125,7 +125,7 @@ namespace Voxel.vWorld
         private bool HasSolidNeighbour(int x, int y, int z)
         {
             Block[,,] chunkData;
-            int chunkSize = World.Instance.ChunkSize;
+            int chunkSize = WorldManager.Instance.ChunkSize;
             // If the neighbour position we're checking isn't in the bounds of this chunk, we must be in another one
             if (x < 0 || x >= chunkSize
                 || y < 0 || y >= chunkSize
@@ -143,7 +143,7 @@ namespace Voxel.vWorld
                 z = CheckBlockEdgeCase(z);
 
                 // Finally check if this chunk exists by consulting the chunk dictionary from it's ID
-                Chunk chunk = World.Instance.GetChunk(World.GetChunkID(neighbouringChunkPosition));
+                Chunk chunk = WorldManager.Instance.GetChunk(WorldManager.GetChunkID(neighbouringChunkPosition));
                 if (chunk != null)
                 {
                     chunkData = chunk.GetChunkData();

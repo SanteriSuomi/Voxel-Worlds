@@ -241,7 +241,7 @@ GameObject:
   - component: {fileID: 185304116}
   - component: {fileID: 185304115}
   m_Layer: 0
-  m_Name: World
+  m_Name: WorldManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -256,7 +256,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 185304114}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 290f5d4eb23de7647a50fa46087bbd89, type: 3}
+  m_Script: {fileID: 11500000, guid: 721f1619b26f9464085399c1a03d0f83, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   worldTextureAtlas: {fileID: 2100000, guid: c17e763c77fbfbc4d92a1c37437e2d60, type: 2}
@@ -264,7 +264,7 @@ MonoBehaviour:
     type: 3}
   chunkRowHeight: 8
   chunkSize: 16
-  radius: 1
+  radius: 2
 --- !u!4 &185304116
 Transform:
   m_ObjectHideFlags: 0
@@ -277,7 +277,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &255885223
 GameObject:
@@ -1047,7 +1047,7 @@ RectTransform:
   - {fileID: 255885224}
   - {fileID: 1688313412}
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -1196,7 +1196,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1590055907
 MonoBehaviour:
@@ -1212,6 +1212,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 9171768461920612256, guid: c68f0e5ef5db7fa44a1747f2a1d6305b,
     type: 3}
+  playerSpawnOffset: 1
 --- !u!1 &1603585366
 GameObject:
   m_ObjectHideFlags: 0
@@ -1295,7 +1296,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1688313411
 GameObject:

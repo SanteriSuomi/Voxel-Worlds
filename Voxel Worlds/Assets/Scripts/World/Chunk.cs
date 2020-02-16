@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using Voxel.Utility;
 
-namespace Voxel.vWorld
+namespace Voxel.World
 {
     public class Chunk
     {
@@ -33,7 +33,7 @@ namespace Voxel.vWorld
         // Build all the blocks for this chunk object
         public void BuildChunk()
         {
-            int worldChunkSize = World.Instance.ChunkSize;
+            int worldChunkSize = WorldManager.Instance.ChunkSize;
             chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
             // Populate the voxel chunk data
             for (int x = 0; x < worldChunkSize; x++)
@@ -57,7 +57,7 @@ namespace Voxel.vWorld
                         int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
                         int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
                         int noise2D = (int)(Utils.fBm2D(worldPositionX, worldPositionZ)
-                            * (World.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
+                            * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
                         // Air
                         if (worldPositionY >= noise2D)
                         {
@@ -109,7 +109,7 @@ namespace Voxel.vWorld
 
         public void BuildChunkBlocks()
         {
-            int worldChunkSize = World.Instance.ChunkSize;
+            int worldChunkSize = WorldManager.Instance.ChunkSize;
             //chunkVoxelValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
             // so we can use the HasSolidNeighbour check (to discard quads that are not visible).

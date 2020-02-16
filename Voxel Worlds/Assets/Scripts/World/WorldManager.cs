@@ -4,9 +4,9 @@ using UnityEngine;
 using Voxel.Player;
 using Voxel.Utility;
 
-namespace Voxel.vWorld
+namespace Voxel.World
 {
-    public class World : Singleton<World>
+    public class WorldManager : Singleton<WorldManager>
     {
         private Dictionary<string, Chunk> chunkDictionary;
 
