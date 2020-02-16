@@ -12,10 +12,9 @@ namespace Voxel.Player
         [SerializeField]
         private float playerSpawnOffset = 1;
 
-        public Transform SpawnPlayer(int maxWorldHeight)
+        public Transform SpawnPlayer(Vector3 atPosition)
         {
-            Vector3 spawnRaycastPosition = new Vector3(0, maxWorldHeight, 0);
-            Physics.Raycast(spawnRaycastPosition, Vector3.down, out RaycastHit hitInfo, maxWorldHeight);
+            Physics.Raycast(atPosition, Vector3.down, out RaycastHit hitInfo, atPosition.y * 2);
             Vector3 spawnPosition = hitInfo.point + new Vector3(0, playerSpawnOffset, 0);
             return ActivePlayer = Instantiate(playerPrefab, spawnPosition, Quaternion.identity).transform;
         }

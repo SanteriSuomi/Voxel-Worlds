@@ -15,7 +15,7 @@ namespace Voxel.World
 
     public class WorldManager : Singleton<WorldManager>
     {
-        private Dictionary<string, Chunk> chunkDatabase;
+        private ConcurrentDictionary<string, Chunk> chunkDatabase;
 
         /// <summary>
         /// Return the ID (as a string) of a chunk at position as specified in the ChunkDictionary.
@@ -61,80 +61,148 @@ namespace Voxel.World
         public int Radius { get { return radius; } }
         public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
         public int BuildWorldProgress { get; private set; } // Used for loading bar
+        private Vector3 lastBuildPosition; // Keep track of where chunks we build around player last time
 
-        private bool isInitialBuild = true; // Is this build the first one?
+        private bool isInitialBuild = true; // Keep track on when first time build is complete
 
         protected override void Awake()
         {
             base.Awake();
-            chunkDatabase = new Dictionary<string, Chunk>();
+            chunkDatabase = new ConcurrentDictionary<string, Chunk>();
             ChunkSize = chunkSize;
         }
 
-        public void StartInitialBuildWorld() // This is when the player enters to the game the first time
+        public void InitializeWorld()
         {
-            BuildWorldProgress = 0;
-            StartCoroutine(BuildWorld());
+            Vector3 playerInitialPosition = new Vector3(playerTransform.position.x,
+                                                       (playerTransform.position.y + MaxWorldHeight) / 2,
+                                                        playerTransform.position.z);
+            lastBuildPosition = playerInitialPosition;
+            Vector3 playerChunkPosition = new Vector3(playerInitialPosition.x / ChunkSize,
+                                                      playerInitialPosition.y / ChunkSize,
+                                                      playerInitialPosition.z / ChunkSize);
+            // Chunk position relative to the player converted to integer
+            int playerChunkPosX = (int)playerChunkPosition.x;
+            int playerChunkPosY = (int)playerChunkPosition.y;
+            int playerChunkPosZ = (int)playerChunkPosition.z;
+
+            UpdateProgress(10); // Updating the progress bad
+            InitializeChunkAt(playerChunkPosX, playerChunkPosY, playerChunkPosZ);
+            UpdateProgress(30);
+            StartCoroutine(BuildInitializedChunks());
+            UpdateProgress(30);
+            StartCoroutine(BuildWorldRecursive(playerChunkPosX, playerChunkPosY, playerChunkPosZ, radius));
+            UpdateProgress(30);
+            StartCoroutine(InitializationComplete());
         }
+
+        #region Initialization
+        private void UpdateProgress(int progress)
+        {
+            if (isInitialBuild)
+            {
+                BuildWorldProgress += progress;
+            }
+        }
+
+        private IEnumerator InitializationComplete()
+        {
+            yield return new WaitForSeconds(5);
+            SpawnPlayer();
+            WorldStatus = WorldStatus.None;
+            if (isInitialBuild)
+            {
+                isInitialBuild = false; // We've already built the initial (start) world
+            }
+        }
+
+        private void SpawnPlayer()
+        {
+            if (isInitialBuild)
+            {
+                playerTransform = PlayerManager.Instance.SpawnPlayer(new Vector3(0, MaxWorldHeight, 0));
+            }
+        }
+        #endregion
 
         private void Update()
         {
-            if (WorldStatus != WorldStatus.Building && !isInitialBuild)
+            Vector3 playerMovement = lastBuildPosition - playerTransform.position;
+            if (playerMovement.sqrMagnitude > ChunkSize * 2)
             {
-                StartCoroutine(BuildWorld());
+                lastBuildPosition = playerTransform.position;
+                BuildNearPlayer();
             }
         }
 
-        private IEnumerator BuildWorld()
+        private void BuildNearPlayer()
         {
-            WorldStatus = WorldStatus.Building;
+            StopCoroutine(nameof(BuildWorldRecursive));
+            int chunkPositionX = (int)(playerTransform.position.x / ChunkSize);
+            int chunkPositionY = (int)(playerTransform.position.y / ChunkSize);
+            int chunkPositionZ = (int)(playerTransform.position.z / ChunkSize);
+            StartCoroutine(BuildWorldRecursive(chunkPositionX, chunkPositionY, chunkPositionZ, radius));
+            StartCoroutine(BuildInitializedChunks());
+        }
 
-            int playerPositionX = Mathf.FloorToInt(playerTransform.position.x / ChunkSize);
-            int playerPositionZ = Mathf.FloorToInt(playerTransform.position.z / ChunkSize);
+        private IEnumerator BuildWorldRecursive(int x, int y, int z, int radius)
+        {
+            radius--;
+            if (radius <= 0) yield break;
 
-            UpdateProgress(10);
+            // Front
+            InitializeChunkAt(x, y, z + 1);
+            StartCoroutine(BuildWorldRecursive(x, y, z + 1, radius));
+            yield return null;
 
-            // Initialise chunks around player
-            for (int x = -Radius; x <= Radius; x++)
+            // Back
+            InitializeChunkAt(x, y, z - 1);
+            StartCoroutine(BuildWorldRecursive(x, y, z - 1, radius));
+            yield return null;
+
+            // Right
+            InitializeChunkAt(x + 1, y, z);
+            StartCoroutine(BuildWorldRecursive(x + 1, y, z, radius));
+            yield return null;
+
+            // Left
+            InitializeChunkAt(x - 1, y, z);
+            StartCoroutine(BuildWorldRecursive(x - 1, y, z, radius));
+            yield return null;
+
+            // Top
+            InitializeChunkAt(x, y + 1, z);
+            StartCoroutine(BuildWorldRecursive(x, y + 1, z, radius));
+            yield return null;
+
+            // Bottom
+            InitializeChunkAt(x, y - 1, z);
+            StartCoroutine(BuildWorldRecursive(x, y - 1, z, radius));
+            yield return null;
+        }
+
+        private void InitializeChunkAt(int x, int y, int z)
+        {
+            Vector3 chunkPosition = new Vector3(x * ChunkSize,
+                                                y * ChunkSize,
+                                                z * ChunkSize);
+
+            string chunkID = GetChunkID(chunkPosition);
+            Chunk currentChunk = GetChunk(chunkID);
+            if (currentChunk == null)
             {
-                for (int z = -Radius; z <= Radius; z++)
+                currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
                 {
-                    for (int y = 0; y < chunkRowHeight; y++)
-                    {
+                    ChunkStatus = ChunkStatus.Draw // Signal that this chunk can be drawn
+                };
 
-
-                        Vector3 chunkPosition = new Vector3((x + playerPositionX) * ChunkSize,
-                                                             y * ChunkSize,
-                                                            (z + playerPositionZ) * ChunkSize);
-
-
-                        string chunkID = GetChunkID(chunkPosition);
-                        Chunk currentChunk = GetChunk(chunkID);
-                        // Chunk already exists, keep it
-                        if (currentChunk != null)
-                        {
-                            currentChunk.ChunkStatus = ChunkStatus.Keep;
-                            break;
-                        }
-                        // Chunk doesn't exist, draw it
-                        else
-                        {
-                            currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
-                            {
-                                ChunkStatus = ChunkStatus.Draw
-                            };
-
-                            chunkDatabase.Add(chunkID, currentChunk);
-                        }
-
-                        yield return null;
-                    }
-                }
+                chunkDatabase.TryAdd(chunkID, currentChunk);
             }
+        }
 
-            UpdateProgress(30);
-
-            // Build initialised chunks
+        private IEnumerator BuildInitializedChunks()
+        {
+            // Build chunks
             foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
             {
                 if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
@@ -144,8 +212,6 @@ namespace Voxel.World
 
                 yield return null;
             }
-
-            UpdateProgress(30);
 
             // Build chunk blocks
             foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
@@ -159,39 +225,101 @@ namespace Voxel.World
                 // TODO delete old chunks
 
                 chunk.Value.ChunkStatus = ChunkStatus.Done;
-
                 yield return null;
             }
-
-            CurrentBuildComplete();
         }
 
-        private void CurrentBuildComplete()
-        {
-            SpawnPlayer();
-            UpdateProgress(30);
+        //public void StartInitialBuildWorld() // This is when the player enters to the game the first time
+        //{
+        //    BuildWorldProgress = 0;
+        //    StartCoroutine(BuildWorld());
+        //}
 
-            WorldStatus = WorldStatus.None;
-            if (isInitialBuild)
-            {
-                isInitialBuild = false; // We've already built the initial (start) world
-            }
-        }
+        //private void Update()
+        //{
+        //    if (WorldStatus != WorldStatus.Building && !isInitialBuild)
+        //    {
+        //        StartCoroutine(BuildWorld());
+        //    }
+        //}
 
-        private void SpawnPlayer()
-        {
-            if (isInitialBuild)
-            {
-                playerTransform = PlayerManager.Instance.SpawnPlayer(MaxWorldHeight);
-            }
-        }
+        //private IEnumerator BuildWorld()
+        //{
+        //    WorldStatus = WorldStatus.Building;
 
-        private void UpdateProgress(int progress)
-        {
-            if (isInitialBuild)
-            {
-                BuildWorldProgress += progress;
-            }
-        }
+        //    int playerPositionX = Mathf.FloorToInt(playerTransform.position.x / ChunkSize);
+        //    int playerPositionZ = Mathf.FloorToInt(playerTransform.position.z / ChunkSize);
+
+        //    UpdateProgress(10);
+
+        //    // Initialise chunks around player
+        //    for (int x = -Radius; x <= Radius; x++)
+        //    {
+        //        for (int z = -Radius; z <= Radius; z++)
+        //        {
+        //            for (int y = 0; y < chunkRowHeight; y++)
+        //            {
+        //                Vector3 chunkPosition = new Vector3((x + playerPositionX) * ChunkSize,
+        //                                                     y * ChunkSize,
+        //                                                    (z + playerPositionZ) * ChunkSize);
+
+
+        //                string chunkID = GetChunkID(chunkPosition);
+        //                Chunk currentChunk = GetChunk(chunkID);
+        //                // Chunk already exists, keep it
+        //                if (currentChunk != null)
+        //                {
+        //                    currentChunk.ChunkStatus = ChunkStatus.Keep;
+        //                    break;
+        //                }
+        //                // Chunk doesn't exist, draw it
+        //                else
+        //                {
+        //                    currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
+        //                    {
+        //                        ChunkStatus = ChunkStatus.Draw
+        //                    };
+
+        //                    chunkDatabase.TryAdd(chunkID, currentChunk);
+        //                }
+
+        //                yield return null;
+        //            }
+        //        }
+        //    }
+
+        //    UpdateProgress(30);
+
+        //    // Build initialised chunks
+        //    foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
+        //    {
+        //        if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+        //        {
+        //            chunk.Value.BuildChunk();
+        //        }
+
+        //        yield return null;
+        //    }
+
+        //    UpdateProgress(30);
+
+        //    // Build chunk blocks
+        //    foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
+        //    {
+        //        if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+        //        {
+        //            chunk.Value.BuildChunkBlocks();
+        //            chunk.Value.ChunkStatus = ChunkStatus.Keep;
+        //        }
+
+        //        // TODO delete old chunks
+
+        //        chunk.Value.ChunkStatus = ChunkStatus.Done;
+
+        //        yield return null;
+        //    }
+
+        //    CurrentBuildComplete();
+        //}
     }
 }
