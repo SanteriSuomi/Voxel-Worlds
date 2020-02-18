@@ -19,15 +19,17 @@ namespace Voxel.World
         private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
 
         private float[] chunkVoxelValues; // For marching cubes
-        private Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
+        private readonly Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
         {
             return chunkData;
         }
 
+        private readonly int chunkSize;
+
         public ChunkStatus ChunkStatus { get; set; }
 
-        public Chunk(Vector3 position, Material material, Transform parent)
+        public Chunk(Vector3 position, Material material, Transform parent, int chunkSize)
         {
             // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
             chunkGameObject = new GameObject
@@ -38,19 +40,19 @@ namespace Voxel.World
             chunkGameObject.transform.position = position; // Chunk position in the world
             chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
+            this.chunkSize = chunkSize - 1; // - 1 because of array index
+            chunkData = new Block[chunkSize, chunkSize, chunkSize]; // Initialize the voxel data for this chunk
         }
 
         // Build all the blocks for this chunk object
         public void BuildChunk()
         {
-            int worldChunkSize = WorldManager.Instance.ChunkSize;
-            chunkData = new Block[worldChunkSize, worldChunkSize, worldChunkSize]; // Initialize the voxel data for this chunk
             // Populate the voxel chunk data
-            for (int x = 0; x < worldChunkSize; x++)
+            for (int x = 0; x < chunkSize; x++)
             {
-                for (int z = 0; z < worldChunkSize; z++)
+                for (int z = 0; z < chunkSize; z++)
                 {
-                    int chunkTopIndex = worldChunkSize - 1;
+                    int chunkTopIndex = chunkSize;
                     bool surfaceBlockAlreadyPlaced = false; // Bool to determine is the top block of a certain column has been placed in this Y loop
                     for (int y = chunkTopIndex; y >= 0; y--) // Start height Y from top so we can easily place the top block
                     {
@@ -117,21 +119,25 @@ namespace Voxel.World
             }
 
             ChunkStatus = ChunkStatus.Draw;
+            BuildBlocks();
         }
 
-        public void BuildChunkBlocks()
+        private void BuildBlocks()
         {
-            int worldChunkSize = WorldManager.Instance.ChunkSize;
             //chunkVoxelValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
             // so we can use the HasSolidNeighbour check (to discard quads that are not visible).
-            for (int x = 0; x < worldChunkSize; x++)
+            for (int x = 0; x < chunkSize; x++)
             {
-                for (int y = 0; y < worldChunkSize; y++)
+                for (int y = 0; y < chunkSize; y++)
                 {
-                    for (int z = 0; z < worldChunkSize; z++)
+                    for (int z = 0; z < chunkSize; z++)
                     {
-                        chunkData[x, y, z].BuildBlock();
+                        if (chunkData[x, y, z] != null)
+                        {
+                            chunkData[x, y, z].BuildBlock();
+                        }
+                        //chunkData[x, y, z].BuildBlock();
                         //int chunkVoxelIndex = x + y * worldChunkSize + z * worldChunkSize * worldChunkSize;
                         //SetChunkVoxelValues(x, y, z, chunkVoxelIndex);
                     }
