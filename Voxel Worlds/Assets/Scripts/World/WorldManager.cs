@@ -110,6 +110,7 @@ namespace Voxel.World
 
             void SpawnPlayer()
             {
+                EventManager.TriggerEvent("BuildWorldComplete");
                 playerTransform = PlayerManager.Instance.SpawnPlayer(playerInitialPosition);
             }
         }
@@ -124,6 +125,7 @@ namespace Voxel.World
                 Vector3Int playerChunkPosition = new Vector3Int((int)lastBuildPosition.x,
                                                                 (int)lastBuildPosition.y,
                                                                 (int)lastBuildPosition.z) / ChunkSize;
+
                 BuildNearPlayer(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z);
             }
         }
@@ -131,7 +133,7 @@ namespace Voxel.World
         private void BuildNearPlayer(int x, int y, int z)
         {
             WorldStatus = WorldStatus.Building;
-            //StopCoroutine(nameof(BuildWorldRecursive));
+            StopCoroutine(nameof(BuildWorldRecursive));
             StartCoroutine(BuildWorldRecursive(x, y, z, radius));
             StartCoroutine(BuildInitializedChunks());
         }
@@ -180,6 +182,7 @@ namespace Voxel.World
             Vector3Int chunkPosition = new Vector3Int(x * (ChunkSize - 1), // -1 from chunkSize because otherwise there would be 1 block gap between chunks. 
                                                       y * (ChunkSize - 1), // Cause unknown at this time.
                                                       z * (ChunkSize - 1));
+            if (chunkPosition.y < 0) return; // Don't create chunks below bedrock
 
             string chunkID = GetChunkID(chunkPosition);
             Chunk currentChunk = GetChunk(chunkID);
@@ -196,9 +199,10 @@ namespace Voxel.World
 
         private IEnumerator BuildInitializedChunks()
         {
-            WaitForSeconds timer = new WaitForSeconds(3.5f);
+            WaitForSeconds timer = null;
             if (isInitialBuild)
             {
+                timer = new WaitForSeconds(3.5f);
                 yield return timer;
             }
 
