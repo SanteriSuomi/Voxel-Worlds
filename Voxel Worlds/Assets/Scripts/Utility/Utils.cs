@@ -6,7 +6,7 @@ namespace Voxel.Utility
 	#pragma warning disable IDE1006 // Methods correctly named
 	public static class Utils
 	{
-		private static readonly FastNoise noise = new FastNoise(UnityEngine.Random.Range(0, 1000000)); // Remove random seed later //
+		private static readonly FastNoise noise = new FastNoise(Random.Range(0, 1000000)); // Remove random seed later //
 		private static readonly MarchingCubes marchingCubes = new MarchingCubes(surface: 0);
 		private static readonly MarchingTertrahedron marchingTertrahedron = new MarchingTertrahedron(surface: 0);
 

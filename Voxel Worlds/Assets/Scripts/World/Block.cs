@@ -30,6 +30,7 @@ namespace Voxel.World
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3 blockPosition; // Position relative to the chunk
         private readonly BlockType blockType; // What type this block is (for UV maps)
+        private readonly int chunkSize;
 
         // UV coordinates for the material on the UV atlas
         private readonly Vector2[,] uvAtlasMap =
@@ -77,6 +78,7 @@ namespace Voxel.World
             blockPosition = position;
             parentChunk = parent;
             chunkOwner = owner;
+            chunkSize = WorldManager.Instance.ChunkSize - 1;
             if (type == BlockType.Air) // These types of blocks should not be solid
             {
                 IsSolid = false;
@@ -125,7 +127,6 @@ namespace Voxel.World
         private bool HasSolidNeighbour(int x, int y, int z)
         {
             Block[,,] chunkData;
-            int chunkSize = WorldManager.Instance.ChunkSize;
             // If the neighbour position we're checking isn't in the bounds of this chunk, we must be in another one
             if (x < 0 || x >= chunkSize
                 || y < 0 || y >= chunkSize

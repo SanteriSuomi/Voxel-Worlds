@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UnityEngine;
@@ -63,8 +63,8 @@ namespace Voxel.World
         public int BuildWorldProgress { get; private set; } // Used for loading bar
 
         private Vector3 lastBuildPosition; // Keep track of where chunks we build around player last time
+        private Vector3Int playerInitialPosition; // Player first spawn position
         private bool isInitialBuild = true; // Keep track on when first time build is complete
-
 
         protected override void Awake()
         {
@@ -75,12 +75,11 @@ namespace Voxel.World
 
         public void InitializeWorld()
         {
-            WorldStatus = WorldStatus.Building;
-            Vector3Int playerInitialPosition = new Vector3Int(0,
-                                                           MaxWorldHeight / 2,
-                                                           0);
-            lastBuildPosition = playerInitialPosition;
+            playerInitialPosition = new Vector3Int(0,
+                                                   MaxWorldHeight / 2,
+                                                   0);
             Vector3Int playerChunkPosition = playerInitialPosition / ChunkSize;
+            lastBuildPosition = playerChunkPosition;
 
             UpdateProgressBarWith(10);
             InitializeChunkAt(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z);
@@ -91,7 +90,7 @@ namespace Voxel.World
             UpdateProgressBarWith(30);
             StartCoroutine(BuildInitializedChunks());
             UpdateProgressBarWith(30);
-            StartCoroutine(CompleteInitialization(playerInitialPosition));
+            StartCoroutine(CompleteInitialization());
         }
 
         private void UpdateProgressBarWith(int progress)
@@ -102,7 +101,7 @@ namespace Voxel.World
             }
         }
 
-        private IEnumerator CompleteInitialization(Vector3 playerInitialPosition)
+        private IEnumerator CompleteInitialization()
         {
             yield return new WaitUntil(() => !isInitialBuild);
             SpawnPlayer();
@@ -117,22 +116,21 @@ namespace Voxel.World
         private void Update()
         {
             if (isInitialBuild) return;
-            float playerDistanceFromLastBuildPos = (lastBuildPosition - playerTransform.position).sqrMagnitude;
-            if (playerDistanceFromLastBuildPos > ChunkSize * 2)
+            Vector3 playerMovement = lastBuildPosition - playerTransform.position;
+            if (playerMovement.magnitude > ChunkSize * 2)
             {
-                lastBuildPosition = playerTransform.position;
-                Vector3Int playerChunkPosition = new Vector3Int((int)lastBuildPosition.x,
-                                                                (int)lastBuildPosition.y,
-                                                                (int)lastBuildPosition.z) / ChunkSize;
-                BuildNearPlayer(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z);
+                BuildNearPlayer();
             }
         }
 
-        private void BuildNearPlayer(int x, int y, int z)
+        private void BuildNearPlayer()
         {
-            WorldStatus = WorldStatus.Building;
-            //StopCoroutine(nameof(BuildWorldRecursive));
-            StartCoroutine(BuildWorldRecursive(x, y, z, radius));
+            StopCoroutine(nameof(BuildWorldRecursive));
+            Vector3Int playerChunkPosition = new Vector3Int((int)playerTransform.position.x, 
+                                                            (int)playerTransform.position.y, 
+                                                            (int)playerTransform.position.z) / ChunkSize;
+            lastBuildPosition = playerChunkPosition;
+            StartCoroutine(BuildWorldRecursive(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z, radius));
             StartCoroutine(BuildInitializedChunks());
         }
 
@@ -177,15 +175,15 @@ namespace Voxel.World
 
         private void InitializeChunkAt(int x, int y, int z)
         {
-            Vector3Int chunkPosition = new Vector3Int(x * (ChunkSize - 1), // -1 from chunkSize because otherwise there would be 1 block gap between chunks. 
-                                                      y * (ChunkSize - 1), // Cause unknown at this time.
-                                                      z * (ChunkSize - 1));
+            Vector3Int chunkPosition = new Vector3Int(x * ChunkSize,
+                                                      y * ChunkSize,
+                                                      z * ChunkSize);
 
             string chunkID = GetChunkID(chunkPosition);
             Chunk currentChunk = GetChunk(chunkID);
             if (currentChunk == null)
             {
-                currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
+                currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform, ChunkSize)
                 {
                     ChunkStatus = ChunkStatus.Draw // Signal that this chunk can be drawn
                 };
@@ -196,10 +194,9 @@ namespace Voxel.World
 
         private IEnumerator BuildInitializedChunks()
         {
-            WaitForSeconds timer = new WaitForSeconds(3.5f);
             if (isInitialBuild)
             {
-                yield return timer;
+                yield return new WaitForSeconds(3.5f);
             }
 
             // Build chunks
@@ -212,7 +209,7 @@ namespace Voxel.World
 
                 yield return null;
             }
-
+            
             foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
             {
                 if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
@@ -229,13 +226,117 @@ namespace Voxel.World
 
             if (isInitialBuild)
             {
-                yield return timer;
+                yield return new WaitForSeconds(3.5f);
                 isInitialBuild = false;
             }
-            else if (WorldStatus == WorldStatus.Building)
-            {
-                WorldStatus = WorldStatus.Idle;
-            }
+
+            //// Build chunk blocks
+            //foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
+            //{
+            //    if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+            //    {
+            //        chunk.Value.BuildChunkBlocks();
+            //        chunk.Value.ChunkStatus = ChunkStatus.Keep;
+            //    }
+
+            //    // TODO delete old chunks
+
+            //    chunk.Value.ChunkStatus = ChunkStatus.Done;
+            //    yield return null;
+            //}
         }
+
+        //public void StartInitialBuildWorld() // This is when the player enters to the game the first time
+        //{
+        //    BuildWorldProgress = 0;
+        //    StartCoroutine(BuildWorld());
+        //}
+
+        //private void Update()
+        //{
+        //    if (WorldStatus != WorldStatus.Building && !isInitialBuild)
+        //    {
+        //        StartCoroutine(BuildWorld());
+        //    }
+        //}
+
+        //private IEnumerator BuildWorld()
+        //{
+        //    WorldStatus = WorldStatus.Building;
+
+        //    int playerPositionX = Mathf.FloorToInt(playerTransform.position.x / ChunkSize);
+        //    int playerPositionZ = Mathf.FloorToInt(playerTransform.position.z / ChunkSize);
+
+        //    UpdateProgress(10);
+
+        //    // Initialise chunks around player
+        //    for (int x = -Radius; x <= Radius; x++)
+        //    {
+        //        for (int z = -Radius; z <= Radius; z++)
+        //        {
+        //            for (int y = 0; y < chunkRowHeight; y++)
+        //            {
+        //                Vector3 chunkPosition = new Vector3((x + playerPositionX) * ChunkSize,
+        //                                                     y * ChunkSize,
+        //                                                    (z + playerPositionZ) * ChunkSize);
+
+
+        //                string chunkID = GetChunkID(chunkPosition);
+        //                Chunk currentChunk = GetChunk(chunkID);
+        //                // Chunk already exists, keep it
+        //                if (currentChunk != null)
+        //                {
+        //                    currentChunk.ChunkStatus = ChunkStatus.Keep;
+        //                    break;
+        //                }
+        //                // Chunk doesn't exist, draw it
+        //                else
+        //                {
+        //                    currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
+        //                    {
+        //                        ChunkStatus = ChunkStatus.Draw
+        //                    };
+
+        //                    chunkDatabase.TryAdd(chunkID, currentChunk);
+        //                }
+
+        //                yield return null;
+        //            }
+        //        }
+        //    }
+
+        //    UpdateProgress(30);
+
+        //    // Build initialised chunks
+        //    foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
+        //    {
+        //        if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+        //        {
+        //            chunk.Value.BuildChunk();
+        //        }
+
+        //        yield return null;
+        //    }
+
+        //    UpdateProgress(30);
+
+        //    // Build chunk blocks
+        //    foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
+        //    {
+        //        if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+        //        {
+        //            chunk.Value.BuildChunkBlocks();
+        //            chunk.Value.ChunkStatus = ChunkStatus.Keep;
+        //        }
+
+        //        // TODO delete old chunks
+
+        //        chunk.Value.ChunkStatus = ChunkStatus.Done;
+
+        //        yield return null;
+        //    }
+
+        //    CurrentBuildComplete();
+        //}
     }
 }
