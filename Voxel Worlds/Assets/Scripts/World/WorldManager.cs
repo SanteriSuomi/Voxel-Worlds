@@ -64,7 +64,7 @@ namespace Voxel.World
 
         private Vector3 lastBuildPosition; // Keep track of where chunks we build around player last time
         private bool isInitialBuild = true; // Keep track on when first time build is complete
-
+        private bool isFirstUpdate = true;
 
         protected override void Awake()
         {
@@ -77,8 +77,8 @@ namespace Voxel.World
         {
             WorldStatus = WorldStatus.Building;
             Vector3Int playerInitialPosition = new Vector3Int(0,
-                                                           MaxWorldHeight / 2,
-                                                           0);
+                                                              MaxWorldHeight / 2,
+                                                              0);
             lastBuildPosition = playerInitialPosition;
             Vector3Int playerChunkPosition = playerInitialPosition / ChunkSize;
 
@@ -87,7 +87,7 @@ namespace Voxel.World
             UpdateProgressBarWith(30);
             StartCoroutine(BuildWorldRecursive(playerChunkPosition.x,
                                                playerChunkPosition.y,
-                                               playerChunkPosition.z, radius));
+                                               playerChunkPosition.z, radius * 2));
             UpdateProgressBarWith(30);
             StartCoroutine(BuildInitializedChunks());
             UpdateProgressBarWith(30);
@@ -107,10 +107,10 @@ namespace Voxel.World
             yield return new WaitUntil(() => !isInitialBuild);
             SpawnPlayer();
             WorldStatus = WorldStatus.Idle;
+            EventManager.TriggerEvent("BuildWorldComplete");
 
             void SpawnPlayer()
             {
-                EventManager.TriggerEvent("BuildWorldComplete");
                 playerTransform = PlayerManager.Instance.SpawnPlayer(playerInitialPosition);
             }
         }
@@ -118,10 +118,18 @@ namespace Voxel.World
         private void Update()
         {
             if (isInitialBuild) return;
-            float playerDistanceFromLastBuildPos = (lastBuildPosition - playerTransform.position).sqrMagnitude;
-            if (playerDistanceFromLastBuildPos > ChunkSize * 2)
+            float playerDistanceFromLastBuildPos = (lastBuildPosition - playerTransform.position).magnitude;
+            if (playerDistanceFromLastBuildPos > ChunkSize)
             {
-                lastBuildPosition = playerTransform.position;
+                if (isFirstUpdate)
+                {
+                    isFirstUpdate = false;
+                }
+                else
+                {
+                    lastBuildPosition = playerTransform.position;
+                }
+
                 Vector3Int playerChunkPosition = new Vector3Int((int)lastBuildPosition.x,
                                                                 (int)lastBuildPosition.y,
                                                                 (int)lastBuildPosition.z) / ChunkSize;
@@ -199,12 +207,8 @@ namespace Voxel.World
 
         private IEnumerator BuildInitializedChunks()
         {
-            WaitForSeconds timer = null;
-            if (isInitialBuild)
-            {
-                timer = new WaitForSeconds(3.5f);
-                yield return timer;
-            }
+            WaitForSeconds timer = new WaitForSeconds(5);
+            yield return timer;
 
             // Build chunks
             foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
