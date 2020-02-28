@@ -48,6 +48,11 @@ namespace Voxel.World
         [SerializeField]
         private Transform playerTransform = default;
 
+        private CoroutineQueue coroutineQueue;
+        public uint MaxQueueCoroutines { get; private set; }
+        [SerializeField]
+        private uint maxQueueCoroutinesAllowed = 1000;
+
         [Header("Chunk and World Settings")]
         [SerializeField]
         private int chunkRowHeight = 8;
@@ -64,12 +69,14 @@ namespace Voxel.World
 
         private Vector3 lastBuildPosition; // Keep track of where chunks we build around player last time
         private bool isInitialBuild = true; // Keep track on when first time build is complete
-        private bool isFirstUpdate = true;
+        private bool isFirstUpdate = true; // Is this the first update loop?
 
         protected override void Awake()
         {
             base.Awake();
             chunkDatabase = new ConcurrentDictionary<string, Chunk>();
+            MaxQueueCoroutines = maxQueueCoroutinesAllowed;
+            coroutineQueue = new CoroutineQueue(MaxQueueCoroutines, StartCoroutine);
             ChunkSize = chunkSize;
         }
 
@@ -85,13 +92,13 @@ namespace Voxel.World
             UpdateProgressBarWith(10);
             InitializeChunkAt(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z);
             UpdateProgressBarWith(30);
-            StartCoroutine(BuildWorldRecursive(playerChunkPosition.x,
+            coroutineQueue.Run(BuildWorldRecursive(playerChunkPosition.x,
                                                playerChunkPosition.y,
                                                playerChunkPosition.z, radius * 2));
             UpdateProgressBarWith(30);
-            StartCoroutine(BuildInitializedChunks());
+            coroutineQueue.Run(BuildInitializedChunks());
             UpdateProgressBarWith(30);
-            StartCoroutine(CompleteInitialization(playerInitialPosition));
+            coroutineQueue.Run(CompleteInitialization(playerInitialPosition));
         }
 
         private void UpdateProgressBarWith(int progress)
@@ -140,10 +147,11 @@ namespace Voxel.World
 
         private void BuildNearPlayer(int x, int y, int z)
         {
+            Debug.Log("building");
             WorldStatus = WorldStatus.Building;
             StopCoroutine(nameof(BuildWorldRecursive));
-            StartCoroutine(BuildWorldRecursive(x, y, z, radius));
-            StartCoroutine(BuildInitializedChunks());
+            coroutineQueue.Run(BuildWorldRecursive(x, y, z, radius));
+            coroutineQueue.Run(BuildInitializedChunks());
         }
 
         private IEnumerator BuildWorldRecursive(int x, int y, int z, int radius)
@@ -156,32 +164,32 @@ namespace Voxel.World
 
             // Front
             InitializeChunkAt(x, y, z + 1);
-            StartCoroutine(BuildWorldRecursive(x, y, z + 1, radius));
+            coroutineQueue.Run(BuildWorldRecursive(x, y, z + 1, radius));
             yield return null;
 
             // Back
             InitializeChunkAt(x, y, z - 1);
-            StartCoroutine(BuildWorldRecursive(x, y, z - 1, radius));
+            coroutineQueue.Run(BuildWorldRecursive(x, y, z - 1, radius));
             yield return null;
 
             // Right
             InitializeChunkAt(x + 1, y, z);
-            StartCoroutine(BuildWorldRecursive(x + 1, y, z, radius));
+            coroutineQueue.Run(BuildWorldRecursive(x + 1, y, z, radius));
             yield return null;
 
             // Left
             InitializeChunkAt(x - 1, y, z);
-            StartCoroutine(BuildWorldRecursive(x - 1, y, z, radius));
+            coroutineQueue.Run(BuildWorldRecursive(x - 1, y, z, radius));
             yield return null;
 
             // Top
             InitializeChunkAt(x, y + 1, z);
-            StartCoroutine(BuildWorldRecursive(x, y + 1, z, radius));
+            coroutineQueue.Run(BuildWorldRecursive(x, y + 1, z, radius));
             yield return null;
 
             // Bottom
             InitializeChunkAt(x, y - 1, z);
-            StartCoroutine(BuildWorldRecursive(x, y - 1, z, radius));
+            coroutineQueue.Run(BuildWorldRecursive(x, y - 1, z, radius));
             yield return null;
         }
 

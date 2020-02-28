@@ -33,6 +33,7 @@ namespace Voxel.Player
         [Header("Looking")]
         [SerializeField]
         private PlayerLookStateVariable lookState = default;
+        private Vector2 lookValue;
         [SerializeField]
         private float lookSpeedMultiplier = 5;
         [SerializeField]
@@ -85,10 +86,7 @@ namespace Voxel.Player
 
         private void OnLookPerformed(InputAction.CallbackContext context)
         {
-            Vector2 lookValue = context.ReadValue<Vector2>();
-            lookValue *= lookSpeedMultiplier * Time.deltaTime;
-            lookValueX += lookValue.x;
-            lookValueY -= lookValue.y;
+            lookValue = context.ReadValue<Vector2>();
             lookState.Value = PlayerLookState.IsLooking;
         }
 
@@ -101,10 +99,8 @@ namespace Voxel.Player
         private void OnSprintCanceled(InputAction.CallbackContext context)
             => moveSpeed = originalMoveSpeed;
 
-        private void OnJumpPerformed(InputAction.CallbackContext context)
-        {
-            Jump();
-        }
+        private void OnJumpPerformed(InputAction.CallbackContext context) 
+            => Jump();
 
         private void Update()
         {
@@ -150,7 +146,7 @@ namespace Voxel.Player
             float goalPlayerHeight = player.position.y + jumpMaxHeight;
             float jumpMaxTimeLength = Time.realtimeSinceStartup + jumpMaxTime;
             float jumpMoveSpeed = jumpStartSpeed;
-            while(player.position.y < goalPlayerHeight && Time.realtimeSinceStartup < jumpMaxTimeLength)
+            while (player.position.y < goalPlayerHeight && Time.realtimeSinceStartup < jumpMaxTimeLength)
             {
                 Vector3 jumpVector = new Vector3(player.position.x, goalPlayerHeight, player.position.z);
                 player.position = Vector3.MoveTowards(player.position, jumpVector, jumpMoveSpeed * Time.deltaTime);
@@ -176,10 +172,18 @@ namespace Voxel.Player
         {
             if (lookState.Value == PlayerLookState.IsLooking)
             {
+                CalculateLookValue();
                 player.localRotation = Quaternion.Euler(0, lookValueX, 0);
-                lookValueY = Utils.FastClamp(lookValueY, -lookVerticalClampRange, lookVerticalClampRange);
+                lookValueY = Mathf.Clamp(lookValueY, -lookVerticalClampRange, lookVerticalClampRange);
                 playerCamera.localRotation = Quaternion.Euler(lookValueY, 0, 0);
             }
+        }
+
+        private void CalculateLookValue()
+        {
+            lookValueX += lookValue.x;
+            lookValueY -= lookValue.y;
+            lookValue *= lookSpeedMultiplier * Time.deltaTime;
         }
 
         private void OnDisable()
