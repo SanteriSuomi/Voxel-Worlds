@@ -64,17 +64,19 @@ namespace Voxel.Utility
 		/// given coroutine. Otherwise, queue it to be run when other coroutines finish.
 		/// </summary>
 		/// <param name="coroutine">Coroutine to run or queue</param>
-		public void Run(IEnumerator coroutine)
+		public Coroutine Run(IEnumerator coroutine)
 		{
 			if (numActive < maxActive)
 			{
 				var runner = CoroutineRunner(coroutine);
-				coroutineStarter(runner);
+				return coroutineStarter(runner);
 			}
 			else
 			{
 				queue.Enqueue(coroutine);
 			}
+
+			return null;
 		}
 
 		/// <summary>
@@ -90,7 +92,9 @@ namespace Voxel.Utility
 			{
 				yield return coroutine.Current;
 			}
+
 			numActive--;
+
 			if (queue.Count > 0)
 			{
 				var next = queue.Dequeue();

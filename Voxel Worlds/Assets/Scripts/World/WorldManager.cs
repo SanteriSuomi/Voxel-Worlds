@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UnityEngine;
+using Voxel.Game;
 using Voxel.Player;
 using Voxel.Utility;
 
@@ -60,16 +61,14 @@ namespace Voxel.World
         private int chunkSize = 16;
         public int ChunkSize { get; private set; }
         [SerializeField]
-        private int radius = 1;
+        private int buildRadius = 4;
 
         public WorldStatus WorldStatus { get; private set; }
-        public int Radius { get { return radius; } }
+        public int Radius { get { return buildRadius; } }
         public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
         public int BuildWorldProgress { get; private set; } // Used for loading bar
 
         private Vector3 lastBuildPosition; // Keep track of where chunks we build around player last time
-        private bool isInitialBuild = true; // Keep track on when first time build is complete
-        private bool isFirstUpdate = true; // Is this the first update loop?
 
         protected override void Awake()
         {
@@ -83,6 +82,11 @@ namespace Voxel.World
         public void InitializeWorld()
         {
             WorldStatus = WorldStatus.Building;
+            StartCoroutine(InitializeWorldCoroutine());
+        }
+
+        private IEnumerator InitializeWorldCoroutine()
+        {
             Vector3Int playerInitialPosition = new Vector3Int(0,
                                                               MaxWorldHeight / 2,
                                                               0);
@@ -92,70 +96,57 @@ namespace Voxel.World
             UpdateProgressBarWith(10);
             InitializeChunkAt(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z);
             UpdateProgressBarWith(30);
-            coroutineQueue.Run(BuildWorldRecursive(playerChunkPosition.x,
-                                               playerChunkPosition.y,
-                                               playerChunkPosition.z, radius * 2));
+            yield return StartCoroutine(BuildWorldRecursive(playerChunkPosition.x,
+                                                                playerChunkPosition.y,
+                                                                playerChunkPosition.z,
+                                                                buildRadius * 4));
             UpdateProgressBarWith(30);
-            coroutineQueue.Run(BuildInitializedChunks());
+            yield return StartCoroutine(BuildInitializedChunks());
             UpdateProgressBarWith(30);
-            coroutineQueue.Run(CompleteInitialization(playerInitialPosition));
+            CompleteInitialization(playerInitialPosition);
+            StartCoroutine(UpdateLoop());
         }
 
-        private void UpdateProgressBarWith(int progress)
-        {
-            if (isInitialBuild)
-            {
-                BuildWorldProgress += progress;
-            }
-        }
+        private void UpdateProgressBarWith(int progress) => BuildWorldProgress += progress;
 
-        private IEnumerator CompleteInitialization(Vector3 playerInitialPosition)
+        private void CompleteInitialization(Vector3 playerInitialPosition)
         {
-            yield return new WaitUntil(() => !isInitialBuild);
-            SpawnPlayer();
             WorldStatus = WorldStatus.Idle;
             EventManager.TriggerEvent("BuildWorldComplete");
-
-            void SpawnPlayer()
-            {
-                playerTransform = PlayerManager.Instance.SpawnPlayer(playerInitialPosition);
-            }
+            playerTransform = PlayerManager.Instance.SpawnPlayer(playerInitialPosition);
         }
 
-        private void Update()
+        private IEnumerator UpdateLoop()
         {
-            if (isInitialBuild) return;
-            float playerDistanceFromLastBuildPos = (lastBuildPosition - playerTransform.position).magnitude;
-            if (playerDistanceFromLastBuildPos > ChunkSize)
+            while (GameManager.Instance.IsGameRunning)
             {
-                if (isFirstUpdate)
-                {
-                    isFirstUpdate = false;
-                }
-                else
+                float distanceFromLastBuildPosition = (lastBuildPosition - playerTransform.position).magnitude;
+                if (distanceFromLastBuildPosition > ChunkSize)
                 {
                     lastBuildPosition = playerTransform.position;
+                    Vector3Int playerChunkPosition = new Vector3Int((int)lastBuildPosition.x,
+                                                                    (int)lastBuildPosition.y,
+                                                                    (int)lastBuildPosition.z) / ChunkSize;
+
+                    StartCoroutine(BuildNearPlayer(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z));
                 }
 
-                Vector3Int playerChunkPosition = new Vector3Int((int)lastBuildPosition.x,
-                                                                (int)lastBuildPosition.y,
-                                                                (int)lastBuildPosition.z) / ChunkSize;
-
-                BuildNearPlayer(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z);
+                yield return null;
             }
         }
 
-        private void BuildNearPlayer(int x, int y, int z)
+        private IEnumerator BuildNearPlayer(int x, int y, int z)
         {
-            Debug.Log("building");
             WorldStatus = WorldStatus.Building;
-            StopCoroutine(nameof(BuildWorldRecursive));
-            coroutineQueue.Run(BuildWorldRecursive(x, y, z, radius));
-            coroutineQueue.Run(BuildInitializedChunks());
+            //StopCoroutine(nameof(BuildWorldRecursive));
+            yield return StartCoroutine(BuildWorldRecursive(x, y, z, buildRadius));
+            yield return StartCoroutine(BuildInitializedChunks());
+            WorldStatus = WorldStatus.Idle;
         }
 
         private IEnumerator BuildWorldRecursive(int x, int y, int z, int radius)
         {
+            //Debug.Log("buildworldrecursive");
             radius--;
             if (radius <= 0)
             {
@@ -215,9 +206,7 @@ namespace Voxel.World
 
         private IEnumerator BuildInitializedChunks()
         {
-            WaitForSeconds timer = new WaitForSeconds(5);
-            yield return timer;
-
+            //Debug.Log("buildinitializedchunks");
             // Build chunks
             foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
             {
@@ -243,15 +232,7 @@ namespace Voxel.World
                 yield return null;
             }
 
-            if (isInitialBuild)
-            {
-                yield return timer;
-                isInitialBuild = false;
-            }
-            else if (WorldStatus == WorldStatus.Building)
-            {
-                WorldStatus = WorldStatus.Idle;
-            }
+            WorldStatus = WorldStatus.Building;
         }
     }
 }
