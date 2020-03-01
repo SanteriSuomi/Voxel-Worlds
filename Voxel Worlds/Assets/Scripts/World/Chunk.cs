@@ -126,7 +126,7 @@ namespace Voxel.World
                 {
                     for (int z = 0; z < chunkSize; z++)
                     {
-                        if (chunkData[x, y, z] != null)
+                        if (!chunkData[x, y, z].Equals(null))
                         {
                             chunkData[x, y, z].BuildBlock();
                         }

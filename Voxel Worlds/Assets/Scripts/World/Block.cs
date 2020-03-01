@@ -13,7 +13,7 @@ namespace Voxel.World
         Bedrock
     }
 
-    public enum CubeSide
+    public enum BlockSide
     {
         Bottom,
         Top,
@@ -23,8 +23,9 @@ namespace Voxel.World
         Back
     }
 
-    public class Block
+    public struct Block
     {
+        #region Static Block Settings
         // UV coordinates for the material on the UV atlas
         private static readonly Vector2[,] uvAtlasMap =
         {
@@ -65,12 +66,32 @@ namespace Voxel.World
             }
         };
 
+        // All the points that make 2 triangles, which in turn makes a quad
+        static readonly int[] triangles = new int[]
+        {
+            3, 2, 1, 3, 1, 0
+        };
+
+        // All possible points on a cube made out of quads with clockwise ordering
+        // left/right: position of X (or "left/right")
+        // Bottom/Top: position of Y (or "bottom/top")
+        // 0/1: position of Z (or "depth")
+        // https://cglearn.codelight.eu/files/course/3/cube.png
+        private static Vector3 leftBottom0 = new Vector3(-0.5f, -0.5f, 0.5f);
+        private static Vector3 rightBottom0 = new Vector3(0.5f, -0.5f, 0.5f);
+        private static Vector3 rightBottom1 = new Vector3(0.5f, -0.5f, -0.5f);
+        private static Vector3 leftBottom1 = new Vector3(-0.5f, -0.5f, -0.5f);
+        private static Vector3 leftTop0 = new Vector3(-0.5f, 0.5f, 0.5f);
+        private static Vector3 rightTop0 = new Vector3(0.5f, 0.5f, 0.5f);
+        private static Vector3 rightTop1 = new Vector3(0.5f, 0.5f, -0.5f);
+        private static Vector3 leftTop1 = new Vector3(-0.5f, 0.5f, -0.5f);
+        #endregion
+
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3 blockPosition; // Position relative to the chunk
         private readonly BlockType blockType; // What type this block is (for UV maps)
-        private readonly int chunkSize;
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
         {
@@ -78,7 +99,7 @@ namespace Voxel.World
             blockPosition = position;
             parentChunk = parent;
             chunkOwner = owner;
-            chunkSize = WorldManager.Instance.ChunkSize - 1;
+
             if (type == BlockType.Air) // These types of blocks should not be solid
             {
                 IsSolid = false;
@@ -100,230 +121,255 @@ namespace Voxel.World
             // If there is no neighbour, create a specified side of the cube
             if (!HasSolidNeighbour(positionX, positionY, positionZ + 1))
             {
-                CreateQuad(CubeSide.Front);
+                CreateQuad(BlockSide.Front);
             }
             if (!HasSolidNeighbour(positionX, positionY, positionZ - 1))
             {
-                CreateQuad(CubeSide.Back);
+                CreateQuad(BlockSide.Back);
             }
             if (!HasSolidNeighbour(positionX - 1, positionY, positionZ))
             {
-                CreateQuad(CubeSide.Left);
+                CreateQuad(BlockSide.Left);
             }
             if (!HasSolidNeighbour(positionX + 1, positionY, positionZ))
             {
-                CreateQuad(CubeSide.Right);
+                CreateQuad(BlockSide.Right);
             }
             if (!HasSolidNeighbour(positionX, positionY + 1, positionZ))
             {
-                CreateQuad(CubeSide.Top);
+                CreateQuad(BlockSide.Top);
             }
             if (!HasSolidNeighbour(positionX, positionY - 1, positionZ))
             {
-                CreateQuad(CubeSide.Bottom);
+                CreateQuad(BlockSide.Bottom);
             }
         }
 
         private bool HasSolidNeighbour(int x, int y, int z)
         {
-            Block[,,] chunkData;
-            // If the neighbour position we're checking isn't in the bounds of this chunk, we must be in another one
-            if (x < 0 || x >= chunkSize
-                || y < 0 || y >= chunkSize
-                || z < 0 || z >= chunkSize)
+            try
             {
-                // Convert the X Y and Z position to the neigbouring chunk
-                Vector3 neighbouringChunkPosition
-                    = parentChunk.transform.position
-                    + new Vector3((x - (int)blockPosition.x) * chunkSize,
-                                  (y - (int)blockPosition.y) * chunkSize,
-                                  (z - (int)blockPosition.z) * chunkSize);
-
-                x = CheckBlockEdgeCase(x);
-                y = CheckBlockEdgeCase(y);
-                z = CheckBlockEdgeCase(z);
-
-                // Finally check if this chunk exists by consulting the chunk dictionary from it's ID
-                Chunk chunk = WorldManager.Instance.GetChunk(WorldManager.GetChunkID(neighbouringChunkPosition));
-                if (chunk != null)
+                int chunkSize = WorldManager.Instance.ChunkSize - 1;
+                Block[,,] chunkData;
+                // If the neighbour position we're checking isn't in the bounds of this chunk, we must be in another one
+                if (x < 0 || x >= chunkSize
+                    || y < 0 || y >= chunkSize
+                    || z < 0 || z >= chunkSize)
                 {
-                    chunkData = chunk.GetChunkData();
+                    // Convert the X Y and Z position to the neigbouring chunk
+                    Vector3 neighbouringChunkPosition
+                        = parentChunk.transform.position
+                        + new Vector3((x - (int)blockPosition.x) * chunkSize,
+                                      (y - (int)blockPosition.y) * chunkSize,
+                                      (z - (int)blockPosition.z) * chunkSize);
+
+                    x = CheckBlockEdgeCase(x);
+                    y = CheckBlockEdgeCase(y);
+                    z = CheckBlockEdgeCase(z);
+
+                    // Finally check if this chunk exists by consulting the chunk dictionary from it's ID
+                    string chunkID = WorldManager.GetChunkID(neighbouringChunkPosition);
+                    Chunk chunk = WorldManager.Instance.GetChunkByID(chunkID);
+                    if (chunk != null)
+                    {
+                        chunkData = chunk.GetChunkData();
+                    }
+                    else
+                    {
+                        // Since we couldn't find a the chunk in the dictionary, there is no chunk at this position
+                        return false;
+                    }
                 }
                 else
                 {
-                    // Since we couldn't find a the chunk in the dictionary, there is no chunk at this position
-                    return false;
+                    // The neighbour position is in this chunk...
+                    chunkData = chunkOwner.GetChunkData();
                 }
-            }
-            else
-            {
-                // The neighbour position is in this chunk...
-                chunkData = chunkOwner.GetChunkData();
-            }
 
-            int CheckBlockEdgeCase(int index)
-            {
-                if (index <= -1) // We must be at the end of another chunk as there is no index -1
+                // Then at last check the neighbour that the neighbour is solid
+                if (chunkData != null
+                    && x <= chunkData.GetUpperBound(0)
+                    && x >= chunkData.GetLowerBound(0)
+                    && y <= chunkData.GetUpperBound(1)
+                    && y >= chunkData.GetLowerBound(1)
+                    && z <= chunkData.GetUpperBound(2)
+                    && z >= chunkData.GetLowerBound(2)
+                    && !chunkData[x, y, z].Equals(null))
                 {
-                    index = chunkSize - 1;
-                }
-                else if (index >= chunkSize) // We must be at the start of another chunk as there is no index at ChunkSize, only ChunkSize - 1
-                {
-                    index = 0;
+                    return chunkData[x, y, z].IsSolid;
                 }
 
-                return index;
+                // We've checked everything absolutely isn't a neighbour
+                return false;
             }
-
-            // Then at last check the neighbour that the neighbour is solid
-            if (chunkData != null
-                && x <= chunkData.GetUpperBound(0)
-                && x >= chunkData.GetLowerBound(0)
-                && y <= chunkData.GetUpperBound(1)
-                && y >= chunkData.GetLowerBound(1)
-                && z <= chunkData.GetUpperBound(2)
-                && z >= chunkData.GetLowerBound(2)
-                && chunkData[x, y, z] != null)
+            catch (System.Exception)
             {
-                return chunkData[x, y, z].IsSolid;
+                // On any error we return false
+                return false;
+            }
+        }
+
+        private int CheckBlockEdgeCase(int index)
+        {
+            int chunkSize = WorldManager.Instance.ChunkSize - 1;
+            if (index <= -1) // We must be at the end of another chunk as there is no index -1
+            {
+                index = chunkSize - 1;
+            }
+            else if (index >= chunkSize) // We must be at the start of another chunk as there is no index at ChunkSize, only ChunkSize - 1
+            {
+                index = 0;
             }
 
-            // We've checked everything absolutely isn't a neighbour
+            return index;
+        }
+
+        private void CreateQuad(BlockSide side)
+        {
+            try
+            {
+                List<Vector3> vertices = new List<Vector3>();
+                Vector3[] normals = new Vector3[4];
+
+                // Build a quad side and assign it's normals
+                switch (side)
+                {
+                    case BlockSide.Bottom:
+                        AssignVertices(new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 });
+                        AssignNormals(Vector3.down);
+                        break;
+                    case BlockSide.Top:
+                        AssignVertices(new Vector3[] { leftTop1, rightTop1, rightTop0, leftTop0 });
+                        AssignNormals(Vector3.up);
+                        break;
+                    case BlockSide.Left:
+                        AssignVertices(new Vector3[] { leftTop1, leftTop0, leftBottom0, leftBottom1 });
+                        AssignNormals(Vector3.left);
+                        break;
+                    case BlockSide.Right:
+                        AssignVertices(new Vector3[] { rightTop0, rightTop1, rightBottom1, rightBottom0 });
+                        AssignNormals(Vector3.right);
+                        break;
+                    case BlockSide.Front:
+                        AssignVertices(new Vector3[] { rightBottom0, leftBottom0, leftTop0, rightTop0 });
+                        AssignNormals(Vector3.forward);
+                        break;
+                    case BlockSide.Back:
+                        AssignVertices(new Vector3[] { rightTop1, leftTop1, leftBottom1, rightBottom1 });
+                        AssignNormals(Vector3.back);
+                        break;
+                }
+
+                void AssignVertices(Vector3[] verticesToAssign)
+                {
+                    for (int i = 0; i < verticesToAssign.Length; i++)
+                    {
+                        vertices.Add(verticesToAssign[i]);
+                    }
+                }
+
+                void AssignNormals(Vector3 direction)
+                {
+                    for (int i = 0; i < normals.Length; i++)
+                    {
+                        normals[i] = direction;
+                    }
+                }
+
+                Vector2[] uvs = new Vector2[4];
+                // Assign UVs from the atlas map depending on the blocktype
+                if (blockType == BlockType.Grass && side == BlockSide.Top)
+                {
+                    uvs[0] = uvAtlasMap[0, 0];
+                    uvs[1] = uvAtlasMap[0, 1];
+                    uvs[2] = uvAtlasMap[0, 2];
+                    uvs[3] = uvAtlasMap[0, 3];
+                }
+                else if (blockType == BlockType.Dirt || blockType == BlockType.Grass)
+                {
+                    uvs[0] = uvAtlasMap[1, 0];
+                    uvs[1] = uvAtlasMap[1, 1];
+                    uvs[2] = uvAtlasMap[1, 2];
+                    uvs[3] = uvAtlasMap[1, 3];
+                }
+                else if (blockType == BlockType.Stone)
+                {
+                    uvs[0] = uvAtlasMap[2, 0];
+                    uvs[1] = uvAtlasMap[2, 1];
+                    uvs[2] = uvAtlasMap[2, 2];
+                    uvs[3] = uvAtlasMap[2, 3];
+                }
+                else if (blockType == BlockType.Diamond)
+                {
+                    uvs[0] = uvAtlasMap[3, 0];
+                    uvs[1] = uvAtlasMap[3, 1];
+                    uvs[2] = uvAtlasMap[3, 2];
+                    uvs[3] = uvAtlasMap[3, 3];
+                }
+                else if (blockType == BlockType.Bedrock)
+                {
+                    uvs[0] = uvAtlasMap[4, 0];
+                    uvs[1] = uvAtlasMap[4, 1];
+                    uvs[2] = uvAtlasMap[4, 2];
+                    uvs[3] = uvAtlasMap[4, 3];
+                }
+                else
+                {
+                    Debug.LogWarning("Probably shouldn't be here.");
+                    int typeToInt = (int)blockType;
+                    uvs[0] = uvAtlasMap[typeToInt, 0];
+                    uvs[1] = uvAtlasMap[typeToInt, 1];
+                    uvs[2] = uvAtlasMap[typeToInt, 2];
+                    uvs[3] = uvAtlasMap[typeToInt, 3];
+                }
+
+                Mesh mesh = new Mesh
+                {
+                    name = $"Quad {side} Mesh"
+                };
+
+                mesh.SetVertices(vertices);
+                mesh.normals = normals;
+                mesh.uv = uvs;
+                mesh.SetTriangles(triangles, 0);
+
+                GameObject quad = new GameObject($"Quad {side}");
+                quad.transform.position = blockPosition;
+                quad.transform.SetParent(parentChunk.transform);
+                MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
+                meshFilter.mesh = mesh;
+            }
+            catch (System.Exception)
+            {
+                // Do nothing if we have an error
+            }
+        }
+
+        #region Override Equals
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            Block other = (Block)obj;
+            if (blockType == other.blockType && blockPosition == other.blockPosition)
+            {
+                return true;
+            }
+
             return false;
         }
 
-        private void CreateQuad(CubeSide side)
-        {
-            List<Vector3> vertices = new List<Vector3>();
-            Vector3[] normals = new Vector3[4];
+        public override int GetHashCode()
+            => blockType.GetHashCode().GetHashCode();
 
-            // All possible points on a cube made out of quads with clockwise ordering
-            // left/right: position of X (or "left/right")
-            // Bottom/Top: position of Y (or "bottom/top")
-            // 0/1: position of Z (or "depth")
-            // https://cglearn.codelight.eu/files/course/3/cube.png
-            Vector3 leftBottom0 = new Vector3(-0.5f, -0.5f, 0.5f);
-            Vector3 rightBottom0 = new Vector3(0.5f, -0.5f, 0.5f);
-            Vector3 rightBottom1 = new Vector3(0.5f, -0.5f, -0.5f);
-            Vector3 leftBottom1 = new Vector3(-0.5f, -0.5f, -0.5f);
-            Vector3 leftTop0 = new Vector3(-0.5f, 0.5f, 0.5f);
-            Vector3 rightTop0 = new Vector3(0.5f, 0.5f, 0.5f);
-            Vector3 rightTop1 = new Vector3(0.5f, 0.5f, -0.5f);
-            Vector3 leftTop1 = new Vector3(-0.5f, 0.5f, -0.5f);
+        public static bool operator ==(Block left, Block right)
+            => left.Equals(right);
 
-            // Build a quad side and assign it's normals
-            switch (side)
-            {
-                case CubeSide.Bottom:
-                    AssignVertices(new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 });
-                    AssignNormals(Vector3.down);
-                    break;
-                case CubeSide.Top:
-                    AssignVertices(new Vector3[] { leftTop1, rightTop1, rightTop0, leftTop0 });
-                    AssignNormals(Vector3.up);
-                    break;
-                case CubeSide.Left:
-                    AssignVertices(new Vector3[] { leftTop1, leftTop0, leftBottom0, leftBottom1 });
-                    AssignNormals(Vector3.left);
-                    break;
-                case CubeSide.Right:
-                    AssignVertices(new Vector3[] { rightTop0, rightTop1, rightBottom1, rightBottom0 });
-                    AssignNormals(Vector3.right);
-                    break;
-                case CubeSide.Front:
-                    AssignVertices(new Vector3[] { rightBottom0, leftBottom0, leftTop0, rightTop0 });
-                    AssignNormals(Vector3.forward);
-                    break;
-                case CubeSide.Back:
-                    AssignVertices(new Vector3[] { rightTop1, leftTop1, leftBottom1, rightBottom1 });
-                    AssignNormals(Vector3.back);
-                    break;
-            }
-
-            void AssignVertices(Vector3[] verticesToAssign)
-            {
-                for (int i = 0; i < verticesToAssign.Length; i++)
-                {
-                    vertices.Add(verticesToAssign[i]);
-                }
-            }
-
-            void AssignNormals(Vector3 direction)
-            {
-                for (int i = 0; i < normals.Length; i++)
-                {
-                    normals[i] = direction;
-                }
-            }
-
-            Vector2[] uvs = new Vector2[4];
-            // Assign UVs from the atlas map depending on the blocktype
-            if (blockType == BlockType.Grass && side == CubeSide.Top)
-            {
-                uvs[0] = uvAtlasMap[0, 0];
-                uvs[1] = uvAtlasMap[0, 1];
-                uvs[2] = uvAtlasMap[0, 2];
-                uvs[3] = uvAtlasMap[0, 3];
-            }
-            else if (blockType == BlockType.Dirt || blockType == BlockType.Grass)
-            {
-                uvs[0] = uvAtlasMap[1, 0];
-                uvs[1] = uvAtlasMap[1, 1];
-                uvs[2] = uvAtlasMap[1, 2];
-                uvs[3] = uvAtlasMap[1, 3];
-            }
-            else if (blockType == BlockType.Stone)
-            {
-                uvs[0] = uvAtlasMap[2, 0];
-                uvs[1] = uvAtlasMap[2, 1];
-                uvs[2] = uvAtlasMap[2, 2];
-                uvs[3] = uvAtlasMap[2, 3];
-            }
-            else if (blockType == BlockType.Diamond)
-            {
-                uvs[0] = uvAtlasMap[3, 0];
-                uvs[1] = uvAtlasMap[3, 1];
-                uvs[2] = uvAtlasMap[3, 2];
-                uvs[3] = uvAtlasMap[3, 3];
-            }
-            else if (blockType == BlockType.Bedrock)
-            {
-                uvs[0] = uvAtlasMap[4, 0];
-                uvs[1] = uvAtlasMap[4, 1];
-                uvs[2] = uvAtlasMap[4, 2];
-                uvs[3] = uvAtlasMap[4, 3];
-            }
-            else
-            {
-                Debug.LogWarning("Probably shouldn't be here.");
-                int typeToInt = (int)blockType;
-                uvs[0] = uvAtlasMap[typeToInt, 0];
-                uvs[1] = uvAtlasMap[typeToInt, 1];
-                uvs[2] = uvAtlasMap[typeToInt, 2];
-                uvs[3] = uvAtlasMap[typeToInt, 3];
-            }
-
-            // All the points that make 2 triangles, which in turn makes a quad
-            int[] triangles = new int[]
-            {
-                3, 2, 1, 3, 1, 0
-            };
-
-            Mesh mesh = new Mesh
-            {
-                name = $"Quad {side} Mesh"
-            };
-
-            mesh.SetVertices(vertices);
-            mesh.normals = normals;
-            mesh.uv = uvs;
-            mesh.SetTriangles(triangles, 0);
-
-            GameObject quad = new GameObject($"Quad {side}");
-            quad.transform.position = blockPosition;
-            quad.transform.SetParent(parentChunk.transform);
-            MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
-            meshFilter.mesh = mesh;
-        }
+        public static bool operator !=(Block left, Block right)
+            => !left.Equals(right);
+        #endregion
     }
 }

@@ -33,7 +33,7 @@ namespace Voxel.World
         /// </summary>
         /// <param name="chunkID"></param>
         /// <returns></returns>
-        public Chunk GetChunk(string chunkID)
+        public Chunk GetChunkByID(string chunkID)
         {
             if (chunkDatabase.TryGetValue(chunkID, out Chunk chunk))
             {
@@ -161,7 +161,7 @@ namespace Voxel.World
             if (chunkPosition.y < 0) return; // Don't create chunks below bedrock
 
             string chunkID = GetChunkID(chunkPosition);
-            Chunk currentChunk = GetChunk(chunkID);
+            Chunk currentChunk = GetChunkByID(chunkID);
             if (currentChunk == null)
             {
                 currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
