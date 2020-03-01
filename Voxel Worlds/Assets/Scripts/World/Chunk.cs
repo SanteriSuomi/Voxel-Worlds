@@ -5,13 +5,14 @@ namespace Voxel.World
 {
     public enum ChunkStatus
     {
+        Null,
         None,
         Draw,
         Done,
         Keep
     }
 
-    public class Chunk
+    public struct Chunk
     {
         public ChunkStatus ChunkStatus { get; set; }
 
@@ -36,6 +37,7 @@ namespace Voxel.World
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
             int chunkSize = WorldManager.Instance.ChunkSize;
             chunkData = new Block[chunkSize, chunkSize, chunkSize]; // Initialize the voxel data for this chunk
+            ChunkStatus = ChunkStatus.None;
         }
 
         // Build all the blocks for this chunk object
@@ -57,7 +59,7 @@ namespace Voxel.World
                         // Bedrock
                         if (worldPositionY == 0)
                         {
-                            NewBlock(BlockType.Bedrock);
+                            NewBlock(BlockType.Bedrock, x, z, y, localPosition);
                             continue;
                         }
 
@@ -68,7 +70,7 @@ namespace Voxel.World
                         // Air
                         if (worldPositionY >= noise2D)
                         {
-                            NewBlock(BlockType.Air);
+                            NewBlock(BlockType.Air, x, z, y, localPosition);
                             continue;
                         }
 
@@ -79,16 +81,16 @@ namespace Voxel.World
                             float noise3D = Utils.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
                             if (noise3D >= 0.135f && noise3D <= Random.Range(0.135f, 0.1355f))
                             {
-                                NewBlock(BlockType.Diamond);
+                                NewBlock(BlockType.Diamond, x, z, y, localPosition);
                             }
                             // Caves are applied below this noise level but must be above certain range from the bottom
                             else if (worldPositionY >= Random.Range(3, 5) && noise3D < Random.Range(0.125f, 0.135f))
                             {
-                                NewBlock(BlockType.Air);
+                                NewBlock(BlockType.Air, x, z, y, localPosition);
                             }
                             else
                             {
-                                NewBlock(BlockType.Stone);
+                                NewBlock(BlockType.Stone, x, z, y, localPosition);
                             }
 
                             continue;
@@ -97,21 +99,21 @@ namespace Voxel.World
                         // Surface (grass, dirt, etc)
                         if (surfaceBlockAlreadyPlaced)
                         {
-                            NewBlock(BlockType.Dirt);
+                            NewBlock(BlockType.Dirt, x, z, y, localPosition);
                         }
                         else
                         {
-                            NewBlock(BlockType.Grass);
+                            NewBlock(BlockType.Grass, x, z, y, localPosition);
                             surfaceBlockAlreadyPlaced = true;
-                        }
-
-                        void NewBlock(BlockType type)
-                        {
-                            chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
                         }
                     }
                 }
             }
+        }
+
+        private void NewBlock(BlockType type, int x, int z, int y, Vector3 localPosition)
+        {
+            chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
         }
 
         public void BuildBlocks()
@@ -137,6 +139,7 @@ namespace Voxel.World
             // Lets finally combine these cubes in to one mesh to "complete" the chunk
             CombineBlocks();
             AddCollider();
+            ChunkStatus = ChunkStatus.Keep;
         }
 
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
@@ -163,5 +166,33 @@ namespace Voxel.World
         {
             chunkGameObject.AddComponent(typeof(MeshCollider));
         }
+
+        #region Override Equals
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            Chunk other = (Chunk)obj;
+            if (ChunkStatus == other.ChunkStatus 
+                && chunkGameObject.transform.position == other.chunkGameObject.transform.position)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+            => ChunkStatus.GetHashCode().GetHashCode();
+
+        public static bool operator ==(Chunk left, Chunk right)
+            => left.Equals(right);
+
+        public static bool operator !=(Chunk left, Chunk right)
+            => !left.Equals(right);
+        #endregion
     }
 }

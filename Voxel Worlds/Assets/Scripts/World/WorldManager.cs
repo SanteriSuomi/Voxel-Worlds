@@ -40,7 +40,10 @@ namespace Voxel.World
                 return chunk;
             }
 
-            return null;
+            return new Chunk(Vector3.zero, null, null)
+            {
+                ChunkStatus = ChunkStatus.Null // Structs cannot be null so assign a "null" enum
+            };
         }
 
         [Header("Misc. Dependencies")]
@@ -164,6 +167,7 @@ namespace Voxel.World
             Chunk currentChunk = GetChunkByID(chunkID);
             if (currentChunk == null)
             {
+                Debug.Log("chunk null");
                 currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
                 {
                     ChunkStatus = ChunkStatus.Draw // Signal that this chunk can be drawn
@@ -190,13 +194,12 @@ namespace Voxel.World
                 if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
                 {
                     chunk.Value.BuildBlocks();
-                    chunk.Value.ChunkStatus = ChunkStatus.Keep;
                     yield return null;
                 }
 
-                // TODO hide old chunks
+                // TODO hide old chunks, assign chunkstatus.done
 
-                chunk.Value.ChunkStatus = ChunkStatus.Done;
+                //chunk.Value.ChunkStatus = ChunkStatus.Done;
             }
         }
     }
