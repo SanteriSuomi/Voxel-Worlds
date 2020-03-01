@@ -13,27 +13,20 @@ namespace Voxel.World
         Bedrock
     }
 
+    public enum CubeSide
+    {
+        Bottom,
+        Top,
+        Left,
+        Right,
+        Front,
+        Back
+    }
+
     public class Block
     {
-        private enum CubeSide
-        {
-            Bottom,
-            Top,
-            Left,
-            Right,
-            Front,
-            Back
-        }
-
-        public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
-        private readonly GameObject parentChunk; // Object (chunk) this block is parented to
-        private readonly Chunk chunkOwner; // Chunk reference to get chunk data
-        private readonly Vector3 blockPosition; // Position relative to the chunk
-        private readonly BlockType blockType; // What type this block is (for UV maps)
-        private readonly int chunkSize;
-
         // UV coordinates for the material on the UV atlas
-        private readonly Vector2[,] uvAtlasMap =
+        private static readonly Vector2[,] uvAtlasMap =
         {
             // Grass Top
             {
@@ -71,6 +64,13 @@ namespace Voxel.World
                 new Vector2(0.5625f, 0.625f)
             }
         };
+
+        public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
+        private readonly GameObject parentChunk; // Object (chunk) this block is parented to
+        private readonly Chunk chunkOwner; // Chunk reference to get chunk data
+        private readonly Vector3 blockPosition; // Position relative to the chunk
+        private readonly BlockType blockType; // What type this block is (for UV maps)
+        private readonly int chunkSize;
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
         {

@@ -164,6 +164,7 @@ namespace Voxel.Player
                 Vector3 moveX = playerCamera.right * moveValue.x;
                 Vector3 moveY = playerCamera.forward * moveValue.y;
                 Vector3 finalMove = (moveX + moveY) * moveSpeed * Time.deltaTime;
+                finalMove.y = 0;
                 characterController.Move(finalMove);
             }
         }
@@ -181,9 +182,9 @@ namespace Voxel.Player
 
         private void CalculateLookValue()
         {
+            lookValue *= lookSpeedMultiplier * Time.deltaTime;
             lookValueX += lookValue.x;
             lookValueY -= lookValue.y;
-            lookValue *= lookSpeedMultiplier * Time.deltaTime;
         }
 
         private void OnDisable()

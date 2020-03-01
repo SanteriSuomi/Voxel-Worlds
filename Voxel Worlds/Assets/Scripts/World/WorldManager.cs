@@ -49,11 +49,6 @@ namespace Voxel.World
         [SerializeField]
         private Transform playerTransform = default;
 
-        private CoroutineQueue coroutineQueue;
-        public uint MaxQueueCoroutines { get; private set; }
-        [SerializeField]
-        private uint maxQueueCoroutinesAllowed = 1000;
-
         [Header("Chunk and World Settings")]
         [SerializeField]
         private int chunkRowHeight = 8;
@@ -62,6 +57,8 @@ namespace Voxel.World
         public int ChunkSize { get; private set; }
         [SerializeField]
         private int buildRadius = 4;
+        [SerializeField]
+        private int initialBuildRadius = 8;
 
         public WorldStatus WorldStatus { get; private set; }
         public int Radius { get { return buildRadius; } }
@@ -74,8 +71,6 @@ namespace Voxel.World
         {
             base.Awake();
             chunkDatabase = new ConcurrentDictionary<string, Chunk>();
-            MaxQueueCoroutines = maxQueueCoroutinesAllowed;
-            coroutineQueue = new CoroutineQueue(MaxQueueCoroutines, StartCoroutine);
             ChunkSize = chunkSize;
         }
 
@@ -94,16 +89,15 @@ namespace Voxel.World
             Vector3Int playerChunkPosition = playerInitialPosition / ChunkSize;
 
             UpdateProgressBarWith(10);
-            InitializeChunkAt(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z);
-            UpdateProgressBarWith(30);
-            yield return StartCoroutine(BuildWorldRecursive(playerChunkPosition.x,
-                                                                playerChunkPosition.y,
-                                                                playerChunkPosition.z,
-                                                                buildRadius * 4));
+            yield return StartCoroutine(InitializeChunksInRadius(playerChunkPosition.x,
+                                                                 playerChunkPosition.y,
+                                                                 playerChunkPosition.z,
+                                                                 initialBuildRadius));
             UpdateProgressBarWith(30);
             yield return StartCoroutine(BuildInitializedChunks());
             UpdateProgressBarWith(30);
             CompleteInitialization(playerInitialPosition);
+            UpdateProgressBarWith(30);
             StartCoroutine(UpdateLoop());
         }
 
@@ -120,14 +114,14 @@ namespace Voxel.World
         {
             while (GameManager.Instance.IsGameRunning)
             {
-                float distanceFromLastBuildPosition = (lastBuildPosition - playerTransform.position).magnitude;
-                if (distanceFromLastBuildPosition > ChunkSize)
+                float distanceFromLastBuildPosition = (lastBuildPosition - playerTransform.position).sqrMagnitude;
+                if (distanceFromLastBuildPosition > ChunkSize * 2 / 2)
                 {
                     lastBuildPosition = playerTransform.position;
                     Vector3Int playerChunkPosition = new Vector3Int((int)lastBuildPosition.x,
                                                                     (int)lastBuildPosition.y,
                                                                     (int)lastBuildPosition.z) / ChunkSize;
-
+                    Debug.Log("building");
                     StartCoroutine(BuildNearPlayer(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z));
                 }
 
@@ -138,50 +132,25 @@ namespace Voxel.World
         private IEnumerator BuildNearPlayer(int x, int y, int z)
         {
             WorldStatus = WorldStatus.Building;
-            //StopCoroutine(nameof(BuildWorldRecursive));
-            yield return StartCoroutine(BuildWorldRecursive(x, y, z, buildRadius));
+            StopCoroutine(nameof(InitializeChunksInRadius));
+            yield return StartCoroutine(InitializeChunksInRadius(x, y, z, buildRadius));
             yield return StartCoroutine(BuildInitializedChunks());
             WorldStatus = WorldStatus.Idle;
         }
 
-        private IEnumerator BuildWorldRecursive(int x, int y, int z, int radius)
+        private IEnumerator InitializeChunksInRadius(int x, int y, int z, int radius)
         {
-            //Debug.Log("buildworldrecursive");
-            radius--;
-            if (radius <= 0)
+            for (int xL = -radius; xL < radius; xL++)
             {
-                yield break;
+                for (int yL = -radius; yL < radius; yL++)
+                {
+                    for (int zL = -radius; zL < radius; zL++)
+                    {
+                        InitializeChunkAt(x + xL, y + yL, z + zL);
+                        yield return null;
+                    }
+                }
             }
-
-            // Front
-            InitializeChunkAt(x, y, z + 1);
-            coroutineQueue.Run(BuildWorldRecursive(x, y, z + 1, radius));
-            yield return null;
-
-            // Back
-            InitializeChunkAt(x, y, z - 1);
-            coroutineQueue.Run(BuildWorldRecursive(x, y, z - 1, radius));
-            yield return null;
-
-            // Right
-            InitializeChunkAt(x + 1, y, z);
-            coroutineQueue.Run(BuildWorldRecursive(x + 1, y, z, radius));
-            yield return null;
-
-            // Left
-            InitializeChunkAt(x - 1, y, z);
-            coroutineQueue.Run(BuildWorldRecursive(x - 1, y, z, radius));
-            yield return null;
-
-            // Top
-            InitializeChunkAt(x, y + 1, z);
-            coroutineQueue.Run(BuildWorldRecursive(x, y + 1, z, radius));
-            yield return null;
-
-            // Bottom
-            InitializeChunkAt(x, y - 1, z);
-            coroutineQueue.Run(BuildWorldRecursive(x, y - 1, z, radius));
-            yield return null;
         }
 
         private void InitializeChunkAt(int x, int y, int z)
@@ -206,16 +175,14 @@ namespace Voxel.World
 
         private IEnumerator BuildInitializedChunks()
         {
-            //Debug.Log("buildinitializedchunks");
             // Build chunks
             foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
             {
                 if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
                 {
                     chunk.Value.BuildChunk();
+                    yield return null;
                 }
-
-                yield return null;
             }
 
             foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
@@ -224,15 +191,13 @@ namespace Voxel.World
                 {
                     chunk.Value.BuildBlocks();
                     chunk.Value.ChunkStatus = ChunkStatus.Keep;
+                    yield return null;
                 }
 
                 // TODO hide old chunks
 
                 chunk.Value.ChunkStatus = ChunkStatus.Done;
-                yield return null;
             }
-
-            WorldStatus = WorldStatus.Building;
         }
     }
 }

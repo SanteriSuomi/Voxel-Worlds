@@ -15,15 +15,13 @@ namespace Voxel.World
     {
         public ChunkStatus ChunkStatus { get; set; }
 
+        private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
+        private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
         private readonly Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
         {
             return chunkData;
         }
-
-        private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
-        private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
-        private readonly int chunkSize;
 
         public Chunk(Vector3 position, Material material, Transform parent)
         {
@@ -36,14 +34,14 @@ namespace Voxel.World
             chunkGameObject.transform.position = position; // Chunk position in the world
             chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
-            chunkSize = WorldManager.Instance.ChunkSize;
+            int chunkSize = WorldManager.Instance.ChunkSize;
             chunkData = new Block[chunkSize, chunkSize, chunkSize]; // Initialize the voxel data for this chunk
-            chunkSize -= 1; // Minus one because we need to loop through array index
         }
 
         // Build all the blocks for this chunk object
         public void BuildChunk()
         {
+            int chunkSize = WorldManager.Instance.ChunkSize - 1;
             // Populate the voxel chunk data
             for (int x = 0; x < chunkSize; x++)
             {
@@ -118,6 +116,7 @@ namespace Voxel.World
 
         public void BuildBlocks()
         {
+            int chunkSize = WorldManager.Instance.ChunkSize - 1;
             //chunkVoxelValues = new float[worldChunkSize * worldChunkSize * worldChunkSize]; // Voxel data for marching cubes
             // Draw the cubes; must be done after populating chunk array with blocks, since we need it to be full of data, 
             // so we can use the HasSolidNeighbour check (to discard quads that are not visible).

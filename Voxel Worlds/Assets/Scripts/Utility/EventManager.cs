@@ -37,7 +37,6 @@ namespace Voxel.Utility
             if (hasEvent)
             {
                 unityEvent.Invoke();
-                UnityEngine.Debug.Log($"Event {eventName} triggered");
             }
         }
 
