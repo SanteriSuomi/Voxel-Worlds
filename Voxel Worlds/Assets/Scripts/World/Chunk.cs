@@ -16,7 +16,7 @@ namespace Voxel.World
     {
         public ChunkStatus ChunkStatus { get; set; }
 
-        private readonly GameObject chunkGameObject; // This is the chunk's gameobject in the world
+        public GameObject ChunkGameObject { get; } // This is the chunk's gameobject in the world
         private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
         private readonly Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
@@ -29,17 +29,17 @@ namespace Voxel.World
             if (!empty)
             {
                 // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
-                chunkGameObject = new GameObject
+                ChunkGameObject = new GameObject
                 {
                     name = position.ToString(),
                 };
 
-                chunkGameObject.transform.position = position; // Chunk position in the world
-                chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
+                ChunkGameObject.transform.position = position; // Chunk position in the world
+                ChunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
             }
             else
             {
-                chunkGameObject = null;
+                ChunkGameObject = null;
             }
 
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
@@ -70,7 +70,7 @@ namespace Voxel.World
                     for (int y = chunkTopIndex; y >= 0; y--) // Start height Y from top so we can easily place the top block
                     {
                         Vector3 localPosition = new Vector3(x, y, z);
-                        int worldPositionY = (int)(y + chunkGameObject.transform.position.y);
+                        int worldPositionY = (int)(y + ChunkGameObject.transform.position.y);
 
                         // Bedrock
                         if (worldPositionY == 0)
@@ -79,8 +79,8 @@ namespace Voxel.World
                             continue;
                         }
 
-                        int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
-                        int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
+                        int worldPositionX = (int)(x + ChunkGameObject.transform.position.x);
+                        int worldPositionZ = (int)(z + ChunkGameObject.transform.position.z);
                         int noise2D = (int)(Utils.FBM2D(worldPositionX, worldPositionZ)
                             * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
                         // Air
@@ -129,7 +129,7 @@ namespace Voxel.World
 
         private void NewBlock(BlockType type, int x, int z, int y, Vector3 localPosition)
         {
-            chunkData[x, y, z] = new Block(type, localPosition, chunkGameObject, this);
+            chunkData[x, y, z] = new Block(type, localPosition, ChunkGameObject, this);
         }
 
         public void BuildBlocks()
@@ -163,26 +163,26 @@ namespace Voxel.World
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
         private void CombineBlocks()
         {
-            int childCount = chunkGameObject.transform.childCount;
+            int childCount = ChunkGameObject.transform.childCount;
             CombineInstance[] combinedMeshes = new CombineInstance[childCount];
             for (int i = 0; i < childCount; i++)
             {
-                MeshFilter childMeshFilter = chunkGameObject.transform.GetChild(i).GetComponent<MeshFilter>();
+                MeshFilter childMeshFilter = ChunkGameObject.transform.GetChild(i).GetComponent<MeshFilter>();
                 combinedMeshes[i].mesh = childMeshFilter.sharedMesh;
                 combinedMeshes[i].transform = childMeshFilter.transform.localToWorldMatrix;
-                Object.Destroy(chunkGameObject.transform.GetChild(i).gameObject); // Get rid of redundant children
+                Object.Destroy(ChunkGameObject.transform.GetChild(i).gameObject); // Get rid of redundant children
             }
 
-            MeshFilter parentMeshFilter = chunkGameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
+            MeshFilter parentMeshFilter = ChunkGameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
             parentMeshFilter.mesh = new Mesh();
             parentMeshFilter.mesh.CombineMeshes(combinedMeshes, true, true);
-            MeshRenderer parentMeshRenderer = chunkGameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
+            MeshRenderer parentMeshRenderer = ChunkGameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
             parentMeshRenderer.material = chunkMaterial;
         }
 
         private void AddCollider()
         {
-            chunkGameObject.AddComponent(typeof(MeshCollider));
+            ChunkGameObject.AddComponent(typeof(MeshCollider));
         }
 
         //#region Override Equals

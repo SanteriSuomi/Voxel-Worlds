@@ -92,11 +92,11 @@ namespace Voxel.World
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3 blockPosition; // Position relative to the chunk
-        private readonly BlockType blockType; // What type this block is (for UV maps)
+        public BlockType BlockType { get; } // What type this block is (for UV maps)
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
         {
-            blockType = type;
+            BlockType = type;
             blockPosition = position;
             parentChunk = parent;
             chunkOwner = owner;
@@ -113,7 +113,7 @@ namespace Voxel.World
 
         public void BuildBlock()
         {
-            if (blockType == BlockType.Air) return; // If block is any of these types, do not create it
+            if (BlockType == BlockType.Air) return; // If block is any of these types, do not create it
 
             int positionX = (int)blockPosition.x;
             int positionY = (int)blockPosition.y;
@@ -169,7 +169,7 @@ namespace Voxel.World
                     z = CheckBlockEdgeCase(z);
 
                     // Finally check if this chunk exists by consulting the chunk dictionary from it's ID
-                    string chunkID = WorldManager.GetChunkID(neighbouringChunkPosition);
+                    string chunkID = WorldManager.Instance.GetChunkID(neighbouringChunkPosition);
                     Chunk chunk = WorldManager.Instance.GetChunkByID(chunkID);
                     if (chunk.ChunkStatus != ChunkStatus.Null)
                     {
@@ -284,35 +284,35 @@ namespace Voxel.World
 
                 Vector2[] uvs = new Vector2[4];
                 // Assign UVs from the atlas map depending on the blocktype
-                if (blockType == BlockType.Grass && side == BlockSide.Top)
+                if (BlockType == BlockType.Grass && side == BlockSide.Top)
                 {
                     uvs[0] = uvAtlasMap[0, 0];
                     uvs[1] = uvAtlasMap[0, 1];
                     uvs[2] = uvAtlasMap[0, 2];
                     uvs[3] = uvAtlasMap[0, 3];
                 }
-                else if (blockType == BlockType.Dirt || blockType == BlockType.Grass)
+                else if (BlockType == BlockType.Dirt || BlockType == BlockType.Grass)
                 {
                     uvs[0] = uvAtlasMap[1, 0];
                     uvs[1] = uvAtlasMap[1, 1];
                     uvs[2] = uvAtlasMap[1, 2];
                     uvs[3] = uvAtlasMap[1, 3];
                 }
-                else if (blockType == BlockType.Stone)
+                else if (BlockType == BlockType.Stone)
                 {
                     uvs[0] = uvAtlasMap[2, 0];
                     uvs[1] = uvAtlasMap[2, 1];
                     uvs[2] = uvAtlasMap[2, 2];
                     uvs[3] = uvAtlasMap[2, 3];
                 }
-                else if (blockType == BlockType.Diamond)
+                else if (BlockType == BlockType.Diamond)
                 {
                     uvs[0] = uvAtlasMap[3, 0];
                     uvs[1] = uvAtlasMap[3, 1];
                     uvs[2] = uvAtlasMap[3, 2];
                     uvs[3] = uvAtlasMap[3, 3];
                 }
-                else if (blockType == BlockType.Bedrock)
+                else if (BlockType == BlockType.Bedrock)
                 {
                     uvs[0] = uvAtlasMap[4, 0];
                     uvs[1] = uvAtlasMap[4, 1];
@@ -322,7 +322,7 @@ namespace Voxel.World
                 else
                 {
                     Debug.LogWarning("Probably shouldn't be here.");
-                    int typeToInt = (int)blockType;
+                    int typeToInt = (int)BlockType;
                     uvs[0] = uvAtlasMap[typeToInt, 0];
                     uvs[1] = uvAtlasMap[typeToInt, 1];
                     uvs[2] = uvAtlasMap[typeToInt, 2];
