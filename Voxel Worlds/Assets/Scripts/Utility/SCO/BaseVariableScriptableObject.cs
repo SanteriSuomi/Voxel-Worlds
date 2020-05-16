@@ -16,6 +16,7 @@ namespace Voxel.Utility
             }
         }
         public delegate void ValueChanged(T value);
+
         /// <summary>
         /// This event gets invoked when the value of this SCO changes.
         /// </summary>

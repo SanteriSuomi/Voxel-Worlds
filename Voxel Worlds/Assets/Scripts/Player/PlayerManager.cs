@@ -11,12 +11,14 @@ namespace Voxel.Player
 
         [SerializeField]
         private float playerSpawnOffset = 1;
+        [SerializeField]
+        private float rayHitSpawnOffset = 2;
 
         public Transform SpawnPlayer(Vector3 atPosition)
         {
-            bool hitRaycast = Physics.Raycast(atPosition, Vector3.down, out RaycastHit hitInfo, atPosition.y * 2);
-            Vector3 spawnPosition; 
-            if (hitRaycast)
+            bool hitRay = Physics.Raycast(atPosition, Vector3.down, out RaycastHit hitInfo, atPosition.y * rayHitSpawnOffset);
+            Vector3 spawnPosition;
+            if (hitRay)
             {
                 spawnPosition = hitInfo.point + new Vector3(0, playerSpawnOffset, 0);
             }

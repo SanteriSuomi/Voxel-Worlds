@@ -7,7 +7,8 @@ namespace Voxel.Player
 {
     public class PlayerController : MonoBehaviour
     {
-        private InputActions inputActions;
+        [SerializeField]
+        private InputActionsController inputActionsController = default;
         private CharacterController characterController;
         private Transform playerCamera;
         private Transform player;
@@ -56,7 +57,6 @@ namespace Voxel.Player
 
         private void Awake()
         {
-            inputActions = new InputActions();
             playerCamera = GetComponentInChildren<Camera>().transform;
             characterController = GetComponent<CharacterController>();
             player = transform;
@@ -65,14 +65,13 @@ namespace Voxel.Player
 
         private void OnEnable()
         {
-            inputActions.Player.Move.performed += OnMovePerformed;
-            inputActions.Player.Move.canceled += OnMoveCanceled;
-            inputActions.Player.Look.performed += OnLookPerformed;
-            inputActions.Player.Look.canceled += OnLookCanceled;
-            inputActions.Player.Sprint.performed += OnSprintPerformed;
-            inputActions.Player.Sprint.canceled += OnSprintCanceled;
-            inputActions.Player.Jump.performed += OnJumpPerformed;
-            inputActions.Player.Enable();
+            inputActionsController.InputActions.Player.Move.performed += OnMovePerformed;
+            inputActionsController.InputActions.Player.Move.canceled += OnMoveCanceled;
+            inputActionsController.InputActions.Player.Look.performed += OnLookPerformed;
+            inputActionsController.InputActions.Player.Look.canceled += OnLookCanceled;
+            inputActionsController.InputActions.Player.Sprint.performed += OnSprintPerformed;
+            inputActionsController.InputActions.Player.Sprint.canceled += OnSprintCanceled;
+            inputActionsController.InputActions.Player.Jump.performed += OnJumpPerformed;
         }
 
         private void OnMovePerformed(InputAction.CallbackContext context)
@@ -99,7 +98,7 @@ namespace Voxel.Player
         private void OnSprintCanceled(InputAction.CallbackContext context)
             => moveSpeed = originalMoveSpeed;
 
-        private void OnJumpPerformed(InputAction.CallbackContext context) 
+        private void OnJumpPerformed(InputAction.CallbackContext context)
             => Jump();
 
         private void Update()
@@ -131,7 +130,10 @@ namespace Voxel.Player
 
         private void Jump()
         {
-            if (jumpState.Value == PlayerJumpState.IsJumping) return;
+            if (jumpState.Value == PlayerJumpState.IsJumping)
+            {
+                return;
+            }
             else if (jumpCoroutine != null)
             {
                 StopCoroutine(jumpCoroutine);
@@ -189,14 +191,13 @@ namespace Voxel.Player
 
         private void OnDisable()
         {
-            inputActions.Player.Move.performed -= OnMovePerformed;
-            inputActions.Player.Move.canceled -= OnMoveCanceled;
-            inputActions.Player.Look.performed -= OnLookPerformed;
-            inputActions.Player.Look.canceled -= OnLookCanceled;
-            inputActions.Player.Sprint.performed -= OnSprintPerformed;
-            inputActions.Player.Sprint.canceled -= OnSprintCanceled;
-            inputActions.Player.Jump.performed -= OnJumpPerformed;
-            inputActions.Player.Disable();
+            inputActionsController.InputActions.Player.Move.performed -= OnMovePerformed;
+            inputActionsController.InputActions.Player.Move.canceled -= OnMoveCanceled;
+            inputActionsController.InputActions.Player.Look.performed -= OnLookPerformed;
+            inputActionsController.InputActions.Player.Look.canceled -= OnLookCanceled;
+            inputActionsController.InputActions.Player.Sprint.performed -= OnSprintPerformed;
+            inputActionsController.InputActions.Player.Sprint.canceled -= OnSprintCanceled;
+            inputActionsController.InputActions.Player.Jump.performed -= OnJumpPerformed;
         }
     }
 }

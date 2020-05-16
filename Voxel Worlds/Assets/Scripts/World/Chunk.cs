@@ -12,7 +12,7 @@ namespace Voxel.World
         Keep
     }
 
-    public struct Chunk
+    public class Chunk
     {
         public ChunkStatus ChunkStatus { get; set; }
 
@@ -24,20 +24,36 @@ namespace Voxel.World
             return chunkData;
         }
 
-        public Chunk(Vector3 position, Material material, Transform parent)
+        public Chunk(Vector3 position, Material material = null, Transform parent = null, bool empty = false)
         {
-            // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
-            chunkGameObject = new GameObject
+            if (!empty)
             {
-                name = position.ToString(),
-            };
+                // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
+                chunkGameObject = new GameObject
+                {
+                    name = position.ToString(),
+                };
 
-            chunkGameObject.transform.position = position; // Chunk position in the world
-            chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
+                chunkGameObject.transform.position = position; // Chunk position in the world
+                chunkGameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
+            }
+            else
+            {
+                chunkGameObject = null;
+            }
+
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
             int chunkSize = WorldManager.Instance.ChunkSize;
             chunkData = new Block[chunkSize, chunkSize, chunkSize]; // Initialize the voxel data for this chunk
             ChunkStatus = ChunkStatus.None;
+        }
+
+        public static Chunk GetEmptyChunk()
+        {
+            return new Chunk(Vector3.zero, null, null, true)
+            {
+                ChunkStatus = ChunkStatus.Null
+            };
         }
 
         // Build all the blocks for this chunk object
@@ -65,7 +81,7 @@ namespace Voxel.World
 
                         int worldPositionX = (int)(x + chunkGameObject.transform.position.x);
                         int worldPositionZ = (int)(z + chunkGameObject.transform.position.z);
-                        int noise2D = (int)(Utils.fBm2D(worldPositionX, worldPositionZ)
+                        int noise2D = (int)(Utils.FBM2D(worldPositionX, worldPositionZ)
                             * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
                         // Air
                         if (worldPositionY >= noise2D)
@@ -78,7 +94,7 @@ namespace Voxel.World
                         int undergroundLayerStart = noise2D - Random.Range(4, 8);
                         if (worldPositionY <= undergroundLayerStart) // If we're certain range below the surface
                         {
-                            float noise3D = Utils.fBm3D(worldPositionX, worldPositionY, worldPositionZ);
+                            float noise3D = Utils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
                             if (noise3D >= 0.135f && noise3D <= Random.Range(0.135f, 0.1355f))
                             {
                                 NewBlock(BlockType.Diamond, x, z, y, localPosition);
@@ -128,10 +144,12 @@ namespace Voxel.World
                 {
                     for (int z = 0; z < chunkSize; z++)
                     {
-                        if (!chunkData[x, y, z].Equals(null))
+                        if (chunkData[x, y, z] == null)
                         {
-                            chunkData[x, y, z].BuildBlock();
+                            return;
                         }
+
+                        chunkData[x, y, z].BuildBlock();
                     }
                 }
             }
@@ -167,32 +185,28 @@ namespace Voxel.World
             chunkGameObject.AddComponent(typeof(MeshCollider));
         }
 
-        #region Override Equals
-        public override bool Equals(object obj)
-        {
-            if (obj == null)
-            {
-                return false;
-            }
+        //#region Override Equals
+        //public override bool Equals(object obj)
+        //{
+        //    Chunk other = (Chunk)obj;
+        //    if (ChunkStatus == ChunkStatus.Null
+        //        || other.ChunkStatus == ChunkStatus.Null)
+        //    {
+        //        return false;
+        //    }
 
-            Chunk other = (Chunk)obj;
-            if (ChunkStatus == other.ChunkStatus 
-                && chunkGameObject.transform.position == other.chunkGameObject.transform.position)
-            {
-                return true;
-            }
+        //    return ChunkStatus == other.ChunkStatus
+        //           && ChunkGameObject.transform.position == other.ChunkGameObject.transform.position;
+        //}
 
-            return false;
-        }
+        //public override int GetHashCode()
+        //    => ChunkStatus.GetHashCode().GetHashCode();
 
-        public override int GetHashCode()
-            => ChunkStatus.GetHashCode().GetHashCode();
+        //public static bool operator ==(Chunk left, Chunk right)
+        //    => left.Equals(right);
 
-        public static bool operator ==(Chunk left, Chunk right)
-            => left.Equals(right);
-
-        public static bool operator !=(Chunk left, Chunk right)
-            => !left.Equals(right);
-        #endregion
+        //public static bool operator !=(Chunk left, Chunk right)
+        //    => !left.Equals(right);
+        //#endregion
     }
 }

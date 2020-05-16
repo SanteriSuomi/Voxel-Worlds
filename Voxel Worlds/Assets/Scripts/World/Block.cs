@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace Voxel.World
 {
@@ -23,7 +24,7 @@ namespace Voxel.World
         Back
     }
 
-    public struct Block
+    public class Block
     {
         #region Static Block Settings
         // UV coordinates for the material on the UV atlas
@@ -67,7 +68,7 @@ namespace Voxel.World
         };
 
         // All the points that make 2 triangles, which in turn makes a quad
-        static readonly int[] triangles = new int[]
+        private static readonly int[] triangles = new int[]
         {
             3, 2, 1, 3, 1, 0
         };
@@ -87,7 +88,7 @@ namespace Voxel.World
         private static Vector3 leftTop1 = new Vector3(-0.5f, 0.5f, -0.5f);
         #endregion
 
-        public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
+        public bool IsSolid { get; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3 blockPosition; // Position relative to the chunk
@@ -170,7 +171,7 @@ namespace Voxel.World
                     // Finally check if this chunk exists by consulting the chunk dictionary from it's ID
                     string chunkID = WorldManager.GetChunkID(neighbouringChunkPosition);
                     Chunk chunk = WorldManager.Instance.GetChunkByID(chunkID);
-                    if (chunk != null)
+                    if (chunk.ChunkStatus != ChunkStatus.Null)
                     {
                         chunkData = chunk.GetChunkData();
                     }
@@ -194,7 +195,7 @@ namespace Voxel.World
                     && y >= chunkData.GetLowerBound(1)
                     && z <= chunkData.GetUpperBound(2)
                     && z >= chunkData.GetLowerBound(2)
-                    && !chunkData[x, y, z].Equals(null))
+                    /*&& !chunkData[x, y, z].Equals(null)*/)
                 {
                     return chunkData[x, y, z].IsSolid;
                 }
@@ -202,7 +203,7 @@ namespace Voxel.World
                 // We've checked everything absolutely isn't a neighbour
                 return false;
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // On any error we return false
                 return false;
@@ -214,11 +215,11 @@ namespace Voxel.World
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
             if (index <= -1) // We must be at the end of another chunk as there is no index -1
             {
-                index = chunkSize - 1;
+                return chunkSize - 1;
             }
             else if (index >= chunkSize) // We must be at the start of another chunk as there is no index at ChunkSize, only ChunkSize - 1
             {
-                index = 0;
+                return 0;
             }
 
             return index;
@@ -238,22 +239,27 @@ namespace Voxel.World
                         AssignVertices(new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 });
                         AssignNormals(Vector3.down);
                         break;
+
                     case BlockSide.Top:
                         AssignVertices(new Vector3[] { leftTop1, rightTop1, rightTop0, leftTop0 });
                         AssignNormals(Vector3.up);
                         break;
+
                     case BlockSide.Left:
                         AssignVertices(new Vector3[] { leftTop1, leftTop0, leftBottom0, leftBottom1 });
                         AssignNormals(Vector3.left);
                         break;
+
                     case BlockSide.Right:
                         AssignVertices(new Vector3[] { rightTop0, rightTop1, rightBottom1, rightBottom0 });
                         AssignNormals(Vector3.right);
                         break;
+
                     case BlockSide.Front:
                         AssignVertices(new Vector3[] { rightBottom0, leftBottom0, leftTop0, rightTop0 });
                         AssignNormals(Vector3.forward);
                         break;
+
                     case BlockSide.Back:
                         AssignVertices(new Vector3[] { rightTop1, leftTop1, leftBottom1, rightBottom1 });
                         AssignNormals(Vector3.back);
@@ -339,37 +345,28 @@ namespace Voxel.World
                 MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
                 meshFilter.mesh = mesh;
             }
-            catch (System.Exception)
+            catch (NullReferenceException e)
             {
+                Debug.LogWarning(e);
                 // Do nothing if we have an error
             }
         }
 
-        #region Override Equals
-        public override bool Equals(object obj)
-        {
-            if (obj == null)
-            {
-                return false;
-            }
+        //#region Override Equals
+        //public override bool Equals(object obj)
+        //{
+        //    Block other = (Block)obj;
+        //    return blockType == other.blockType && blockPosition == other.blockPosition;
+        //}
 
-            Block other = (Block)obj;
-            if (blockType == other.blockType && blockPosition == other.blockPosition)
-            {
-                return true;
-            }
+        //public override int GetHashCode()
+        //    => blockType.GetHashCode().GetHashCode();
 
-            return false;
-        }
+        //public static bool operator ==(Block left, Block right)
+        //    => left.Equals(right);
 
-        public override int GetHashCode()
-            => blockType.GetHashCode().GetHashCode();
-
-        public static bool operator ==(Block left, Block right)
-            => left.Equals(right);
-
-        public static bool operator !=(Block left, Block right)
-            => !left.Equals(right);
-        #endregion
+        //public static bool operator !=(Block left, Block right)
+        //    => !left.Equals(right);
+        //#endregion
     }
 }

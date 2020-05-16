@@ -4,7 +4,7 @@ namespace Voxel.Utility
 {
     public abstract class SingletonBase : MonoBehaviour
     {
-        protected static bool ApplicationIsQuitting { get; set; }
+        protected static bool ApplicationIsClosing { get; set; }
     }
 
     public abstract class Singleton<T> : SingletonBase where T : Component
@@ -14,19 +14,26 @@ namespace Voxel.Utility
         {
             get
             {
-                if (ApplicationIsQuitting) { return null; }
-                else if (ValidateInstance()) { return BaseInstance; }
+                if (ApplicationIsClosing)
+                {
+                    return null;
+                }
+                else if (ValidateInstance())
+                {
+                    return BaseInstance;
+                }
                 else
                 {
                     LogInitializationError();
-                    return null;
+                    return default;
                 }
             }
         }
 
         protected virtual void Awake()
         {
-            if (!ValidateInstance()) { LogInitializationError(); }
+            ApplicationIsClosing = false;
+            if (!ValidateInstance()) LogInitializationError();
         }
 
         private static void LogInitializationError()
@@ -34,10 +41,10 @@ namespace Voxel.Utility
 
         private static bool ValidateInstance()
         {
-            if (BaseInstance != null) { return true; }
+            if (BaseInstance != null) return true;
 
             T[] instances = FindObjectsOfType<T>();
-            if (instances.Length <= 0)
+            if (instances.Length == 0)
             {
                 GameObject typeGameObject = new GameObject($"{typeof(T).Name}");
                 ActivateInstance(typeGameObject.AddComponent<T>());
@@ -55,7 +62,7 @@ namespace Voxel.Utility
 
                 ActivateInstance(instances[0]);
             }
-            else if (BaseInstance is null)
+            else if (BaseInstance == null)
             {
                 return false;
             }
@@ -67,19 +74,27 @@ namespace Voxel.Utility
         {
             BaseInstance = newInstance;
             newInstance.gameObject.SetActive(true);
-            DontDestroyOnLoad(newInstance.gameObject);
+            if (newInstance.transform.parent == null
+                && Application.isPlaying)
+            {
+                //DontDestroyOnLoad(newInstance.gameObject);
+            }
         }
 
-        private static void OnDestroy() => ApplicationIsQuitting = true;
+        protected virtual void OnDestroy() => ApplicationIsClosing = true;
 
-        private static void OnApplicationQuit() => ApplicationIsQuitting = true;
-
-        #if UNITY_ANDROID
-        protected virtual void OnApplicationPause(bool hasPaused)
+    #if UNITY_ANDROID || UNITY_IOS
+    protected virtual void OnApplicationPause(bool hasPaused)
+    {
+        if (hasPaused)
         {
-            if (hasPaused) { ApplicationIsQuitting = true; }
-            else { ApplicationIsQuitting = false; }
+            ApplicationIsClosing = true;
         }
-        #endif
+        else
+        {
+            ApplicationIsClosing = false;
+        }
+    }
+    #endif
     }
 }

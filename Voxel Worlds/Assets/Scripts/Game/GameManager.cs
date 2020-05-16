@@ -6,7 +6,12 @@ namespace Voxel.Game
     {
         public bool IsGameRunning { get; private set; } = true;
 
-        private void OnApplicationQuit()
+        private void OnEnable()
+        {
+            IsGameRunning = true;
+        }
+
+        private void OnDisable()
         {
             IsGameRunning = false;
         }

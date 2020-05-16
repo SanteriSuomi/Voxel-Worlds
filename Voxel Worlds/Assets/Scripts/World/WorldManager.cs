@@ -22,7 +22,6 @@ namespace Voxel.World
         /// Return the ID (as a string) of a chunk at position as specified in the ChunkDictionary.
         /// </summary>
         /// <param name="fromPosition"></param>
-        /// <returns></returns>
         public static string GetChunkID(Vector3 fromPosition)
         {
             return $"{(int)fromPosition.x} {(int)fromPosition.y} {(int)fromPosition.z}";
@@ -32,7 +31,6 @@ namespace Voxel.World
         /// Get the chunk by it's ID (string) normally used with the GetChunkID method.
         /// </summary>
         /// <param name="chunkID"></param>
-        /// <returns></returns>
         public Chunk GetChunkByID(string chunkID)
         {
             if (chunkDatabase.TryGetValue(chunkID, out Chunk chunk))
@@ -40,10 +38,8 @@ namespace Voxel.World
                 return chunk;
             }
 
-            return new Chunk(Vector3.zero, null, null)
-            {
-                ChunkStatus = ChunkStatus.Null // Structs cannot be null so assign a "null" enum
-            };
+            //return Chunk.GetEmptyChunk();
+            return null;
         }
 
         [Header("Misc. Dependencies")]
@@ -124,7 +120,7 @@ namespace Voxel.World
                     Vector3Int playerChunkPosition = new Vector3Int((int)lastBuildPosition.x,
                                                                     (int)lastBuildPosition.y,
                                                                     (int)lastBuildPosition.z) / ChunkSize;
-                    Debug.Log("building");
+
                     StartCoroutine(BuildNearPlayer(playerChunkPosition.x, playerChunkPosition.y, playerChunkPosition.z));
                 }
 
@@ -161,13 +157,13 @@ namespace Voxel.World
             Vector3Int chunkPosition = new Vector3Int(x * (ChunkSize - 1), // -1 from chunkSize because otherwise there would be 1 block gap between chunks. 
                                                       y * (ChunkSize - 1), // Cause unknown at this time.
                                                       z * (ChunkSize - 1));
+
             if (chunkPosition.y < 0) return; // Don't create chunks below bedrock
 
             string chunkID = GetChunkID(chunkPosition);
             Chunk currentChunk = GetChunkByID(chunkID);
             if (currentChunk == null)
             {
-                Debug.Log("chunk null");
                 currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
                 {
                     ChunkStatus = ChunkStatus.Draw // Signal that this chunk can be drawn
@@ -189,6 +185,7 @@ namespace Voxel.World
                 }
             }
 
+            // Build blocks
             foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
             {
                 if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
@@ -196,10 +193,10 @@ namespace Voxel.World
                     chunk.Value.BuildBlocks();
                     yield return null;
                 }
+                
+                // Remove old blocks here??
 
-                // TODO hide old chunks, assign chunkstatus.done
-
-                //chunk.Value.ChunkStatus = ChunkStatus.Done;
+                //chunk.Value.SetStatus(ChunkStatus.Done);
             }
         }
     }

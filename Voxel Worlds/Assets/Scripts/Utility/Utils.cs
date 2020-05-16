@@ -3,10 +3,9 @@ using UnityEngine;
 
 namespace Voxel.Utility
 {
-	#pragma warning disable IDE1006 // Methods correctly named
 	public static class Utils
 	{
-		private static readonly FastNoise noise = new FastNoise(Random.Range(0, 1000000)); // Remove random seed later //
+		private static readonly FastNoise noise = new FastNoise(Random.Range(0, 1000000)); // Remove random seed later
 		private static readonly MarchingCubes marchingCubes = new MarchingCubes(surface: 0);
 		private static readonly MarchingTertrahedron marchingTertrahedron = new MarchingTertrahedron(surface: 0);
 
@@ -27,7 +26,7 @@ namespace Voxel.Utility
 		private const float gain3D = 0.25f;
 		private const float scale3D = 1.2f;
 
-		public static float fBm2D(float x, float z)
+		public static float FBM2D(float x, float z)
 		{
 			float frequency = baseFrequency2D;
 			float amplitude = baseAmplitude2D;
@@ -43,7 +42,7 @@ namespace Voxel.Utility
 			return baseValue + (value * scale2D);
 		}
 
-		public static float fBm3D(float x, float y, float z)
+		public static float FBM3D(float x, float y, float z)
 		{
 			float frequency = baseFrequency3D;
 			float amplitude = baseAmplitude3D;
