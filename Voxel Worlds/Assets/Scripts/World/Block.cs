@@ -6,6 +6,7 @@ namespace Voxel.World
 {
     public enum BlockType
     {
+        None,
         Grass,
         Dirt,
         Stone,
@@ -92,7 +93,7 @@ namespace Voxel.World
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3 blockPosition; // Position relative to the chunk
-        public BlockType BlockType { get; } // What type this block is (for UV maps)
+        public BlockType BlockType { get; private set; } // What type this block is (for UV maps)
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
         {
@@ -111,9 +112,17 @@ namespace Voxel.World
             }
         }
 
-        public void BuildBlock()
+        public void BuildBlock(BlockType blockType)
         {
-            if (BlockType == BlockType.Air) return; // If block is any of these types, do not create it
+            if (BlockType == BlockType.Air )
+            {
+                return;
+            }
+
+            if (blockType != BlockType.None)
+            {
+                BlockType = blockType;
+            }
 
             int positionX = (int)blockPosition.x;
             int positionY = (int)blockPosition.y;
@@ -348,25 +357,7 @@ namespace Voxel.World
             catch (NullReferenceException e)
             {
                 Debug.LogWarning(e);
-                // Do nothing if we have an error
             }
         }
-
-        //#region Override Equals
-        //public override bool Equals(object obj)
-        //{
-        //    Block other = (Block)obj;
-        //    return blockType == other.blockType && blockPosition == other.blockPosition;
-        //}
-
-        //public override int GetHashCode()
-        //    => blockType.GetHashCode().GetHashCode();
-
-        //public static bool operator ==(Block left, Block right)
-        //    => left.Equals(right);
-
-        //public static bool operator !=(Block left, Block right)
-        //    => !left.Equals(right);
-        //#endregion
     }
 }

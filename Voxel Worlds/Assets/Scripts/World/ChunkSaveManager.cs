@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
@@ -11,23 +12,19 @@ namespace Voxel.Saving
     public class ChunkData
     {
         public BlockType[,,] BlockTypeData { get; }
+        public float X { get; }
+        public float Y { get; }
+        public float Z { get; }
 
         public ChunkData() { }
 
-        public ChunkData(Block[,,] blockData)
+        public ChunkData(BlockType[,,] blockTypeData, Vector3 chunkPosition)
         {
-            int chunkSize = WorldManager.Instance.ChunkSize;
-            BlockTypeData = new BlockType[chunkSize, chunkSize, chunkSize];
-            for (int x = 0; x < blockData.GetUpperBound(0); x++)
-            {
-                for (int y = 0; y < blockData.GetUpperBound(1); y++)
-                {
-                    for (int z = 0; z < blockData.GetUpperBound(2); z++)
-                    {
-                        BlockTypeData[x, y, z] = blockData[x, y, z].BlockType;
-                    }
-                }
-            }
+            X = chunkPosition.x;
+            Y = chunkPosition.y;
+            Z = chunkPosition.z;
+
+            BlockTypeData = blockTypeData;
         }
     }
 
@@ -44,14 +41,35 @@ namespace Voxel.Saving
             bf = new BinaryFormatter();
         }
 
-        public string BuildChunkFileName(Vector3 chunkPosition)
+        public string BuildChunkFileName(Vector3Int chunkPosition)
         {
             return $"{Application.persistentDataPath}/{saveFolderName}/Chunk_{chunkPosition}_{WorldManager.Instance.ChunkSize}.dat";
         }
 
+        public IEnumerator Save(Chunk chunk)
+        {
+            string chunkFile = BuildChunkFileName(new Vector3Int((int)chunk.GameObject.transform.position.x,
+                                                                 (int)chunk.GameObject.transform.position.y,
+                                                                 (int)chunk.GameObject.transform.position.z));
+            if (!File.Exists(chunkFile))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(chunkFile));
+            }
+
+            ChunkData newChunkData = new ChunkData(chunk.GetBlockTypeData(), chunk.GameObject.transform.position);
+            using (var fs = new FileStream(chunkFile, FileMode.Create))
+            {
+                bf.Serialize(fs, newChunkData);
+            }
+
+            yield break;
+        }
+
         public (bool, ChunkData) Load(Chunk chunk)
         {
-            string chunkFile = BuildChunkFileName(chunk.ChunkGameObject.transform.position);
+            string chunkFile = BuildChunkFileName(new Vector3Int((int)chunk.GameObject.transform.position.x,
+                                                                 (int)chunk.GameObject.transform.position.y,
+                                                                 (int)chunk.GameObject.transform.position.z));
             if (File.Exists(chunkFile))
             {
                 ChunkData chunkData;
@@ -66,30 +84,12 @@ namespace Voxel.Saving
             return (false, null);
         }
 
-        public bool Save(Chunk chunk, ChunkData chunkData)
+        public bool Exists(Chunk chunk)
         {
-            if (chunk == null || chunkData == null)
-            {
-                return false;
-            }
-
-            string chunkFile = BuildChunkFileName(chunk.ChunkGameObject.transform.position);
-            if (!File.Exists(chunkFile))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(chunkFile));
-            }
-            
-            using (var fs = new FileStream(chunkFile, FileMode.Create))
-            {
-                bf.Serialize(fs, chunkData);
-            }
-
-            return true;
-        }
-
-        public void BuildChunk(Chunk chunk)
-        {
-
+            string chunkFile = BuildChunkFileName(new Vector3Int((int)chunk.GameObject.transform.position.x,
+                                                                 (int)chunk.GameObject.transform.position.y,
+                                                                 (int)chunk.GameObject.transform.position.z));
+            return File.Exists(chunkFile);
         }
     }
 }
