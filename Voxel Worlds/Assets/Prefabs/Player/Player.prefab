@@ -124,11 +124,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9171768461920612257}
+  - component: {fileID: 3816025110728520974}
+  - component: {fileID: 1374924915}
   - component: {fileID: 9171768461920612262}
+  - component: {fileID: 1374924916}
   - component: {fileID: 9171768461920612260}
   - component: {fileID: 9171768461920612263}
-  - component: {fileID: 1374924916}
-  - component: {fileID: 1374924915}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -151,6 +152,46 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3816025110728520974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171768461920612256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba7056fe95dc26d4fbabc1ac542c9d3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1374924915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171768461920612256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 318e9d4f4068b6d40901ddfbf8354661, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
+    type: 2}
+  groundState: {fileID: 11400000, guid: aed401ad1553d3d448638c114dd240a3, type: 2}
+  rayDistance: 1
+  gravityMultiplier: 3
+  moveState: {fileID: 11400000, guid: 2ee9d5f9c3f8e794c881b48635f13e92, type: 2}
+  moveSpeed: 4
+  sprintSpeedMultiplier: 1.6
+  lookState: {fileID: 11400000, guid: 57b033d6c1fd7824bba28883e2d43541, type: 2}
+  lookSpeedMultiplier: 10
+  lookVerticalClampRange: 77.5
+  jumpState: {fileID: 11400000, guid: c18e0274860fb74479677f3f0bb6346b, type: 2}
+  jumpMaxHeight: 1.35
+  jumpMaxTime: 0.75
+  jumpStartSpeed: 17.5
+  jumpSpeedReduction: 30
 --- !u!143 &9171768461920612262
 CharacterController:
   m_ObjectHideFlags: 0
@@ -169,6 +210,37 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1374924916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171768461920612256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 05e16d6681fa4cd4c8133cddb266ce9a,
+    type: 3}
+  m_NotificationBehavior: 3
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!33 &9171768461920612260
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -216,62 +288,3 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!114 &1374924916
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9171768461920612256}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Actions: {fileID: -944628639613478452, guid: 05e16d6681fa4cd4c8133cddb266ce9a,
-    type: 3}
-  m_NotificationBehavior: 3
-  m_UIInputModule: {fileID: 0}
-  m_DeviceLostEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_DeviceRegainedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ControlsChangedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ActionEvents: []
-  m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: 
-  m_DefaultActionMap: Player
-  m_SplitScreenIndex: -1
-  m_Camera: {fileID: 0}
---- !u!114 &1374924915
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9171768461920612256}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 318e9d4f4068b6d40901ddfbf8354661, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
-    type: 2}
-  groundState: {fileID: 11400000, guid: aed401ad1553d3d448638c114dd240a3, type: 2}
-  rayDistance: 1
-  gravityMultiplier: 3
-  moveState: {fileID: 11400000, guid: 2ee9d5f9c3f8e794c881b48635f13e92, type: 2}
-  moveSpeed: 4
-  sprintSpeedMultiplier: 1.6
-  lookState: {fileID: 11400000, guid: 57b033d6c1fd7824bba28883e2d43541, type: 2}
-  lookSpeedMultiplier: 10
-  lookVerticalClampRange: 77.5
-  jumpState: {fileID: 11400000, guid: c18e0274860fb74479677f3f0bb6346b, type: 2}
-  jumpMaxHeight: 1.35
-  jumpMaxTime: 0.75
-  jumpStartSpeed: 17.5
-  jumpSpeedReduction: 30

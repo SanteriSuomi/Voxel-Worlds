@@ -6,7 +6,6 @@ namespace Voxel.World
 {
     public enum ChunkStatus
     {
-        Null,
         None,
         Draw,
         Done,
@@ -30,7 +29,6 @@ namespace Voxel.World
         {
             return blockMatrixData;
         }
-
 
         public Chunk(Vector3 position, Material material, Transform parent, bool emptyChunk)
         {
@@ -60,10 +58,8 @@ namespace Voxel.World
         // Build all the blocks for this chunk object
         public void BuildChunk()
         {
-            if (ChunkSaveManager.Instance.Exists(this)) return; // Return if chunk data has been saved on the disk.
-
+            (bool saveExists, ChunkData chunkData) = SaveManager.Instance.Load(this);
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
-            // Populate the voxel chunk data
             for (int x = 0; x < chunkSize; x++)
             {
                 for (int z = 0; z < chunkSize; z++)
@@ -74,6 +70,12 @@ namespace Voxel.World
                     {
                         Vector3 localPosition = new Vector3(x, y, z);
                         int worldPositionY = (int)(y + GameObject.transform.position.y);
+
+                        if (saveExists)
+                        {
+                            NewBlock(chunkData.BlockTypeData[x, y, z], x, z, y, localPosition);
+                            continue;
+                        }
 
                         // Bedrock
                         if (worldPositionY == 0)
@@ -138,23 +140,6 @@ namespace Voxel.World
 
         public void BuildBlocks()
         {
-            (bool saveExists, ChunkData chunkData) = ChunkSaveManager.Instance.Load(this);
-            if (saveExists)
-            {
-                BuildBlocksWith(chunkData);
-            }
-            else
-            {
-                BuildBlocksWith(null);
-            }
-
-            CombineBlocks();
-            AddCollider();
-            ChunkStatus = ChunkStatus.Keep;
-        }
-
-        private void BuildBlocksWith(ChunkData newChunkData)
-        {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
             for (int x = 0; x < chunkSize; x++)
             {
@@ -164,23 +149,18 @@ namespace Voxel.World
                     {
                         if (chunkData[x, y, z] == null)
                         {
+                            Debug.LogWarning($"chunkData {(x, y, z)}");
                             return;
                         }
 
-                        BlockType currentBlockType;
-                        if (newChunkData != null)
-                        {
-                            currentBlockType = newChunkData.BlockTypeData[x, y, z];
-                        }
-                        else
-                        {
-                            currentBlockType = BlockType.None;
-                        }
-
-                        chunkData[x, y, z].BuildBlock(currentBlockType);
+                        chunkData[x, y, z].BuildBlock();
                     }
                 }
             }
+
+            CombineBlocks();
+            AddCollider();
+            ChunkStatus = ChunkStatus.Keep;
         }
 
         // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches

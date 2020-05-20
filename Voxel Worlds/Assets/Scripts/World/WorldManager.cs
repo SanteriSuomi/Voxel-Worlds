@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Voxel.Game;
 using Voxel.Player;
@@ -12,7 +13,7 @@ namespace Voxel.World
     public enum WorldStatus
     {
         Idle,
-        Modifying
+        Processing
     }
 
     public class WorldManager : Singleton<WorldManager>
@@ -33,7 +34,7 @@ namespace Voxel.World
         /// Get the chunk by it's ID (string) normally used with the GetChunkID method.
         /// </summary>
         /// <param name="chunkID"></param>
-        public Chunk GetChunkByID(string chunkID)
+        public Chunk GetChunkFromID(string chunkID)
         {
             if (chunkDatabase.TryGetValue(chunkID, out Chunk chunk))
             {
@@ -60,19 +61,24 @@ namespace Voxel.World
         [SerializeField]
         private int initialBuildRadius = 8;
         [SerializeField]
-        private float buildNearPlayerDistanceThresholdMultiplier = 0.5f;
+        private float buildNearPlayerDistanceMultiplier = 0.5f;
         [SerializeField]
         private float removeOldChunksDistanceMultiplier = 2;
+        [SerializeField]
+        private int amountOfBuildsUntilRemoving = 3;
 
         [Header("World Generation Misc. Settings")]
         [SerializeField]
         private int loopsUntilWaitingAFrame = 5;
+        [SerializeField]
+        private int buildForwardMultiplier = 5;
 
         public WorldStatus WorldStatus { get; private set; }
         public int Radius { get { return buildRadius; } }
         public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
         public int BuildWorldProgress { get; private set; } // Used for loading bar
         private int chunkStatusDoneAmount; // Amount of chunks with the "completed" status, used by loading bar.
+        private int removeOldChunksIndex;
 
         private Vector3 lastBuildPosition; // Keep track of where chunks we build around player last time
 
@@ -85,7 +91,7 @@ namespace Voxel.World
 
         public void InitializeWorld()
         {
-            WorldStatus = WorldStatus.Modifying;
+            WorldStatus = WorldStatus.Processing;
             StartCoroutine(InitializeWorldCoroutine());
         }
 
@@ -97,17 +103,18 @@ namespace Voxel.World
             lastBuildPosition = playerInitialPosition;
             Vector3Int playerChunkPosition = playerInitialPosition / ChunkSize;
 
-            StartCoroutine(UpdateProgressBar());
+            StartCoroutine(UpdateWorldProgress());
             yield return StartCoroutine(InitializeChunksInRadius(playerChunkPosition.x,
                                                                  playerChunkPosition.y,
                                                                  playerChunkPosition.z,
                                                                  initialBuildRadius));
+
             yield return StartCoroutine(BuildInitializedChunks());
             CompleteInitialization(playerInitialPosition);
             StartCoroutine(UpdateLoop());
         }
 
-        private IEnumerator UpdateProgressBar()
+        private IEnumerator UpdateWorldProgress()
         {
             while (BuildWorldProgress < 100)
             {
@@ -128,13 +135,13 @@ namespace Voxel.World
             while (GameManager.Instance.IsGameRunning)
             {
                 float distanceFromLastBuildPosition = (lastBuildPosition - playerTransform.position).magnitude;
-                if (distanceFromLastBuildPosition > ChunkSize * buildNearPlayerDistanceThresholdMultiplier)
+                if (distanceFromLastBuildPosition > ChunkSize * buildNearPlayerDistanceMultiplier)
                 {
                     lastBuildPosition = playerTransform.position;
-                    Vector3Int playerChunkPosition = new Vector3Int((int)lastBuildPosition.x,
+                    Vector3 directionMultiplier = playerTransform.forward * ChunkSize * buildForwardMultiplier;
+                    Vector3Int playerChunkPosition = new Vector3Int((int)(lastBuildPosition.x + directionMultiplier.x),
                                                                     (int)lastBuildPosition.y,
-                                                                    (int)lastBuildPosition.z) / ChunkSize;
-
+                                                                    (int)(lastBuildPosition.z + directionMultiplier.z)) / ChunkSize;
                     yield return StartCoroutine(ProcessChunksNearPlayer(playerChunkPosition.x,
                                                                         playerChunkPosition.y,
                                                                         playerChunkPosition.z));
@@ -146,10 +153,16 @@ namespace Voxel.World
 
         private IEnumerator ProcessChunksNearPlayer(int x, int y, int z)
         {
-            WorldStatus = WorldStatus.Modifying;
+            WorldStatus = WorldStatus.Processing;
             yield return StartCoroutine(InitializeChunksInRadius(x, y, z, buildRadius));
             yield return StartCoroutine(BuildInitializedChunks());
-            yield return StartCoroutine(RemoveOldChunks());
+            removeOldChunksIndex++;
+            if (removeOldChunksIndex >= amountOfBuildsUntilRemoving)
+            {
+                removeOldChunksIndex = 0;
+                StartCoroutine(RemoveOldChunks());
+            }
+
             WorldStatus = WorldStatus.Idle;
         }
 
@@ -179,13 +192,13 @@ namespace Voxel.World
                                                       y * (ChunkSize - 1), // Cause unknown at this time.
                                                       z * (ChunkSize - 1));
 
-            if (chunkPosition.y < 0) return; // Don't create chunks below bedrock
+            if (chunkPosition.y < 0) return; // Don't create chunks below a certain threshold (bedrock)
 
             string chunkID = GetChunkID(chunkPosition);
-            Chunk currentChunk = GetChunkByID(chunkID);
+            Chunk currentChunk = GetChunkFromID(chunkID);
             if (currentChunk == null)
             {
-                currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform, false)
+                currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform, emptyChunk: false)
                 {
                     ChunkStatus = ChunkStatus.Draw // Signal that this chunk can be drawn
                 };
@@ -201,11 +214,12 @@ namespace Voxel.World
             int waitFrameCounter = 0;
 
             // Build chunks
-            foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
+            for (int i = 0; i < chunkDatabase.Count; i++)
             {
-                if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+                Chunk chunk = chunkDatabase.ElementAt(i).Value;
+                if (chunk.ChunkStatus == ChunkStatus.Draw)
                 {
-                    chunk.Value.BuildChunk();
+                    chunk.BuildChunk();
                     object obj = CheckForFrameWait(ref waitFrameCounter);
                     if (obj is null)
                     {
@@ -215,11 +229,12 @@ namespace Voxel.World
             }
 
             // Build blocks
-            foreach (KeyValuePair<string, Chunk> chunk in chunkDatabase)
+            for (int i = 0; i < chunkDatabase.Count; i++)
             {
-                if (chunk.Value.ChunkStatus == ChunkStatus.Draw)
+                Chunk chunk = chunkDatabase.ElementAt(i).Value;
+                if (chunk.ChunkStatus == ChunkStatus.Draw)
                 {
-                    chunk.Value.BuildBlocks();
+                    chunk.BuildBlocks();
                     object obj = CheckForFrameWait(ref waitFrameCounter);
                     if (obj is null)
                     {
@@ -227,16 +242,16 @@ namespace Voxel.World
                     }
                 }
 
-                chunk.Value.ChunkStatus = ChunkStatus.Done;
+                chunk.ChunkStatus = ChunkStatus.Done;
                 chunkStatusDoneAmount++;
 
                 if (PlayerManager.Instance.ActivePlayer != null
-                    && chunk.Value.GameObject != null)
+                    && chunk.GameObject != null)
                 {
-                    float distanceToChunk = (PlayerManager.Instance.ActivePlayer.position - chunk.Value.GameObject.transform.position).magnitude;
-                    if (distanceToChunk > Radius * ChunkSize * removeOldChunksDistanceMultiplier)
+                    float distanceToChunk = (PlayerManager.Instance.ActivePlayer.position - chunk.GameObject.transform.position).magnitude;
+                    if (distanceToChunk > ChunkSize * removeOldChunksDistanceMultiplier)
                     {
-                        chunksToRemove.Push(chunk.Key);
+                        chunksToRemove.Push(chunkDatabase.ElementAt(i).Key);
                     }
                 }
             }
@@ -252,8 +267,7 @@ namespace Voxel.World
                 string chunkToRemoveID = chunksToRemove.Pop();
                 if (chunkDatabase.TryGetValue(chunkToRemoveID, out Chunk chunk))
                 {
-                    yield return StartCoroutine(ChunkSaveManager.Instance.Save(chunk));
-                    Destroy(chunk.GameObject);
+                    StartCoroutine(SaveManager.Instance.Save(chunk));
                     chunkDatabase.TryRemove(chunkToRemoveID, out _);
                     object obj = CheckForFrameWait(ref waitFrameCounter);
                     if (obj is null)

@@ -93,7 +93,7 @@ namespace Voxel.World
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3 blockPosition; // Position relative to the chunk
-        public BlockType BlockType { get; private set; } // What type this block is (for UV maps)
+        public BlockType BlockType { get; set; } // What type this block is (for UV maps)
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
         {
@@ -112,16 +112,11 @@ namespace Voxel.World
             }
         }
 
-        public void BuildBlock(BlockType blockType)
+        public void BuildBlock()
         {
-            if (BlockType == BlockType.Air )
+            if (BlockType == BlockType.Air)
             {
                 return;
-            }
-
-            if (blockType != BlockType.None)
-            {
-                BlockType = blockType;
             }
 
             int positionX = (int)blockPosition.x;
@@ -179,8 +174,8 @@ namespace Voxel.World
 
                     // Finally check if this chunk exists by consulting the chunk dictionary from it's ID
                     string chunkID = WorldManager.Instance.GetChunkID(neighbouringChunkPosition);
-                    Chunk chunk = WorldManager.Instance.GetChunkByID(chunkID);
-                    if (chunk.ChunkStatus != ChunkStatus.Null)
+                    Chunk chunk = WorldManager.Instance.GetChunkFromID(chunkID);
+                    if (chunk != null)
                     {
                         chunkData = chunk.GetChunkData();
                     }
@@ -212,7 +207,7 @@ namespace Voxel.World
                 // We've checked everything absolutely isn't a neighbour
                 return false;
             }
-            catch (Exception)
+            catch (NullReferenceException)
             {
                 // On any error we return false
                 return false;

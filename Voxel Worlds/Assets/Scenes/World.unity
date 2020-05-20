@@ -265,11 +265,13 @@ MonoBehaviour:
     type: 3}
   chunkRowHeight: 4
   chunkSize: 8
-  buildRadius: 3
+  buildRadius: 5
   initialBuildRadius: 5
-  buildNearPlayerDistanceThresholdMultiplier: 0.25
-  removeOldChunksDistanceMultiplier: 2
-  loopsUntilWaitingAFrame: 2
+  buildNearPlayerDistanceMultiplier: 0.25
+  removeOldChunksDistanceMultiplier: 10
+  amountOfBuildsUntilRemoving: 2
+  loopsUntilWaitingAFrame: 3
+  buildForwardMultiplier: 4
 --- !u!4 &185304116
 Transform:
   m_ObjectHideFlags: 0

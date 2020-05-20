@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 
-public class inputActionsController : IInputActionCollection, IDisposable
+public class @InputActions : IInputActionCollection, IDisposable
 {
     public InputActionAsset asset { get; }
-    public inputActionsController()
+    public @InputActions()
     {
         asset = InputActionAsset.FromJson(@"{
     ""name"": ""InputActions"",
@@ -783,8 +783,8 @@ public class inputActionsController : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_Jump;
     public struct PlayerActions
     {
-        private inputActionsController m_Wrapper;
-        public PlayerActions(inputActionsController wrapper) { m_Wrapper = wrapper; }
+        private @InputActions m_Wrapper;
+        public PlayerActions(@InputActions wrapper) { m_Wrapper = wrapper; }
         public InputAction @Move => m_Wrapper.m_Player_Move;
         public InputAction @Look => m_Wrapper.m_Player_Look;
         public InputAction @Sprint => m_Wrapper.m_Player_Sprint;
@@ -847,8 +847,8 @@ public class inputActionsController : IInputActionCollection, IDisposable
     private readonly InputAction m_UI_TrackedDeviceSelect;
     public struct UIActions
     {
-        private inputActionsController m_Wrapper;
-        public UIActions(inputActionsController wrapper) { m_Wrapper = wrapper; }
+        private @InputActions m_Wrapper;
+        public UIActions(@InputActions wrapper) { m_Wrapper = wrapper; }
         public InputAction @Navigate => m_Wrapper.m_UI_Navigate;
         public InputAction @Submit => m_Wrapper.m_UI_Submit;
         public InputAction @Cancel => m_Wrapper.m_UI_Cancel;

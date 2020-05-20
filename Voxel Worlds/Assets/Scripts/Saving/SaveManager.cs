@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
@@ -8,27 +7,7 @@ using Voxel.World;
 
 namespace Voxel.Saving
 {
-    [Serializable]
-    public class ChunkData
-    {
-        public BlockType[,,] BlockTypeData { get; }
-        public float X { get; }
-        public float Y { get; }
-        public float Z { get; }
-
-        public ChunkData() { }
-
-        public ChunkData(BlockType[,,] blockTypeData, Vector3 chunkPosition)
-        {
-            X = chunkPosition.x;
-            Y = chunkPosition.y;
-            Z = chunkPosition.z;
-
-            BlockTypeData = blockTypeData;
-        }
-    }
-
-    public class ChunkSaveManager : Singleton<ChunkSaveManager>
+    public class SaveManager : Singleton<SaveManager>
     {
         private BinaryFormatter bf;
 
@@ -43,7 +22,7 @@ namespace Voxel.Saving
 
         public string BuildChunkFileName(Vector3Int chunkPosition)
         {
-            return $"{Application.persistentDataPath}/{saveFolderName}/Chunk_{chunkPosition}_{WorldManager.Instance.ChunkSize}.dat";
+            return $"{Application.persistentDataPath}/{saveFolderName}/Chunk_{chunkPosition}_{WorldManager.Instance.ChunkSize}_{WorldManager.Instance.Radius}.dat";
         }
 
         public IEnumerator Save(Chunk chunk)
@@ -62,7 +41,13 @@ namespace Voxel.Saving
                 bf.Serialize(fs, newChunkData);
             }
 
+            Destroy(chunk.GameObject);
             yield break;
+        }
+
+        public void Save<T>(T obj)
+        {
+
         }
 
         public (bool, ChunkData) Load(Chunk chunk)
@@ -82,6 +67,11 @@ namespace Voxel.Saving
             }
 
             return (false, null);
+        }
+
+        public (bool, T) Load<T>()
+        {
+            return default;
         }
 
         public bool Exists(Chunk chunk)
