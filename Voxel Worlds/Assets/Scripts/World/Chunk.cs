@@ -17,6 +17,10 @@ namespace Voxel.World
         public ChunkStatus ChunkStatus { get; set; }
 
         public GameObject GameObject { get; } // This is the chunk's gameobject in the world
+        public MeshFilter MeshFilter { get; private set; }
+        public MeshRenderer MeshRenderer { get; private set; }
+        public Collider Collider { get; private set; }
+
         private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
         private readonly Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
         public Block[,,] GetChunkData()
@@ -177,15 +181,17 @@ namespace Voxel.World
             }
 
             MeshFilter parentMeshFilter = GameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
+            MeshFilter = parentMeshFilter;
             parentMeshFilter.mesh = new Mesh();
             parentMeshFilter.mesh.CombineMeshes(combinedMeshes, true, true);
             MeshRenderer parentMeshRenderer = GameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
+            MeshRenderer = parentMeshRenderer;
             parentMeshRenderer.material = chunkMaterial;
         }
 
         private void AddCollider()
         {
-            GameObject.AddComponent(typeof(MeshCollider));
+            Collider = GameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
         }
     }
 }

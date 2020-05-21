@@ -93,6 +93,7 @@ namespace Voxel.World
         public void InitializeWorld()
         {
             WorldStatus = WorldStatus.Processing;
+            PlayerManager.Instance.LoadPlayer();
             StartCoroutine(InitializeWorldCoroutine());
         }
 
@@ -105,7 +106,7 @@ namespace Voxel.World
                                                                  playerChunkPosition.z,
                                                                  initialBuildRadius));
             yield return StartCoroutine(BuildInitializedChunks());
-            EndInitialization();
+            EndWorldInitialize();
             StartCoroutine(UpdateLoop()); // Start the main update loop
         }
 
@@ -113,10 +114,9 @@ namespace Voxel.World
         {
             Vector3 initialPosition = PlayerManager.Instance.InitialPosition;
             lastBuildPosition = initialPosition;
-            Vector3Int playerChunkPosition = new Vector3Int((int)initialPosition.x,
-                                                            (int)initialPosition.y,
-                                                            (int)initialPosition.z) / ChunkSize;
-            return playerChunkPosition;
+            return new Vector3Int((int)initialPosition.x,
+                                  (int)initialPosition.y,
+                                  (int)initialPosition.z) / ChunkSize;
         }
 
         private IEnumerator UpdateWorldBuildProgress()
@@ -128,7 +128,7 @@ namespace Voxel.World
             }
         }
 
-        private void EndInitialization()
+        private void EndWorldInitialize()
         {
             WorldStatus = WorldStatus.Idle;
             EventManager.TriggerEvent("BuildWorldComplete");

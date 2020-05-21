@@ -126,6 +126,7 @@ GameObject:
   - component: {fileID: 9171768461920612257}
   - component: {fileID: 3816025110728520974}
   - component: {fileID: 1374924915}
+  - component: {fileID: 8269590369259728606}
   - component: {fileID: 9171768461920612262}
   - component: {fileID: 1374924916}
   - component: {fileID: 9171768461920612260}
@@ -192,6 +193,20 @@ MonoBehaviour:
   jumpMaxTime: 0.75
   jumpStartSpeed: 17.5
   jumpSpeedReduction: 30
+--- !u!114 &8269590369259728606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171768461920612256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba8bf01e1197f0b4a95ad5a95629e40d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
+    type: 2}
 --- !u!143 &9171768461920612262
 CharacterController:
   m_ObjectHideFlags: 0

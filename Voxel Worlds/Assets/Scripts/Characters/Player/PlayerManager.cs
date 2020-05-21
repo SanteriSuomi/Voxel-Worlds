@@ -38,12 +38,7 @@ namespace Voxel.Player
             InitialRotation = Quaternion.identity;
         }
 
-        private void OnEnable()
-        {
-            LoadPlayer();
-        }
-
-        private void LoadPlayer()
+        public void LoadPlayer()
         {
             (bool loaded, CharacterData playerData) = SaveManager.Instance.Load<CharacterData>(SaveManager.Instance.BuildFilePath(playerSaveFileName));
             PlayerLoaded = loaded;

@@ -8,6 +8,8 @@ namespace Voxel.UI
     {
         [SerializeField]
         private GameObject uiCamera = default;
+        [SerializeField]
+        private GameObject crosshair = default;
 
         private void Awake()
         {
@@ -18,6 +20,7 @@ namespace Voxel.UI
         protected override void OnStateEnable()
         {
             Cursor.lockState = CursorLockMode.Locked;
+            crosshair.SetActive(true);
         }
 
         private void DisableMenuCamera()

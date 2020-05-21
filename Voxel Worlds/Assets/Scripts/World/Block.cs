@@ -89,11 +89,17 @@ namespace Voxel.World
         private static Vector3 leftTop1 = new Vector3(-0.5f, 0.5f, -0.5f);
         #endregion
 
-        public bool IsSolid { get; } // Bool for checking if this block is solid material
+        public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3 blockPosition; // Position relative to the chunk
+
         public BlockType BlockType { get; set; } // What type this block is (for UV maps)
+        public void SetType(BlockType type)
+        {
+            BlockType = type;
+            IsSolid = BlockType == BlockType.Air;
+        }
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
         {
