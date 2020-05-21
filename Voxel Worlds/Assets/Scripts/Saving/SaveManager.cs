@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using Voxel.Utility;
@@ -17,24 +18,36 @@ namespace Voxel.Saving
         protected override void Awake()
         {
             base.Awake();
-            bf = new BinaryFormatter();
+            var surrogates = new SurrogateSelector();
+            surrogates.AddSurrogate(typeof(Vector3), new StreamingContext(StreamingContextStates.All), new Vector3Surrogate());
+            surrogates.AddSurrogate(typeof(Quaternion), new StreamingContext(StreamingContextStates.All), new QuaternionSurrogate());
+            bf = new BinaryFormatter
+            {
+                SurrogateSelector = surrogates
+            };
         }
 
-        public string BuildChunkFileName(Vector3Int chunkPosition)
+        public string BuildChunkFilePath(Vector3Int chunkPosition)
         {
-            return $"{Application.persistentDataPath}/{saveFolderName}/Chunk_{chunkPosition}_{WorldManager.Instance.ChunkSize}_{WorldManager.Instance.Radius}.dat";
+            return $"{Application.persistentDataPath}/{saveFolderName}/ChunkData/Chunk_{chunkPosition}_{WorldManager.Instance.ChunkSize}_{WorldManager.Instance.Radius}.dat";
         }
 
+        public string BuildFilePath(string fileName)
+        {
+            return $"{Application.persistentDataPath}/{saveFolderName}/{fileName}";
+        }
+
+        /// <summary>
+        /// Save a chunk to it's own dedicated file.
+        /// </summary>
+        /// <param name="chunk"></param>
         public IEnumerator Save(Chunk chunk)
         {
-            string chunkFile = BuildChunkFileName(new Vector3Int((int)chunk.GameObject.transform.position.x,
+            string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
                                                                  (int)chunk.GameObject.transform.position.y,
                                                                  (int)chunk.GameObject.transform.position.z));
-            if (!File.Exists(chunkFile))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(chunkFile));
-            }
 
+            ValidateDirectory(chunkFile);
             ChunkData newChunkData = new ChunkData(chunk.GetBlockTypeData(), chunk.GameObject.transform.position);
             using (var fs = new FileStream(chunkFile, FileMode.Create))
             {
@@ -45,14 +58,29 @@ namespace Voxel.Saving
             yield break;
         }
 
-        public void Save<T>(T obj)
+        /// <summary>
+        /// Save any object to a path of your choosing.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj">Object to save.</param>
+        /// <param name="path">Path to save the object to.</param>
+        public void Save<T>(T obj, string path)
         {
-
+            ValidateDirectory(path);
+            using (var fs = new FileStream(path, FileMode.Create))
+            {
+                bf.Serialize(fs, obj);
+            }
         }
 
+        /// <summary>
+        /// Load a chunk.
+        /// </summary>
+        /// <param name="chunk"></param>
+        /// <returns>Tuple that includes whether or not the load was succesfull and the chunk's data if so.</returns>
         public (bool, ChunkData) Load(Chunk chunk)
         {
-            string chunkFile = BuildChunkFileName(new Vector3Int((int)chunk.GameObject.transform.position.x,
+            string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
                                                                  (int)chunk.GameObject.transform.position.y,
                                                                  (int)chunk.GameObject.transform.position.z));
             if (File.Exists(chunkFile))
@@ -69,17 +97,46 @@ namespace Voxel.Saving
             return (false, null);
         }
 
-        public (bool, T) Load<T>()
+        /// <summary>
+        /// Load an objet.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="path"></param>
+        /// <returns>Bool that indicates load success and the objet itself.</returns>
+        public (bool, T) Load<T>(string path)
         {
+            if (File.Exists(path))
+            {
+                T data;
+                using (var fs = new FileStream(path, FileMode.Open))
+                {
+                    data = (T)bf.Deserialize(fs);
+                }
+
+                return (true, data);
+            }
+
+            Debug.LogWarning($"File {path} does not exist!");
             return default;
         }
 
+        /// <summary>
+        /// Is a particular chunk saved?
+        /// </summary>
+        /// <param name="chunk"></param>
         public bool Exists(Chunk chunk)
         {
-            string chunkFile = BuildChunkFileName(new Vector3Int((int)chunk.GameObject.transform.position.x,
+            return File.Exists(BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
                                                                  (int)chunk.GameObject.transform.position.y,
-                                                                 (int)chunk.GameObject.transform.position.z));
-            return File.Exists(chunkFile);
+                                                                 (int)chunk.GameObject.transform.position.z)));
+        }
+
+        private static void ValidateDirectory(string file)
+        {
+            if (!Directory.Exists(Path.GetDirectoryName(file)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(file));
+            }
         }
     }
 }

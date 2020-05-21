@@ -77,6 +77,7 @@ namespace Voxel.World
         public int Radius { get { return buildRadius; } }
         public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
         public int BuildWorldProgress { get; private set; } // Used for loading bar
+
         private int chunkStatusDoneAmount; // Amount of chunks with the "completed" status, used by loading bar.
         private int removeOldChunksIndex;
 
@@ -97,24 +98,28 @@ namespace Voxel.World
 
         private IEnumerator InitializeWorldCoroutine()
         {
-            Vector3Int playerInitialPosition = new Vector3Int(0,
-                                                              MaxWorldHeight / 2,
-                                                              0);
-            lastBuildPosition = playerInitialPosition;
-            Vector3Int playerChunkPosition = playerInitialPosition / ChunkSize;
-
-            StartCoroutine(UpdateWorldProgress());
+            Vector3Int playerChunkPosition = CalculateInitialPositions();
+            StartCoroutine(UpdateWorldBuildProgress());
             yield return StartCoroutine(InitializeChunksInRadius(playerChunkPosition.x,
                                                                  playerChunkPosition.y,
                                                                  playerChunkPosition.z,
                                                                  initialBuildRadius));
-
             yield return StartCoroutine(BuildInitializedChunks());
-            CompleteInitialization(playerInitialPosition);
-            StartCoroutine(UpdateLoop());
+            EndInitialization();
+            StartCoroutine(UpdateLoop()); // Start the main update loop
         }
 
-        private IEnumerator UpdateWorldProgress()
+        private Vector3Int CalculateInitialPositions()
+        {
+            Vector3 initialPosition = PlayerManager.Instance.InitialPosition;
+            lastBuildPosition = initialPosition;
+            Vector3Int playerChunkPosition = new Vector3Int((int)initialPosition.x,
+                                                            (int)initialPosition.y,
+                                                            (int)initialPosition.z) / ChunkSize;
+            return playerChunkPosition;
+        }
+
+        private IEnumerator UpdateWorldBuildProgress()
         {
             while (BuildWorldProgress < 100)
             {
@@ -123,11 +128,11 @@ namespace Voxel.World
             }
         }
 
-        private void CompleteInitialization(Vector3 playerInitialPosition)
+        private void EndInitialization()
         {
             WorldStatus = WorldStatus.Idle;
             EventManager.TriggerEvent("BuildWorldComplete");
-            playerTransform = PlayerManager.Instance.SpawnPlayer(playerInitialPosition);
+            playerTransform = PlayerManager.Instance.SpawnPlayer();
         }
 
         private IEnumerator UpdateLoop()
@@ -137,11 +142,13 @@ namespace Voxel.World
                 float distanceFromLastBuildPosition = (lastBuildPosition - playerTransform.position).magnitude;
                 if (distanceFromLastBuildPosition > ChunkSize * buildNearPlayerDistanceMultiplier)
                 {
+                    PlayerManager.Instance.SavePlayer();
                     lastBuildPosition = playerTransform.position;
                     Vector3 directionMultiplier = playerTransform.forward * ChunkSize * buildForwardMultiplier;
                     Vector3Int playerChunkPosition = new Vector3Int((int)(lastBuildPosition.x + directionMultiplier.x),
                                                                     (int)lastBuildPosition.y,
                                                                     (int)(lastBuildPosition.z + directionMultiplier.z)) / ChunkSize;
+
                     yield return StartCoroutine(ProcessChunksNearPlayer(playerChunkPosition.x,
                                                                         playerChunkPosition.y,
                                                                         playerChunkPosition.z));

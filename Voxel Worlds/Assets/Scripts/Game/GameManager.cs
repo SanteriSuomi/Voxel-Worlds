@@ -4,7 +4,7 @@ namespace Voxel.Game
 {
     public class GameManager : Singleton<GameManager>
     {
-        public bool IsGameRunning { get; private set; } = true;
+        public bool IsGameRunning { get; private set; }
 
         private void OnEnable()
         {

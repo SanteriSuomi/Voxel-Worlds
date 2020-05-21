@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
+using Voxel.Characters.Saving;
+using Voxel.Saving;
 using Voxel.Utility;
+using Voxel.World;
 
 namespace Voxel.Player
 {
@@ -13,10 +16,52 @@ namespace Voxel.Player
         private float playerSpawnOffset = 1;
         [SerializeField]
         private float rayHitSpawnOffset = 2;
+        [SerializeField]
+        private string playerSaveFileName = "PlayerData.dat";
 
-        public Transform SpawnPlayer(Vector3 atPosition)
+        public bool PlayerLoaded { get; private set; }
+
+        /// <summary>
+        /// Contains the loaded position if one exists, otherwise contains a default raycast position to determine initial player position.
+        /// </summary>
+        public Vector3 InitialPosition { get; private set; }
+
+        /// <summary>
+        /// Contains the loaded rotation if one exists, otherwise contains a default identity rotation.
+        /// </summary>
+        public Quaternion InitialRotation { get; private set; }
+
+        protected override void Awake()
         {
-            bool hitRay = Physics.Raycast(atPosition, Vector3.down, out RaycastHit hitInfo, atPosition.y * rayHitSpawnOffset);
+            base.Awake();
+            InitialPosition = new Vector3(0, WorldManager.Instance.MaxWorldHeight / 2, 0);
+            InitialRotation = Quaternion.identity;
+        }
+
+        private void OnEnable()
+        {
+            LoadPlayer();
+        }
+
+        private void LoadPlayer()
+        {
+            (bool loaded, CharacterData playerData) = SaveManager.Instance.Load<CharacterData>(SaveManager.Instance.BuildFilePath(playerSaveFileName));
+            PlayerLoaded = loaded;
+            if (loaded)
+            {
+                InitialPosition = playerData.Position;
+                InitialRotation = playerData.Rotation;
+            }
+        }
+
+        public Transform SpawnPlayer()
+        {
+            if (PlayerLoaded)
+            {
+                return InstantiatePlayer(InitialPosition, InitialRotation);
+            }
+
+            bool hitRay = Physics.Raycast(InitialPosition, Vector3.down, out RaycastHit hitInfo, InitialPosition.y * rayHitSpawnOffset);
             Vector3 spawnPosition;
             if (hitRay)
             {
@@ -24,12 +69,23 @@ namespace Voxel.Player
             }
             else
             {
-                spawnPosition = atPosition;
+                spawnPosition = InitialPosition;
             }
 
-            GameObject player = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+            return InstantiatePlayer(spawnPosition, Quaternion.identity);
+        }
+
+        private Transform InstantiatePlayer(Vector3 position, Quaternion rotation)
+        {
+            GameObject player = Instantiate(playerPrefab, position, rotation);
             ActivePlayer = player.transform;
             return ActivePlayer;
+        }
+
+        public void SavePlayer()
+        {
+            SaveManager.Instance.Save(new CharacterData(ActivePlayer.position, ActivePlayer.rotation),
+                                      SaveManager.Instance.BuildFilePath(playerSaveFileName));
         }
     }
 }

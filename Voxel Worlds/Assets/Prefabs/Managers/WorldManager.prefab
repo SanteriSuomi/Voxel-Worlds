@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7081502516914564490
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7081502516914564492}
+  - component: {fileID: 7081502516914564491}
+  m_Layer: 0
+  m_Name: WorldManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7081502516914564492
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7081502516914564490}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7081502516914564491
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7081502516914564490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 721f1619b26f9464085399c1a03d0f83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  worldTextureAtlas: {fileID: 2100000, guid: c17e763c77fbfbc4d92a1c37437e2d60, type: 2}
+  playerTransform: {fileID: 9171768461920612257, guid: c68f0e5ef5db7fa44a1747f2a1d6305b,
+    type: 3}
+  chunkRowHeight: 4
+  chunkSize: 8
+  buildRadius: 5
+  initialBuildRadius: 5
+  buildNearPlayerDistanceMultiplier: 0.25
+  removeOldChunksDistanceMultiplier: 10
+  amountOfBuildsUntilRemoving: 2
+  loopsUntilWaitingAFrame: 3
+  buildForwardMultiplier: 4
