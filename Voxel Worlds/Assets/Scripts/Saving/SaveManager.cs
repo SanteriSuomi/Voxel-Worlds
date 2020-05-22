@@ -116,7 +116,9 @@ namespace Voxel.Saving
                 return (true, data);
             }
 
-            Debug.LogWarning($"File {path} does not exist!");
+            #if UNITY_EDITOR
+            Debug.LogWarning($"File {path} does not exist! Ignore if first time playing.");
+            #endif
             return default;
         }
 

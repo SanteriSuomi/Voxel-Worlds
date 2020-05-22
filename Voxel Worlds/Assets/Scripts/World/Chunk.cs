@@ -100,16 +100,16 @@ namespace Voxel.World
                         }
 
                         // Underground (stone, diamond, etc)
-                        int undergroundLayerStart = noise2D - Random.Range(4, 8);
+                        int undergroundLayerStart = noise2D - /*Random.Range(4, 8)*/6;
                         if (worldPositionY <= undergroundLayerStart) // If we're certain range below the surface
                         {
                             float noise3D = Utils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
-                            if (noise3D >= 0.135f && noise3D <= Random.Range(0.135f, 0.1355f))
+                            if (noise3D >= 0.135f && noise3D <= /*Random.Range(0.135f, 0.1355f)*/0.1325f)
                             {
                                 NewBlock(BlockType.Diamond, x, z, y, localPosition);
                             }
                             // Caves are applied below this noise level but must be above certain range from the bottom
-                            else if (worldPositionY >= Random.Range(3, 5) && noise3D < Random.Range(0.125f, 0.135f))
+                            else if (worldPositionY >= /*Random.Range(3, 5)*/4 && noise3D < /*Random.Range(0.125f, 0.135f)*/0.13f)
                             {
                                 NewBlock(BlockType.Air, x, z, y, localPosition);
                             }

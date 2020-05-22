@@ -4,12 +4,18 @@ namespace Voxel.Utility
 {
     public class ReferenceManager : Singleton<ReferenceManager>
     {
-        public Camera MainCamera { get; private set; }
-
-        protected override void Awake()
+        private Camera mainCamera;
+        public Camera MainCamera
         {
-            base.Awake();
-            EventManager.Listen("BuildWorldComplete", () => MainCamera = Camera.main);
+            get
+            {
+                if (mainCamera == null)
+                {
+                    mainCamera = Camera.main;
+                }
+
+                return mainCamera;
+            }
         }
     }
 }

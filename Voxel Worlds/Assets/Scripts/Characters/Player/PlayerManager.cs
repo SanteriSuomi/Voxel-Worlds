@@ -34,7 +34,7 @@ namespace Voxel.Player
         protected override void Awake()
         {
             base.Awake();
-            InitialPosition = new Vector3(0, WorldManager.Instance.MaxWorldHeight / 2, 0);
+            InitialPosition = new Vector3(0, WorldManager.Instance.MaxWorldHeight, 0);
             InitialRotation = Quaternion.identity;
         }
 
@@ -56,18 +56,16 @@ namespace Voxel.Player
                 return InstantiatePlayer(InitialPosition, InitialRotation);
             }
 
-            bool hitRay = Physics.Raycast(InitialPosition, Vector3.down, out RaycastHit hitInfo, InitialPosition.y * rayHitSpawnOffset);
-            Vector3 spawnPosition;
-            if (hitRay)
-            {
-                spawnPosition = hitInfo.point + new Vector3(0, playerSpawnOffset, 0);
-            }
-            else
-            {
-                spawnPosition = InitialPosition;
-            }
+            return InstantiatePlayer(GetRayHit(), Quaternion.identity);
+        }
 
-            return InstantiatePlayer(spawnPosition, Quaternion.identity);
+        private Vector3 GetRayHit()
+        {
+            InitialPosition = new Vector3(0, WorldManager.Instance.MaxWorldHeight, 0);
+            Debug.Log(InitialPosition);
+            return Physics.Raycast(InitialPosition, Vector3.down, out RaycastHit hitInfo, InitialPosition.y * rayHitSpawnOffset)
+                   ? hitInfo.point + new Vector3(0, playerSpawnOffset, 0)
+                   : InitialPosition;
         }
 
         private Transform InstantiatePlayer(Vector3 position, Quaternion rotation)
