@@ -153,7 +153,7 @@ namespace Voxel.World
                     {
                         if (chunkData[x, y, z] == null)
                         {
-                            Debug.LogWarning($"chunkData {(x, y, z)}");
+                            Debug.LogWarning($"chunkData {(x, y, z)} is null");
                             return;
                         }
 

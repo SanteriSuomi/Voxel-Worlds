@@ -5,9 +5,9 @@ namespace Voxel.Utility
 {
 	public static class Utils
 	{
-		private static readonly FastNoise noise = new FastNoise(Random.Range(0, 1000000)); // Remove random seed later
-		private static readonly MarchingCubes marchingCubes = new MarchingCubes(surface: 0);
-		private static readonly MarchingTertrahedron marchingTertrahedron = new MarchingTertrahedron(surface: 0);
+		private static readonly FastNoise noise = new FastNoise(seed: 1000);
+		private static readonly MarchingCubes marchingCubes = new MarchingCubes(0);
+		private static readonly MarchingTertrahedron marchingTertrahedron = new MarchingTertrahedron(0);
 
 		// Values for 2D fractal brownian motion
 		private const int octaves2D = 2;

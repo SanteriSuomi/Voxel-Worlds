@@ -42,7 +42,7 @@ namespace Voxel.Player
         {
             (bool loaded, CharacterData playerData) = SaveManager.Instance.Load<CharacterData>(SaveManager.Instance.BuildFilePath(playerSaveFileName));
             PlayerLoaded = loaded;
-            if (loaded)
+            if (PlayerLoaded)
             {
                 InitialPosition = playerData.Position;
                 InitialRotation = playerData.Rotation;
@@ -62,7 +62,6 @@ namespace Voxel.Player
         private Vector3 GetRayHit()
         {
             InitialPosition = new Vector3(0, WorldManager.Instance.MaxWorldHeight, 0);
-            Debug.Log(InitialPosition);
             return Physics.Raycast(InitialPosition, Vector3.down, out RaycastHit hitInfo, InitialPosition.y * rayHitSpawnOffset)
                    ? hitInfo.point + new Vector3(0, playerSpawnOffset, 0)
                    : InitialPosition;

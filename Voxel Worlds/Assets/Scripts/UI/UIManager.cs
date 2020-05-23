@@ -10,6 +10,7 @@ namespace Voxel.UI
         private List<UIState> uiStates;
         [SerializeField]
         private UIState startingState = default;
+        public UIState CurrentState { get; private set; }
 
         protected override void Awake()
         {
@@ -31,11 +32,11 @@ namespace Voxel.UI
                 if (newState == currentState)
                 {
                     currentState.Enable();
+                    CurrentState = currentState;
+                    continue;
                 }
-                else
-                {
-                    currentState.Disable();
-                }
+
+                currentState.Disable();
             }
         }
     }

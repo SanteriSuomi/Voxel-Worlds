@@ -6,11 +6,6 @@ namespace Voxel.UI
 {
     public class UIStateGameMenu : UIState
     {
-        [SerializeField]
-        private GameObject uiCamera = default;
-        [SerializeField]
-        private GameObject crosshair = default;
-
         private void Awake()
         {
             UnityAction buildWorldComplete = new UnityAction(DisableMenuCamera);
@@ -20,12 +15,12 @@ namespace Voxel.UI
         protected override void OnStateEnable()
         {
             Cursor.lockState = CursorLockMode.Locked;
-            crosshair.SetActive(true);
+            ReferenceManager.Instance.Crosshair.gameObject.SetActive(true);
         }
 
         private void DisableMenuCamera()
         {
-            uiCamera.SetActive(false);
+            ReferenceManager.Instance.UICamera.gameObject.SetActive(false);
         }
     }
 }

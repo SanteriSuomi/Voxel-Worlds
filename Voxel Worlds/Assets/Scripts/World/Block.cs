@@ -98,7 +98,7 @@ namespace Voxel.World
         public void SetType(BlockType type)
         {
             BlockType = type;
-            IsSolid = BlockType == BlockType.Air;
+            IsSolid = BlockType != BlockType.Air;
         }
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)

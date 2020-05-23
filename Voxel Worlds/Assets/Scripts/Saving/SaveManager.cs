@@ -28,14 +28,11 @@ namespace Voxel.Saving
         }
 
         public string BuildChunkFilePath(Vector3Int chunkPosition)
-        {
-            return $"{Application.persistentDataPath}/{saveFolderName}/ChunkData/Chunk_{chunkPosition}_{WorldManager.Instance.ChunkSize}_{WorldManager.Instance.Radius}.dat";
-        }
+            => $"{Application.persistentDataPath}/{saveFolderName}/ChunkData/Chunk_{chunkPosition}_{WorldManager.Instance.ChunkSize}_{WorldManager.Instance.Radius}.dat";
 
-        public string BuildFilePath(string fileName)
-        {
-            return $"{Application.persistentDataPath}/{saveFolderName}/{fileName}";
-        }
+        public string BuildFilePath(string fileName) => $"{Application.persistentDataPath}/{saveFolderName}/{fileName}";
+
+        public string GetDirectoryPath() => $"{Application.persistentDataPath}/{saveFolderName}";
 
         /// <summary>
         /// Save a chunk to it's own dedicated file.
@@ -54,7 +51,6 @@ namespace Voxel.Saving
                 bf.Serialize(fs, newChunkData);
             }
 
-            Destroy(chunk.GameObject);
             yield break;
         }
 
@@ -116,9 +112,6 @@ namespace Voxel.Saving
                 return (true, data);
             }
 
-            #if UNITY_EDITOR
-            Debug.LogWarning($"File {path} does not exist! Ignore if first time playing.");
-            #endif
             return default;
         }
 
@@ -131,6 +124,20 @@ namespace Voxel.Saving
             return File.Exists(BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
                                                                  (int)chunk.GameObject.transform.position.y,
                                                                  (int)chunk.GameObject.transform.position.z)));
+        }
+
+        /// <summary>
+        /// Clear ALL saved files.
+        /// </summary>
+        public void Clear()
+        {
+            if (!Directory.Exists(GetDirectoryPath())) return;
+
+            string[] files = Directory.GetFileSystemEntries(GetDirectoryPath(), "*", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                File.Delete(files[i]);
+            }
         }
 
         private static void ValidateDirectory(string file)

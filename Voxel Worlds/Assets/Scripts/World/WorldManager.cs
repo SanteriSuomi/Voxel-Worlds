@@ -1,11 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Voxel.Game;
 using Voxel.Player;
-using Voxel.Saving;
 using Voxel.Utility;
 
 namespace Voxel.World
@@ -274,8 +274,8 @@ namespace Voxel.World
                 string chunkToRemoveID = chunksToRemove.Pop();
                 if (chunkDatabase.TryGetValue(chunkToRemoveID, out Chunk chunk))
                 {
-                    StartCoroutine(SaveManager.Instance.Save(chunk));
                     chunkDatabase.TryRemove(chunkToRemoveID, out _);
+                    Destroy(chunk.GameObject);
                     object obj = CheckForFrameWait(ref waitFrameCounter);
                     if (obj is null)
                     {
@@ -283,6 +283,9 @@ namespace Voxel.World
                     }
                 }
             }
+
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false);
+            Resources.UnloadUnusedAssets();
         }
 
         private object CheckForFrameWait(ref int value)
