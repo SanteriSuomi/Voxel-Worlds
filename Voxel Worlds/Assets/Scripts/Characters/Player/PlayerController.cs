@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Voxel.Utility;
+using Voxel.World;
 
 namespace Voxel.Player
 {
@@ -17,9 +18,13 @@ namespace Voxel.Player
         [SerializeField]
         private PlayerGroundStateVariable groundState = default;
         [SerializeField]
-        private float rayDistance = 1;
+        private LayerMask layersToDetect = default;
         [SerializeField]
-        private float gravityMultiplier = 2;
+        private float maxRayDistance = 1.25f;
+        [SerializeField]
+        private float baseGravityMultiplier = 2;
+        [SerializeField]
+        private float distanceMultiplierMax = 5;
 
         [Header("Moving")]
         [SerializeField]
@@ -30,6 +35,10 @@ namespace Voxel.Player
         [SerializeField]
         private float sprintSpeedMultiplier = 1.5f;
         private float originalMoveSpeed;
+
+        [Header("Block Collision")]
+        [SerializeField]
+        private Transform rayStart = default;
 
         [Header("Looking")]
         [SerializeField]
@@ -45,15 +54,13 @@ namespace Voxel.Player
         [Header("Jumping")]
         [SerializeField]
         private PlayerJumpStateVariable jumpState = default;
-        private Coroutine jumpCoroutine;
+        [SerializeField, Tooltip("Essentially the same as jump speed.")]
+        private float jumpStartValue = 0.2f;
         [SerializeField]
-        private float jumpMaxHeight = 2;
+        private float newJumpDelay = 0.2f;
         [SerializeField]
-        private float jumpMaxTime = 1;
-        [SerializeField]
-        private float jumpStartSpeed = 10;
-        [SerializeField]
-        private float jumpSpeedReduction = 5;
+        private float jumpReduceAmount = 0.0075f;
+        private WaitForSeconds jumpDelayWFS;
 
         private void Awake()
         {
@@ -61,6 +68,7 @@ namespace Voxel.Player
             characterController = GetComponent<CharacterController>();
             player = transform;
             originalMoveSpeed = moveSpeed;
+            jumpDelayWFS = new WaitForSeconds(newJumpDelay);
         }
 
         private void OnEnable()
@@ -103,82 +111,86 @@ namespace Voxel.Player
 
         private void Update()
         {
-            Ground();
-            Move();
-            Look();
+            Vector3 totalMoveValue = Vector3.zero;
+            totalMoveValue.y += Grounding();
+            totalMoveValue += Moving();
+            characterController.Move(totalMoveValue * Time.deltaTime);
         }
 
-        private void Ground()
+        private float Grounding()
         {
-            bool hit = Physics.Raycast(player.position, Vector3.down, out RaycastHit hitInfo, rayDistance);
-            if (hit)
+            float rayLength = WorldManager.Instance.MaxWorldHeight * 2;
+            Physics.Raycast(player.position, Vector3.down, out RaycastHit hitInfo, rayLength, layersToDetect);
+            if (hitInfo.collider != null
+                && hitInfo.distance <= maxRayDistance)
             {
                 groundState.Value = PlayerGroundState.IsGrounded;
+                return 0;
             }
-            else
-            {
-                groundState.Value = PlayerGroundState.None;
-                Gravity(hitInfo.distance);
-            }
+
+            float distanceMultiplier = Mathf.Clamp(hitInfo.distance, distanceMultiplierMax / 2, distanceMultiplierMax);
+            groundState.Value = PlayerGroundState.None;
+            return -Mathf.Abs(baseGravityMultiplier * distanceMultiplier);
         }
 
-        private void Gravity(float distanceFromGround)
+        private Vector3 Moving()
         {
-            Vector3 gravity = new Vector3(0, (Physics.gravity / Mathf.Pow(distanceFromGround, 2) * gravityMultiplier).y, 0);
-            characterController.SimpleMove(gravity);
+            if (moveState.Value == PlayerMoveState.IsMoving)
+            {
+                Vector3 moveX = playerCamera.right * moveValue.x;
+                Vector3 moveZ = playerCamera.forward * moveValue.y;
+                Vector3 finalMove = (moveX + moveZ) * moveSpeed;
+                if (CheckBlockCollision()
+                    && finalMove.z > 0)
+                {
+                    Debug.Log("Reset Z");
+                    finalMove.z = 0;
+                }
+
+                finalMove.y = 0; // Make sure to not apply any upwards motion when moving (only on jump)
+                return finalMove;
+            }
+
+            return Vector3.zero;
+        }
+
+        private bool CheckBlockCollision()
+        {
+            Physics.Raycast(rayStart.position, rayStart.forward, out RaycastHit hitInfo, 0.75f, layersToDetect);
+            return hitInfo.collider != null;
         }
 
         private void Jump()
         {
-            if (jumpState.Value == PlayerJumpState.IsJumping)
-            {
-                return;
-            }
-            else if (jumpCoroutine != null)
-            {
-                StopCoroutine(jumpCoroutine);
-            }
+            if (jumpState.Value == PlayerJumpState.IsJumping) return;
 
-            jumpCoroutine = StartCoroutine(JumpCoroutine());
+            StartCoroutine(JumpCoroutine());
         }
 
         private IEnumerator JumpCoroutine()
         {
             jumpState.Value = PlayerJumpState.IsJumping;
-            float goalPlayerHeight = player.position.y + jumpMaxHeight;
-            float jumpMaxTimeLength = Time.realtimeSinceStartup + jumpMaxTime;
-            float jumpMoveSpeed = jumpStartSpeed;
-            while (player.position.y < goalPlayerHeight && Time.realtimeSinceStartup < jumpMaxTimeLength)
+            float time = jumpStartValue;
+            while (time > 0)
             {
-                Vector3 jumpVector = new Vector3(player.position.x, goalPlayerHeight, player.position.z);
-                player.position = Vector3.MoveTowards(player.position, jumpVector, jumpMoveSpeed * Time.deltaTime);
-                jumpMoveSpeed -= jumpSpeedReduction * Time.deltaTime;
+                time -= jumpReduceAmount;
+                Vector3 jumpVector = new Vector3(0, Mathf.Clamp(time, jumpStartValue / 4, jumpStartValue), 0);
+                characterController.Move(jumpVector);
                 yield return null;
             }
 
+            yield return jumpDelayWFS;
             jumpState.Value = PlayerJumpState.None;
         }
 
-        private void Move()
-        {
-            if (moveState.Value == PlayerMoveState.IsMoving)
-            {
-                Vector3 moveX = playerCamera.right * moveValue.x;
-                Vector3 moveY = playerCamera.forward * moveValue.y;
-                Vector3 finalMove = (moveX + moveY) * moveSpeed * Time.deltaTime;
-                finalMove.y = 0;
-                characterController.Move(finalMove);
-            }
-        }
+        private void LateUpdate() => Looking();
 
-        private void Look()
+        private void Looking()
         {
             if (lookState.Value == PlayerLookState.IsLooking)
             {
                 CalculateLookValue();
-                player.localRotation = Quaternion.Euler(0, lookValueX, 0);
-                lookValueY = Mathf.Clamp(lookValueY, -lookVerticalClampRange, lookVerticalClampRange);
-                playerCamera.localRotation = Quaternion.Euler(lookValueY, 0, 0);
+                ApplyLookValue();
             }
         }
 
@@ -187,6 +199,13 @@ namespace Voxel.Player
             lookValue *= lookSpeedMultiplier * Time.deltaTime;
             lookValueX += lookValue.x;
             lookValueY -= lookValue.y;
+            lookValueY = Mathf.Clamp(lookValueY, -lookVerticalClampRange, lookVerticalClampRange);
+        }
+
+        private void ApplyLookValue()
+        {
+            player.localRotation = Quaternion.Euler(0, lookValueX, 0);
+            playerCamera.localRotation = Quaternion.Euler(lookValueY, 0, 0);
         }
 
         private void OnDisable()

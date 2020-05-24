@@ -1,5 +1,35 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &800730423060192296
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 597396429882515071}
+  m_Layer: 8
+  m_Name: BlockCollisionRay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &597396429882515071
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800730423060192296}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 9171768461920612257}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9171768461707996297
 GameObject:
   m_ObjectHideFlags: 0
@@ -150,6 +180,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 9171768461707996300}
+  - {fileID: 597396429882515071}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -180,19 +211,22 @@ MonoBehaviour:
   inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
     type: 2}
   groundState: {fileID: 11400000, guid: aed401ad1553d3d448638c114dd240a3, type: 2}
-  rayDistance: 1
-  gravityMultiplier: 3
+  layersToDetect:
+    serializedVersion: 2
+    m_Bits: 55
+  maxRayDistance: 1.25
+  baseGravityMultiplier: 2
+  distanceMultiplierMax: 6
   moveState: {fileID: 11400000, guid: 2ee9d5f9c3f8e794c881b48635f13e92, type: 2}
   moveSpeed: 4
   sprintSpeedMultiplier: 1.6
+  rayStart: {fileID: 597396429882515071}
   lookState: {fileID: 11400000, guid: 57b033d6c1fd7824bba28883e2d43541, type: 2}
   lookSpeedMultiplier: 10
   lookVerticalClampRange: 77.5
   jumpState: {fileID: 11400000, guid: c18e0274860fb74479677f3f0bb6346b, type: 2}
-  jumpMaxHeight: 1.35
-  jumpMaxTime: 0.75
-  jumpStartSpeed: 17.5
-  jumpSpeedReduction: 30
+  jumpStartValue: 0.2
+  newJumpDelay: 0.175
 --- !u!114 &8269590369259728606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -207,6 +241,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
     type: 2}
+  interactionMaxDistance: 4
 --- !u!143 &9171768461920612262
 CharacterController:
   m_ObjectHideFlags: 0
