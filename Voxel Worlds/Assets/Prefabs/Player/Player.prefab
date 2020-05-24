@@ -221,12 +221,15 @@ MonoBehaviour:
   moveSpeed: 4
   sprintSpeedMultiplier: 1.6
   rayStart: {fileID: 597396429882515071}
+  blockCollisionRayLength: 0.775
   lookState: {fileID: 11400000, guid: 57b033d6c1fd7824bba28883e2d43541, type: 2}
   lookSpeedMultiplier: 10
   lookVerticalClampRange: 77.5
   jumpState: {fileID: 11400000, guid: c18e0274860fb74479677f3f0bb6346b, type: 2}
-  jumpStartValue: 0.2
+  jumpStartValue: 1
   newJumpDelay: 0.175
+  jumpReduceAmount: 0.02
+  jumpTotalMultiplier: 15
 --- !u!114 &8269590369259728606
 MonoBehaviour:
   m_ObjectHideFlags: 0

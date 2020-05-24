@@ -39,6 +39,8 @@ namespace Voxel.Player
         [Header("Block Collision")]
         [SerializeField]
         private Transform rayStart = default;
+        [SerializeField]
+        private float blockCollisionRayLength = 0.75f;
 
         [Header("Looking")]
         [SerializeField]
@@ -60,6 +62,8 @@ namespace Voxel.Player
         private float newJumpDelay = 0.2f;
         [SerializeField]
         private float jumpReduceAmount = 0.0075f;
+        [SerializeField]
+        private float jumpTotalMultiplier = 15;
         private WaitForSeconds jumpDelayWFS;
 
         private void Awake()
@@ -138,26 +142,11 @@ namespace Voxel.Player
             if (moveState.Value == PlayerMoveState.IsMoving)
             {
                 Vector3 moveX = playerCamera.right * moveValue.x;
-                Vector3 moveZ = playerCamera.forward * moveValue.y;
-                Vector3 finalMove = (moveX + moveZ) * moveSpeed;
-                if (CheckBlockCollision()
-                    && finalMove.z > 0)
-                {
-                    Debug.Log("Reset Z");
-                    finalMove.z = 0;
-                }
-
-                finalMove.y = 0; // Make sure to not apply any upwards motion when moving (only on jump)
-                return finalMove;
+                Vector3 moveZ = GetPlayerForward() * moveValue.y;
+                return (moveX + moveZ) * moveSpeed;
             }
 
             return Vector3.zero;
-        }
-
-        private bool CheckBlockCollision()
-        {
-            Physics.Raycast(rayStart.position, rayStart.forward, out RaycastHit hitInfo, 0.75f, layersToDetect);
-            return hitInfo.collider != null;
         }
 
         private void Jump()
@@ -171,17 +160,25 @@ namespace Voxel.Player
         {
             jumpState.Value = PlayerJumpState.IsJumping;
             float time = jumpStartValue;
-            while (time > 0)
+            while (time > 0 && !CheckBlockCollision(GetPlayerForward()))
             {
                 time -= jumpReduceAmount;
-                Vector3 jumpVector = new Vector3(0, Mathf.Clamp(time, jumpStartValue / 4, jumpStartValue), 0);
-                characterController.Move(jumpVector);
+                Vector3 jumpVector = new Vector3(0, Mathf.Clamp(time, 0, jumpStartValue), 0);
+                characterController.Move(jumpVector * jumpTotalMultiplier * Time.deltaTime);
                 yield return null;
             }
 
             yield return jumpDelayWFS;
             jumpState.Value = PlayerJumpState.None;
         }
+
+        private bool CheckBlockCollision(Vector3 playerForward)
+        {
+            Physics.Raycast(rayStart.position, playerForward, out RaycastHit hitInfo, blockCollisionRayLength, layersToDetect);
+            return hitInfo.collider != null;
+        }
+
+        private Vector3 GetPlayerForward() => new Vector3(playerCamera.forward.x, 0, playerCamera.forward.z);
 
         private void LateUpdate() => Looking();
 
