@@ -118,7 +118,10 @@ namespace Voxel.Player
             Vector3 totalMoveValue = Vector3.zero;
             totalMoveValue.y += Grounding();
             totalMoveValue += Moving();
-            characterController.Move(totalMoveValue * Time.deltaTime);
+            if (!CheckBlockCollision(GetPlayerForward()))
+            {
+                characterController.Move(totalMoveValue * Time.deltaTime);
+            }
         }
 
         private float Grounding()
@@ -160,7 +163,7 @@ namespace Voxel.Player
         {
             jumpState.Value = PlayerJumpState.IsJumping;
             float time = jumpStartValue;
-            while (time > 0 && !CheckBlockCollision(GetPlayerForward()))
+            while (time > 0)
             {
                 time -= jumpReduceAmount;
                 Vector3 jumpVector = new Vector3(0, Mathf.Clamp(time, 0, jumpStartValue), 0);
