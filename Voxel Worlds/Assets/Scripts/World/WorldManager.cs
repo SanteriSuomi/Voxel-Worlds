@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +23,7 @@ namespace Voxel.World
         /// <summary>
         /// Return the ID (as a string) of a chunk at position as specified in the ChunkDictionary.
         /// </summary>
-        /// <param name="fromPosition"></param>
+        /// <param name="fromPosition">World position of the chunk parent.</param>
         public string GetChunkID(Vector3 fromPosition)
         {
             return $"{(int)fromPosition.x} {(int)fromPosition.y} {(int)fromPosition.z}";
@@ -33,10 +32,24 @@ namespace Voxel.World
         /// <summary>
         /// Get the chunk by it's ID (string) normally used with the GetChunkID method.
         /// </summary>
-        /// <param name="chunkID"></param>
+        /// <param name="chunkID">Chunk ID (position as string)</param>
         public Chunk GetChunkFromID(string chunkID)
         {
             if (chunkDatabase.TryGetValue(chunkID, out Chunk chunk))
+            {
+                return chunk;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Combine GetChunkID and GetChunkFromID to get a chunk from the database.
+        /// </summary>
+        /// <param name="fromPosition"></param>
+        public Chunk GetChunk(Vector3 fromPosition)
+        {
+            if (chunkDatabase.TryGetValue(GetChunkID(fromPosition), out Chunk chunk))
             {
                 return chunk;
             }
@@ -284,8 +297,9 @@ namespace Voxel.World
                 }
             }
 
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false);
-            Resources.UnloadUnusedAssets();
+            // TODO: test gc and resources.unloadunusedassets
+            //GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false);
+            //Resources.UnloadUnusedAssets();
         }
 
         private object CheckForFrameWait(ref int value)

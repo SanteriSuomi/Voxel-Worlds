@@ -37,22 +37,8 @@ namespace Voxel.Saving
         /// <summary>
         /// Save a chunk to it's own dedicated file.
         /// </summary>
-        /// <param name="chunk"></param>
-        public IEnumerator Save(Chunk chunk)
-        {
-            string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
-                                                                 (int)chunk.GameObject.transform.position.y,
-                                                                 (int)chunk.GameObject.transform.position.z));
-
-            ValidateDirectory(chunkFile);
-            ChunkData newChunkData = new ChunkData(chunk.GetBlockTypeData(), chunk.GameObject.transform.position);
-            using (var fs = new FileStream(chunkFile, FileMode.Create))
-            {
-                bf.Serialize(fs, newChunkData);
-            }
-
-            yield break;
-        }
+        /// <param name="chunk">Chunk to save</param>
+        public void Save(Chunk chunk) => StartCoroutine(SaveCoroutine(chunk));
 
         /// <summary>
         /// Save any object to a path of your choosing.
@@ -67,6 +53,22 @@ namespace Voxel.Saving
             {
                 bf.Serialize(fs, obj);
             }
+        }
+
+        public IEnumerator SaveCoroutine(Chunk chunk)
+        {
+            string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
+                                                                 (int)chunk.GameObject.transform.position.y,
+                                                                 (int)chunk.GameObject.transform.position.z));
+
+            ValidateDirectory(chunkFile);
+            ChunkData newChunkData = new ChunkData(chunk.GetBlockTypeData(), chunk.GameObject.transform.position);
+            using (var fs = new FileStream(chunkFile, FileMode.Create))
+            {
+                bf.Serialize(fs, newChunkData);
+            }
+
+            yield break;
         }
 
         /// <summary>

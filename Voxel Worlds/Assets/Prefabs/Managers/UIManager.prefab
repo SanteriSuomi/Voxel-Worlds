@@ -946,7 +946,7 @@ MonoBehaviour:
         m_Mode: 2
         m_Arguments:
           m_ObjectArgument: {fileID: 3968744552162352199}
-          m_ObjectArgumentAssemblyTypeName: Voxel.UI.UIState, Assembly-CSharp
+          m_ObjectArgumentAssemblyTypeName: Voxel.UI.UIState, Scripts
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 

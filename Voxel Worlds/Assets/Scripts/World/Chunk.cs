@@ -162,6 +162,11 @@ namespace Voxel.World
                 }
             }
 
+            FinalizeChunk();
+        }
+
+        private void FinalizeChunk()
+        {
             CombineBlocks();
             AddCollider();
             ChunkStatus = ChunkStatus.Keep;
@@ -189,9 +194,16 @@ namespace Voxel.World
             parentMeshRenderer.material = chunkMaterial;
         }
 
-        private void AddCollider()
+        private void AddCollider() => Collider = GameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
+
+        /// <summary>
+        /// Destroy chunk's mesh filter, mesh renderer and collider.
+        /// </summary>
+        public void DestroyChunkData()
         {
-            Collider = GameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
+            Object.DestroyImmediate(MeshFilter);
+            Object.DestroyImmediate(MeshRenderer);
+            Object.DestroyImmediate(Collider);
         }
     }
 }
