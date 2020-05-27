@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Voxel.Game;
 using Voxel.Saving;
 using Voxel.Utility;
@@ -11,28 +11,60 @@ namespace Voxel.Player
     public class PlayerBlockInteraction : MonoBehaviour
     {
         [SerializeField]
-        private InputActionsController inputActionsController = default;
+        private BlockType[] nonMineableBlockTypes = default;
 
+        [SerializeField]
+        private InputActionsController inputActionsController = default;
         [SerializeField]
         private float interactionMaxDistance = 2;
 
-        private Vector3Int localBlockPosition;
+        private Vector3Int currentLocalBlockPosition;
+        private Coroutine interactCoroutine;
+
+        private int ChunkEdge => WorldManager.Instance.ChunkSize - 2;
 
         private void OnEnable()
         {
-            inputActionsController.InputActions.Player.Interact.performed += OnInteractPerformed;
+            GameManager.Instance.OnGameActiveStateChangeEvent += OnGameActiveStateChange;
+            DisableInteractCoroutine();
+            interactCoroutine = StartCoroutine(OnInteractPerformedCoroutine());
         }
 
-        private void OnInteractPerformed(InputAction.CallbackContext context)
+        private void OnGameActiveStateChange(bool state)
         {
-            if (GameManager.Instance.IsGamePaused) return;
-
-            Camera mainCam = ReferenceManager.Instance.MainCamera;
-            Vector2 rayPosition = new Vector2(Screen.width / 2, Screen.height / 2);
-            Ray ray = mainCam.ScreenPointToRay(rayPosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, interactionMaxDistance))
+            if (state)
             {
-                BlockHit(hit);
+                DisableInteractCoroutine();
+                interactCoroutine = StartCoroutine(OnInteractPerformedCoroutine());
+            }
+            else
+            {
+                DisableInteractCoroutine();
+            }
+        }
+
+        private IEnumerator OnInteractPerformedCoroutine()
+        {
+            while (enabled)
+            {
+                bool interactionTriggered = inputActionsController.InputActions.Player.Interact.triggered;
+                if (GameManager.Instance.IsGamePaused)
+                {
+                    yield return new WaitUntil(() => !GameManager.Instance.IsGamePaused);
+                    interactionTriggered = false;
+                }
+
+                if (interactionTriggered)
+                {
+                    Vector2 rayPosition = new Vector2(Screen.width / 2, Screen.height / 2);
+                    Ray ray = ReferenceManager.Instance.MainCamera.ScreenPointToRay(rayPosition);
+                    if (Physics.Raycast(ray, out RaycastHit hit, interactionMaxDistance))
+                    {
+                        BlockHit(hit);
+                    }
+                }
+
+                yield return null;
             }
         }
 
@@ -40,7 +72,7 @@ namespace Voxel.Player
         {
             Vector3 hitChunkPosition = hit.transform.position;
             Vector3 worldBlockPosition = hit.point - (hit.normal / 2);
-            localBlockPosition = new Vector3Int
+            currentLocalBlockPosition = new Vector3Int
             {
                 x = Mathf.RoundToInt(worldBlockPosition.x - hitChunkPosition.x),
                 y = Mathf.RoundToInt(worldBlockPosition.y - hitChunkPosition.y),
@@ -50,53 +82,62 @@ namespace Voxel.Player
             Chunk localChunk = WorldManager.Instance.GetChunk(hitChunkPosition);
             if (localChunk != null)
             {
-                RebuildAffectedChunks(hitChunkPosition, localChunk);
+                Block localBlock = localChunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
+                if (IsPermittedBlock(localBlock))
+                {
+                    RebuildAffectedChunks(hitChunkPosition, localChunk);
+                }
             }
         }
 
-        private void RebuildAffectedChunks(Vector3 hitChunkPosition, Chunk localChunk)
+        private bool IsPermittedBlock(Block block)
         {
-            Block[,,] chunkData = localChunk.GetChunkData();
-            if (localBlockPosition.x >= 0 && localBlockPosition.x <= chunkData.GetUpperBound(0)
-                && localBlockPosition.y >= 0 && localBlockPosition.y <= chunkData.GetUpperBound(1)
-                && localBlockPosition.z >= 0 && localBlockPosition.z <= chunkData.GetUpperBound(2))
+            for (int i = 0; i < nonMineableBlockTypes.Length; i++)
             {
-                RebuildChunk(localChunk, true);
-                RebuildNeighbouringChunks(hitChunkPosition);
+                if (nonMineableBlockTypes[i] == block.BlockType)
+                {
+                    return false;
+                }
             }
+
+            return true;
+        }
+
+        private void RebuildAffectedChunks(Vector3 hitChunkPosition, Chunk hitChunk)
+        {
+            RebuildChunk(hitChunk, setBlockType: true);
+            RebuildNeighbouringChunks(hitChunkPosition);
         }
 
         private void RebuildNeighbouringChunks(Vector3 localChunkPosition)
         {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
-            if (localBlockPosition.x == chunkSize)
+
+            if (currentLocalBlockPosition.x == 0)
+            {
+                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x - chunkSize, localChunkPosition.y, localChunkPosition.z)));
+            }
+            if (currentLocalBlockPosition.x == ChunkEdge)
             {
                 RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x + chunkSize, localChunkPosition.y, localChunkPosition.z)));
             }
 
-            if (localBlockPosition.x == 0)
+            if (currentLocalBlockPosition.y == 0)
             {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x - chunkSize, localChunkPosition.y, localChunkPosition.z)));
+                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y - chunkSize, localChunkPosition.z)));
             }
-
-            if (localBlockPosition.y == chunkSize)
+            if (currentLocalBlockPosition.y == ChunkEdge)
             {
                 RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y + chunkSize, localChunkPosition.z)));
             }
 
-            if (localBlockPosition.y == 0)
-            {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y - chunkSize, localChunkPosition.z)));
-            }
-
-            if (localBlockPosition.z == chunkSize)
-            {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y, localChunkPosition.z + chunkSize)));
-            }
-
-            if (localBlockPosition.z == 0)
+            if (currentLocalBlockPosition.z == 0)
             {
                 RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y, localChunkPosition.z - chunkSize)));
+            }
+            if (currentLocalBlockPosition.z == ChunkEdge)
+            {
+                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y, localChunkPosition.z + chunkSize)));
             }
         }
 
@@ -105,28 +146,44 @@ namespace Voxel.Player
             Chunk neighbourChunk = chunkGetMethod();
             if (neighbourChunk != null)
             {
-                Debug.Log(neighbourChunk.GameObject.transform.position);
-                RebuildChunk(neighbourChunk, true);
+                RebuildChunk(neighbourChunk, setBlockType: false);
             }
         }
 
-        private void RebuildChunk(Chunk chunk, bool setBlock)
+        private void RebuildChunk(Chunk chunk, bool setBlockType)
         {
-            if (setBlock)
+            if (setBlockType)
             {
-                Block[,,] chunkData = chunk.GetChunkData();
-                Block chunkHitBlock = chunkData[localBlockPosition.x, localBlockPosition.y, localBlockPosition.z];
-                chunkHitBlock.SetType(BlockType.Air);
+                UpdateBlockType(chunk);
             }
 
-            chunk.DestroyChunkData();
+            chunk.DestroyChunkMesh();
             chunk.BuildBlocks();
             SaveManager.Instance.Save(chunk);
         }
 
+        private void UpdateBlockType(Chunk chunk)
+        {
+            Block chunkHitBlock = chunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
+            chunkHitBlock.UpdateType(BlockType.Air);
+            BlockType[,,] blockTypeData = chunk.GetBlockTypeData();
+            blockTypeData[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z] = BlockType.Air;
+        }
+
+        private void DisableInteractCoroutine()
+        {
+            if (interactCoroutine != null)
+            {
+                StopCoroutine(interactCoroutine);
+            }
+        }
+
         private void OnDisable()
         {
-            inputActionsController.InputActions.Player.Interact.performed -= OnInteractPerformed;
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.OnGameActiveStateChangeEvent -= OnGameActiveStateChange;
+            }
         }
     }
 }

@@ -41,6 +41,8 @@ namespace Voxel.Player
         private Transform rayStart = default;
         [SerializeField]
         private float blockCollisionRayLength = 0.75f;
+        [SerializeField]
+        private float leftRightRayAngle = 20;
 
         [Header("Looking")]
         [SerializeField]
@@ -65,6 +67,7 @@ namespace Voxel.Player
         [SerializeField]
         private float jumpTotalMultiplier = 15;
         private WaitForSeconds jumpDelayWFS;
+        private Vector3 jumpVector;
 
         private void Awake()
         {
@@ -118,7 +121,16 @@ namespace Voxel.Player
             Vector3 totalMoveValue = Vector3.zero;
             totalMoveValue.y += Grounding();
             totalMoveValue += Moving();
-            if (!CheckBlockCollision(GetPlayerForward()))
+
+            bool isJumping = false;
+            if (jumpState.Value == PlayerJumpState.IsJumping)
+            {
+                isJumping = true;
+                totalMoveValue += jumpVector;
+            }
+
+            if (!IsCollidingWithBlock(totalMoveValue)
+                || isJumping)
             {
                 characterController.Move(totalMoveValue * Time.deltaTime);
             }
@@ -135,7 +147,16 @@ namespace Voxel.Player
                 return 0;
             }
 
-            float distanceMultiplier = Mathf.Clamp(hitInfo.distance, distanceMultiplierMax / 2, distanceMultiplierMax);
+            float distanceMultiplier;
+            if (hitInfo.collider != null)
+            {
+                distanceMultiplier = Mathf.Clamp(hitInfo.distance, distanceMultiplierMax / 4, distanceMultiplierMax);
+            }
+            else
+            {
+                distanceMultiplier = distanceMultiplierMax;
+            }
+
             groundState.Value = PlayerGroundState.None;
             return -Mathf.Abs(baseGravityMultiplier * distanceMultiplier);
         }
@@ -144,8 +165,8 @@ namespace Voxel.Player
         {
             if (moveState.Value == PlayerMoveState.IsMoving)
             {
-                Vector3 moveX = playerCamera.right * moveValue.x;
-                Vector3 moveZ = GetPlayerForward() * moveValue.y;
+                Vector3 moveX = (GetPlayerSideways() * moveValue.x).normalized;
+                Vector3 moveZ = (GetPlayerForward() * moveValue.y).normalized;
                 return (moveX + moveZ) * moveSpeed;
             }
 
@@ -166,8 +187,7 @@ namespace Voxel.Player
             while (time > 0)
             {
                 time -= jumpReduceAmount;
-                Vector3 jumpVector = new Vector3(0, Mathf.Clamp(time, 0, jumpStartValue), 0);
-                characterController.Move(jumpVector * jumpTotalMultiplier * Time.deltaTime);
+                jumpVector = new Vector3(0, Mathf.Clamp(time, 0, jumpStartValue), 0) * jumpTotalMultiplier;
                 yield return null;
             }
 
@@ -175,13 +195,28 @@ namespace Voxel.Player
             jumpState.Value = PlayerJumpState.None;
         }
 
-        private bool CheckBlockCollision(Vector3 playerForward)
+        private bool IsCollidingWithBlock(Vector3 totalMoveValue)
         {
-            Physics.Raycast(rayStart.position, playerForward, out RaycastHit hitInfo, blockCollisionRayLength, layersToDetect);
-            return hitInfo.collider != null;
+            Vector3 playerForward = GetPlayerForward();
+            // Forward ray
+            Physics.Raycast(rayStart.position, playerForward, out RaycastHit forwardHitInfo, blockCollisionRayLength, layersToDetect);
+            // Right ray
+            Vector3 playerForwardRight = Quaternion.AngleAxis(leftRightRayAngle, Vector3.up) * playerForward;
+            Physics.Raycast(rayStart.position, playerForwardRight, out RaycastHit rightHitInfo, blockCollisionRayLength, layersToDetect);
+            // Left ray
+            Vector3 playerForwardLeft = Quaternion.AngleAxis(-leftRightRayAngle, Vector3.up) * playerForward;
+            Physics.Raycast(rayStart.position, playerForwardLeft, out RaycastHit leftHitInfo, blockCollisionRayLength, layersToDetect);
+
+            return (forwardHitInfo.collider != null
+                   || rightHitInfo.collider != null
+                   || leftHitInfo.collider != null)
+                   && !Mathf.Approximately(totalMoveValue.z, 0)
+                   && !Mathf.Approximately(totalMoveValue.x, 0);
         }
 
         private Vector3 GetPlayerForward() => new Vector3(playerCamera.forward.x, 0, playerCamera.forward.z);
+
+        private Vector3 GetPlayerSideways() => new Vector3(playerCamera.right.x, 0, playerCamera.right.z);
 
         private void LateUpdate() => Looking();
 

@@ -50,7 +50,7 @@ MonoBehaviour:
   chunkSize: 8
   buildRadius: 5
   initialBuildRadius: 5
-  buildNearPlayerDistanceMultiplier: 0.25
+  buildNearPlayerDistanceMultiplier: 0.5
   removeOldChunksDistanceMultiplier: 10
   amountOfBuildsUntilRemoving: 2
   loopsUntilWaitingAFrame: 3

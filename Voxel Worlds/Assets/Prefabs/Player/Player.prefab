@@ -215,13 +215,14 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 55
   maxRayDistance: 1.25
-  baseGravityMultiplier: 2
+  baseGravityMultiplier: 3
   distanceMultiplierMax: 6
   moveState: {fileID: 11400000, guid: 2ee9d5f9c3f8e794c881b48635f13e92, type: 2}
   moveSpeed: 4
   sprintSpeedMultiplier: 1.6
   rayStart: {fileID: 597396429882515071}
   blockCollisionRayLength: 0.775
+  leftRightRayAngle: 20
   lookState: {fileID: 11400000, guid: 57b033d6c1fd7824bba28883e2d43541, type: 2}
   lookSpeedMultiplier: 10
   lookVerticalClampRange: 77.5
@@ -242,6 +243,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba8bf01e1197f0b4a95ad5a95629e40d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  nonMineableBlockTypes: 05000000
   inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
     type: 2}
   interactionMaxDistance: 4

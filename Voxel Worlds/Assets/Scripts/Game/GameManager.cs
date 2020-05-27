@@ -7,8 +7,13 @@ namespace Voxel.Game
 {
     public class GameManager : Singleton<GameManager>
     {
+        public delegate void OnGameActiveStateChange(bool state);
+        public event OnGameActiveStateChange OnGameActiveStateChangeEvent;
+
         public bool IsGameRunning { get; private set; }
         public bool IsGamePaused => Mathf.Approximately(Time.deltaTime, 0);
+
+        private void OnEnable() => IsGameRunning = true;
 
         /// <summary>
         /// Import the mouse_event to simulate mouse clicks.
@@ -35,11 +40,17 @@ namespace Voxel.Game
 
         public void MouseClick(MouseEvents mouseEvent) => mouse_event((uint)mouseEvent, 0, 0, 0, new UIntPtr(0));
 
-        public void Pause() => Time.timeScale = 0;
+        public void Pause()
+        {
+            OnGameActiveStateChangeEvent?.Invoke(false);
+            Time.timeScale = 0;
+        }
 
-        public void Resume() => Time.timeScale = 1;
-
-        private void OnEnable() => IsGameRunning = true;
+        public void Resume()
+        {
+            OnGameActiveStateChangeEvent?.Invoke(true);
+            Time.timeScale = 1;
+        }
 
         private void OnDisable() => IsGameRunning = false;
     }

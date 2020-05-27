@@ -60,9 +60,8 @@ namespace Voxel.Saving
             string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
                                                                  (int)chunk.GameObject.transform.position.y,
                                                                  (int)chunk.GameObject.transform.position.z));
-
             ValidateDirectory(chunkFile);
-            ChunkData newChunkData = new ChunkData(chunk.GetBlockTypeData(), chunk.GameObject.transform.position);
+            ChunkData newChunkData = new ChunkData(chunk.GetBlockTypeData());
             using (var fs = new FileStream(chunkFile, FileMode.Create))
             {
                 bf.Serialize(fs, newChunkData);

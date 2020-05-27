@@ -218,7 +218,7 @@ namespace Voxel.World
             Chunk currentChunk = GetChunkFromID(chunkID);
             if (currentChunk == null)
             {
-                currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform, emptyChunk: false)
+                currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
                 {
                     ChunkStatus = ChunkStatus.Draw // Signal that this chunk can be drawn
                 };

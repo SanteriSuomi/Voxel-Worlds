@@ -6,11 +6,10 @@ namespace Voxel.World
 {
     public enum BlockType
     {
-        None,
+        Air,
         Grass,
         Dirt,
         Stone,
-        Air,
         Diamond,
         Bedrock
     }
@@ -96,7 +95,7 @@ namespace Voxel.World
 
         public BlockType BlockType { get; private set; } // What type this block is (for UV maps)
 
-        public void SetType(BlockType type)
+        public void UpdateType(BlockType type)
         {
             BlockType = type;
             IsSolid = BlockType != BlockType.Air;
@@ -113,39 +112,43 @@ namespace Voxel.World
 
         public void BuildBlock()
         {
-            if (BlockType == BlockType.Air) return;
+            if (BlockType == BlockType.Air)
+            {
+                IsSolid = BlockType != BlockType.Air;
+                return;
+            }
 
             CheckNeighbours(position.x, position.y, position.z);
         }
 
-        private void CheckNeighbours(int positionX, int positionY, int positionZ)
+        private void CheckNeighbours(int posX, int posY, int posZ)
         {
-            if (!HasSolidNeighbour(positionX, positionY, positionZ + 1))
+            if (!HasSolidNeighbour(posX, posY, posZ + 1))
             {
                 CreateQuad(BlockSide.Front);
             }
 
-            if (!HasSolidNeighbour(positionX, positionY, positionZ - 1))
+            if (!HasSolidNeighbour(posX, posY, posZ - 1))
             {
                 CreateQuad(BlockSide.Back);
             }
 
-            if (!HasSolidNeighbour(positionX - 1, positionY, positionZ))
+            if (!HasSolidNeighbour(posX - 1, posY, posZ))
             {
                 CreateQuad(BlockSide.Left);
             }
 
-            if (!HasSolidNeighbour(positionX + 1, positionY, positionZ))
+            if (!HasSolidNeighbour(posX + 1, posY, posZ))
             {
                 CreateQuad(BlockSide.Right);
             }
 
-            if (!HasSolidNeighbour(positionX, positionY + 1, positionZ))
+            if (!HasSolidNeighbour(posX, posY + 1, posZ))
             {
                 CreateQuad(BlockSide.Top);
             }
 
-            if (!HasSolidNeighbour(positionX, positionY - 1, positionZ))
+            if (!HasSolidNeighbour(posX, posY - 1, posZ))
             {
                 CreateQuad(BlockSide.Bottom);
             }

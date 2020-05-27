@@ -43,3 +43,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3a90aa3f3ce7b944bf71340151ec69d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
+    type: 2}

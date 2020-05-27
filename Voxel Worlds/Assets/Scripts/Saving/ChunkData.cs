@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine;
 using Voxel.World;
 
 namespace Voxel.Saving
@@ -8,14 +7,12 @@ namespace Voxel.Saving
     public class ChunkData
     {
         public BlockType[,,] BlockTypeData { get; }
-        public Vector3 Position { get; }
 
         public ChunkData() { }
 
-        public ChunkData(BlockType[,,] blockTypeData, Vector3 chunkPosition)
+        public ChunkData(BlockType[,,] blockTypeData)
         {
             BlockTypeData = blockTypeData;
-            Position = chunkPosition;
         }
     }
 }

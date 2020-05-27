@@ -28,42 +28,53 @@ namespace Voxel.World
             return chunkData;
         }
 
-        private readonly BlockType[,,] blockMatrixData;
+        private readonly BlockType[,,] blockTypeData;
         public BlockType[,,] GetBlockTypeData()
         {
-            return blockMatrixData;
+            return blockTypeData;
         }
 
-        public Chunk(Vector3 position, Material material, Transform parent, bool emptyChunk)
+        public Chunk(Vector3 position, Material material, Transform parent)
         {
-            if (!emptyChunk)
+            // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
+            GameObject = new GameObject
             {
-                // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
-                GameObject = new GameObject
-                {
-                    name = position.ToString(),
-                };
+                name = position.ToString(),
+                tag = "Chunk"
+            };
 
-                GameObject.transform.position = position; // Chunk position in the world
-                GameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
-            }
-            else
-            {
-                GameObject = null;
-            }
+            GameObject.transform.position = position; // Chunk position in the world
+            GameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
 
             chunkMaterial = material; // Chunk texture (world atlas texture from world)
             int chunkSize = WorldManager.Instance.ChunkSize;
-            chunkData = new Block[chunkSize, chunkSize, chunkSize]; // Initialize the voxel data for this chunk
-            blockMatrixData = new BlockType[chunkSize, chunkSize, chunkSize];
+            chunkData = new Block[chunkSize, chunkSize, chunkSize];
+            blockTypeData = new BlockType[chunkSize, chunkSize, chunkSize];
             ChunkStatus = ChunkStatus.None;
         }
 
         // Build all the blocks for this chunk object
         public void BuildChunk()
         {
-            (bool saveExists, ChunkData chunkData) = SaveManager.Instance.Load(this);
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
+            (bool saveExists, ChunkData chunkData) = SaveManager.Instance.Load(this);
+            if (saveExists)
+            {
+                for (int x = 0; x < chunkSize; x++)
+                {
+                    for (int y = 0; y < chunkSize; y++)
+                    {
+                        for (int z = 0; z < chunkSize; z++)
+                        {
+                            Vector3Int localPosition = new Vector3Int(x, y, z);
+                            NewBlock(chunkData.BlockTypeData[x, y, z], localPosition);
+                        }
+                    }
+                }
+
+                return;
+            }
+
             for (int x = 0; x < chunkSize; x++)
             {
                 for (int z = 0; z < chunkSize; z++)
@@ -72,19 +83,13 @@ namespace Voxel.World
                     bool surfaceBlockAlreadyPlaced = false; // Bool to determine is the top block of a certain column has been placed in this Y loop
                     for (int y = chunkTopIndex; y >= 0; y--) // Start height Y from top so we can easily place the top block
                     {
-                        Vector3 localPosition = new Vector3(x, y, z);
+                        Vector3Int localPosition = new Vector3Int(x, y, z);
                         int worldPositionY = (int)(y + GameObject.transform.position.y);
-
-                        if (saveExists)
-                        {
-                            NewBlock(chunkData.BlockTypeData[x, y, z], x, z, y, localPosition);
-                            continue;
-                        }
 
                         // Bedrock
                         if (worldPositionY == 0)
                         {
-                            NewBlock(BlockType.Bedrock, x, z, y, localPosition);
+                            NewBlock(BlockType.Bedrock, localPosition);
                             continue;
                         }
 
@@ -95,27 +100,27 @@ namespace Voxel.World
                         // Air
                         if (worldPositionY >= noise2D)
                         {
-                            NewBlock(BlockType.Air, x, z, y, localPosition);
+                            NewBlock(BlockType.Air, localPosition);
                             continue;
                         }
 
                         // Underground (stone, diamond, etc)
-                        int undergroundLayerStart = noise2D - /*Random.Range(4, 8)*/6;
+                        int undergroundLayerStart = noise2D - 6;
                         if (worldPositionY <= undergroundLayerStart) // If we're certain range below the surface
                         {
                             float noise3D = Utils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
-                            if (noise3D >= 0.135f && noise3D <= /*Random.Range(0.135f, 0.1355f)*/0.1325f)
+                            if (noise3D >= 0.135f && noise3D <= 0.1325f)
                             {
-                                NewBlock(BlockType.Diamond, x, z, y, localPosition);
+                                NewBlock(BlockType.Diamond, localPosition);
                             }
                             // Caves are applied below this noise level but must be above certain range from the bottom
-                            else if (worldPositionY >= /*Random.Range(3, 5)*/4 && noise3D < /*Random.Range(0.125f, 0.135f)*/0.13f)
+                            else if (worldPositionY >= 4 && noise3D < 0.13f)
                             {
-                                NewBlock(BlockType.Air, x, z, y, localPosition);
+                                NewBlock(BlockType.Air, localPosition);
                             }
                             else
                             {
-                                NewBlock(BlockType.Stone, x, z, y, localPosition);
+                                NewBlock(BlockType.Stone, localPosition);
                             }
 
                             continue;
@@ -124,11 +129,11 @@ namespace Voxel.World
                         // Surface (grass, dirt, etc)
                         if (surfaceBlockAlreadyPlaced)
                         {
-                            NewBlock(BlockType.Dirt, x, z, y, localPosition);
+                            NewBlock(BlockType.Dirt, localPosition);
                         }
                         else
                         {
-                            NewBlock(BlockType.Grass, x, z, y, localPosition);
+                            NewBlock(BlockType.Grass, localPosition);
                             surfaceBlockAlreadyPlaced = true;
                         }
                     }
@@ -136,10 +141,10 @@ namespace Voxel.World
             }
         }
 
-        private void NewBlock(BlockType type, int x, int z, int y, Vector3 localPosition)
+        private void NewBlock(BlockType type, Vector3Int pos)
         {
-            chunkData[x, y, z] = new Block(type, localPosition, GameObject, this);
-            blockMatrixData[x, y, z] = chunkData[x, y, z].BlockType;
+            chunkData[pos.x, pos.y, pos.z] = new Block(type, pos, GameObject, this);
+            blockTypeData[pos.x, pos.y, pos.z] = type;
         }
 
         public void BuildBlocks()
@@ -151,12 +156,6 @@ namespace Voxel.World
                 {
                     for (int z = 0; z < chunkSize; z++)
                     {
-                        if (chunkData[x, y, z] == null)
-                        {
-                            Debug.LogWarning($"chunkData {(x, y, z)} is null");
-                            return;
-                        }
-
                         chunkData[x, y, z].BuildBlock();
                     }
                 }
@@ -179,10 +178,11 @@ namespace Voxel.World
             CombineInstance[] combinedMeshes = new CombineInstance[childCount];
             for (int i = 0; i < childCount; i++)
             {
-                MeshFilter childMeshFilter = GameObject.transform.GetChild(i).GetComponent<MeshFilter>();
+                Transform child = GameObject.transform.GetChild(i);
+                MeshFilter childMeshFilter = child.GetComponent<MeshFilter>();
                 combinedMeshes[i].mesh = childMeshFilter.sharedMesh;
                 combinedMeshes[i].transform = childMeshFilter.transform.localToWorldMatrix;
-                Object.Destroy(GameObject.transform.GetChild(i).gameObject); // Get rid of redundant children
+                Object.Destroy(child.gameObject); // Get rid of redundant children
             }
 
             MeshFilter parentMeshFilter = GameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
@@ -199,7 +199,7 @@ namespace Voxel.World
         /// <summary>
         /// Destroy chunk's mesh filter, mesh renderer and collider.
         /// </summary>
-        public void DestroyChunkData()
+        public void DestroyChunkMesh()
         {
             Object.DestroyImmediate(MeshFilter);
             Object.DestroyImmediate(MeshRenderer);

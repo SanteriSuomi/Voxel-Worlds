@@ -15,8 +15,8 @@ namespace Voxel.UI
 
         protected override void OnStateDisable()
         {
-            GameManager.Instance.Resume();
             GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTDOWN);
+            GameManager.Instance.Resume();
         }
     }
 }
