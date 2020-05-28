@@ -14,6 +14,15 @@ namespace Voxel.World
         Bedrock,
     }
 
+    public enum CrackType
+    {
+        Level1,
+        Level2,
+        Level3,
+        Level4,
+        Level5
+    }
+
     public enum BlockSide
     {
         Bottom,
@@ -74,6 +83,80 @@ namespace Voxel.World
             }
         };
 
+        private static readonly Vector2[,] uvBlockBreakMap =
+        {
+            // Level 1
+            {
+                new Vector2(0, 0),
+                new Vector2(0.0625f, 0),
+                new Vector2(0, 0.0625f),
+                new Vector2(0.0625f, 0.0625f)
+            },
+            // Level 2
+            {
+                new Vector2(0.0625f, 0),
+                new Vector2(0.125f, 0),
+                new Vector2(0.0625f, 0.0625f),
+                new Vector2(0.125f, 0.0625f)
+            },
+            // Level 3
+            {
+                new Vector2(0.125f, 0),
+                new Vector2(0.1875f, 0),
+                new Vector2(0.125f, 0.0625f),
+                new Vector2(0.1875f, 0.0625f)
+            },
+            // Level 4
+            {
+                new Vector2(0.1875f, 0),
+                new Vector2(0.25f, 0),
+                new Vector2(0.1875f, 0.0625f),
+                new Vector2(0.25f, 0.0625f)
+            },
+            // Level 5
+            {
+                new Vector2(0.25f, 0),
+                new Vector2(0.3125f, 0),
+                new Vector2(0.25f, 0.0625f),
+                new Vector2(0.3125f, 0.0625f)
+            },
+            // Level 6
+            {
+                new Vector2(0.3125f, 0),
+                new Vector2(0.375f, 0),
+                new Vector2(0.3125f, 0.0625f),
+                new Vector2(0.375f, 0.0625f)
+            },
+            // Level 7
+            {
+                new Vector2(0.375f, 0),
+                new Vector2(0.4375f, 0),
+                new Vector2(0.375f, 0.0625f),
+                new Vector2(0.4375f, 0.0625f)
+            },
+            // Level 8
+            {
+                new Vector2(0.4375f, 0),
+                new Vector2(0.5f, 0),
+                new Vector2(0.4375f, 0.0625f),
+                new Vector2(0.5f, 0.0625f)
+            },
+            // Level 9
+            {
+                new Vector2(0.5f, 0),
+                new Vector2(0.5625f, 0),
+                new Vector2(0.5f, 0.0625f),
+                new Vector2(0.5625f, 0.0625f)
+            },
+            // Level 10
+            {
+                new Vector2(0.5625f, 0),
+                new Vector2(0.625f, 0),
+                new Vector2(0.5625f, 0.0625f),
+                new Vector2(0.625f, 0.0625f)
+            }
+        };
+
         // All the points that make 2 triangles, which in turn makes a quad
         private static readonly int[] triangles = new int[]
         {
@@ -96,11 +179,12 @@ namespace Voxel.World
         #endregion
 
         public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
+        public BlockType BlockType { get; private set; } // What type this block is (for UV maps)
+        public int Health { get; private set; }
+
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3Int position; // Position relative to the chunk
-
-        public BlockType BlockType { get; private set; } // What type this block is (for UV maps)
 
         public void UpdateType(BlockType type)
         {
