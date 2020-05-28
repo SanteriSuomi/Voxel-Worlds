@@ -122,19 +122,16 @@ namespace Voxel.Player
             totalMoveValue.y += Grounding();
             totalMoveValue += Moving();
 
-            bool isJumping = false;
-            if (jumpState.Value == PlayerJumpState.IsJumping)
-            {
-                isJumping = true;
-                totalMoveValue += jumpVector;
-            }
-
             if (!IsCollidingWithBlock(totalMoveValue)
-                || isJumping)
+                || IsMovingSidewaysOrBackwards()
+                || jumpState.Value == PlayerJumpState.IsJumping)
             {
+                totalMoveValue += jumpVector;
                 characterController.Move(totalMoveValue * Time.deltaTime);
             }
         }
+
+        private bool IsMovingSidewaysOrBackwards() => moveValue.y < 0 || !Mathf.Approximately(moveValue.x, 0);
 
         private float Grounding()
         {
@@ -147,18 +144,17 @@ namespace Voxel.Player
                 return 0;
             }
 
-            float distanceMultiplier;
-            if (hitInfo.collider != null)
-            {
-                distanceMultiplier = Mathf.Clamp(hitInfo.distance, distanceMultiplierMax / 4, distanceMultiplierMax);
-            }
-            else
-            {
-                distanceMultiplier = distanceMultiplierMax;
-            }
+            float distanceMultiplier = CalculateDistanceMultiplier(hitInfo);
 
             groundState.Value = PlayerGroundState.None;
             return -Mathf.Abs(baseGravityMultiplier * distanceMultiplier);
+        }
+
+        private float CalculateDistanceMultiplier(RaycastHit hitInfo)
+        {
+            return hitInfo.collider != null
+                   ? Mathf.Clamp(hitInfo.distance, distanceMultiplierMax / 4, distanceMultiplierMax)
+                   : distanceMultiplierMax;
         }
 
         private Vector3 Moving()

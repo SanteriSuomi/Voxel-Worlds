@@ -60,18 +60,7 @@ namespace Voxel.World
             (bool saveExists, ChunkData chunkData) = SaveManager.Instance.Load(this);
             if (saveExists)
             {
-                for (int x = 0; x < chunkSize; x++)
-                {
-                    for (int y = 0; y < chunkSize; y++)
-                    {
-                        for (int z = 0; z < chunkSize; z++)
-                        {
-                            Vector3Int localPosition = new Vector3Int(x, y, z);
-                            NewBlock(chunkData.BlockTypeData[x, y, z], localPosition);
-                        }
-                    }
-                }
-
+                LoadChunk(chunkSize, chunkData);
                 return;
             }
 
@@ -141,6 +130,21 @@ namespace Voxel.World
             }
         }
 
+        private void LoadChunk(int chunkSize, ChunkData chunkData)
+        {
+            for (int x = 0; x < chunkSize; x++)
+            {
+                for (int y = 0; y < chunkSize; y++)
+                {
+                    for (int z = 0; z < chunkSize; z++)
+                    {
+                        Vector3Int localPosition = new Vector3Int(x, y, z);
+                        NewBlock(chunkData.BlockTypeData[x, y, z], localPosition);
+                    }
+                }
+            }
+        }
+
         private void NewBlock(BlockType type, Vector3Int pos)
         {
             chunkData[pos.x, pos.y, pos.z] = new Block(type, pos, GameObject, this);
@@ -171,7 +175,7 @@ namespace Voxel.World
             ChunkStatus = ChunkStatus.Keep;
         }
 
-        // Use Unity API CombineInstance to combine all the chunk's cubes in to one to save draw batches
+        // Combine all the chunk's cubes in to one to save draw batches
         private void CombineBlocks()
         {
             int childCount = GameObject.transform.childCount;

@@ -11,7 +11,7 @@ namespace Voxel.World
         Dirt,
         Stone,
         Diamond,
-        Bedrock
+        Bedrock,
     }
 
     public enum BlockSide
@@ -32,17 +32,17 @@ namespace Voxel.World
         {
             // Grass Top
             {
-                new Vector2(0, 0.9375f),
-                new Vector2(0.0625f, 0.9375f),
-                new Vector2(0, 1),
-                new Vector2(0.0625f, 1)
+                new Vector2(0.125f, 0.375f),
+                new Vector2(0.1875f, 0.375f),
+                new Vector2(0.125f, 0.4375f),
+                new Vector2(0.1875f, 0.4375f)
             },
-            // Dirt (also grass sides)
+            // Dirt
             {
-                new Vector2(0.25f, 0.875f),
-                new Vector2(0.3125f, 0.875f),
-                new Vector2(0.25f, 0.9375f),
-                new Vector2(0.3125f, 0.9375f)
+                new Vector2(0.125f, 0.9375f),
+                new Vector2(0.1875f, 0.9375f),
+                new Vector2(0.125f, 1),
+                new Vector2(0.1875f, 1)
             },
             // Stone
             {
@@ -64,6 +64,13 @@ namespace Voxel.World
                 new Vector2(0.5625f, 0.5625f),
                 new Vector2(0.5f, 0.625f),
                 new Vector2(0.5625f, 0.625f)
+            },
+            // Grass Side
+            {
+                new Vector2(0.1875f, 0.9375f),
+                new Vector2(0.25f, 0.9375f),
+                new Vector2(0.1875f, 1),
+                new Vector2(0.25f, 1)
             }
         };
 
@@ -274,50 +281,7 @@ namespace Voxel.World
 
 
                 Vector2[] uvs = new Vector2[4];
-                if (BlockType == BlockType.Grass && side == BlockSide.Top)
-                {
-                    uvs[0] = uvAtlasMap[0, 0];
-                    uvs[1] = uvAtlasMap[0, 1];
-                    uvs[2] = uvAtlasMap[0, 2];
-                    uvs[3] = uvAtlasMap[0, 3];
-                }
-                else if (BlockType == BlockType.Dirt || BlockType == BlockType.Grass)
-                {
-                    uvs[0] = uvAtlasMap[1, 0];
-                    uvs[1] = uvAtlasMap[1, 1];
-                    uvs[2] = uvAtlasMap[1, 2];
-                    uvs[3] = uvAtlasMap[1, 3];
-                }
-                else if (BlockType == BlockType.Stone)
-                {
-                    uvs[0] = uvAtlasMap[2, 0];
-                    uvs[1] = uvAtlasMap[2, 1];
-                    uvs[2] = uvAtlasMap[2, 2];
-                    uvs[3] = uvAtlasMap[2, 3];
-                }
-                else if (BlockType == BlockType.Diamond)
-                {
-                    uvs[0] = uvAtlasMap[3, 0];
-                    uvs[1] = uvAtlasMap[3, 1];
-                    uvs[2] = uvAtlasMap[3, 2];
-                    uvs[3] = uvAtlasMap[3, 3];
-                }
-                else if (BlockType == BlockType.Bedrock)
-                {
-                    uvs[0] = uvAtlasMap[4, 0];
-                    uvs[1] = uvAtlasMap[4, 1];
-                    uvs[2] = uvAtlasMap[4, 2];
-                    uvs[3] = uvAtlasMap[4, 3];
-                }
-                else
-                {
-                    Debug.LogWarning("No blocktype assigned, probably shouldn't be here.");
-                    int typeToInt = (int)BlockType;
-                    uvs[0] = uvAtlasMap[typeToInt, 0];
-                    uvs[1] = uvAtlasMap[typeToInt, 1];
-                    uvs[2] = uvAtlasMap[typeToInt, 2];
-                    uvs[3] = uvAtlasMap[typeToInt, 3];
-                }
+                AssignUVs(side, uvs);
 
                 Mesh mesh = new Mesh
                 {
@@ -354,6 +318,64 @@ namespace Voxel.World
             for (int i = 0; i < normals.Length; i++)
             {
                 normals[i] = direction;
+            }
+        }
+
+        private void AssignUVs(BlockSide side, Vector2[] uvs)
+        {
+            if (BlockType == BlockType.Grass && (side == BlockSide.Back
+                                             || side == BlockSide.Front
+                                             || side == BlockSide.Left
+                                             || side == BlockSide.Right))
+            {
+                uvs[0] = uvAtlasMap[5, 0];
+                uvs[1] = uvAtlasMap[5, 1];
+                uvs[2] = uvAtlasMap[5, 2];
+                uvs[3] = uvAtlasMap[5, 3];
+            }
+            else if (BlockType == BlockType.Grass && side == BlockSide.Top)
+            {
+                uvs[0] = uvAtlasMap[0, 0];
+                uvs[1] = uvAtlasMap[0, 1];
+                uvs[2] = uvAtlasMap[0, 2];
+                uvs[3] = uvAtlasMap[0, 3];
+            }
+            else if (BlockType == BlockType.Dirt || BlockType == BlockType.Grass)
+            {
+                uvs[0] = uvAtlasMap[1, 0];
+                uvs[1] = uvAtlasMap[1, 1];
+                uvs[2] = uvAtlasMap[1, 2];
+                uvs[3] = uvAtlasMap[1, 3];
+            }
+            else if (BlockType == BlockType.Stone)
+            {
+                uvs[0] = uvAtlasMap[2, 0];
+                uvs[1] = uvAtlasMap[2, 1];
+                uvs[2] = uvAtlasMap[2, 2];
+                uvs[3] = uvAtlasMap[2, 3];
+            }
+            else if (BlockType == BlockType.Diamond)
+            {
+                uvs[0] = uvAtlasMap[3, 0];
+                uvs[1] = uvAtlasMap[3, 1];
+                uvs[2] = uvAtlasMap[3, 2];
+                uvs[3] = uvAtlasMap[3, 3];
+            }
+            else if (BlockType == BlockType.Bedrock)
+            {
+                uvs[0] = uvAtlasMap[4, 0];
+                uvs[1] = uvAtlasMap[4, 1];
+                uvs[2] = uvAtlasMap[4, 2];
+                uvs[3] = uvAtlasMap[4, 3];
+            }
+            else
+            {
+                Debug.LogWarning("No blocktype assigned, probably shouldn't be here.");
+                int blockType = (int)BlockType;
+                uvs[0] = uvAtlasMap[blockType, 0];
+                uvs[1] = uvAtlasMap[blockType, 1];
+                uvs[2] = uvAtlasMap[blockType, 2];
+                uvs[3] = uvAtlasMap[blockType, 3];
             }
         }
     }
