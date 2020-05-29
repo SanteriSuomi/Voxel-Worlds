@@ -8,7 +8,6 @@ namespace Voxel.Utility
     /// </summary>
     public class ReferenceManager : Singleton<ReferenceManager>
     {
-
         private Camera mainCamera;
         public Camera MainCamera
         {

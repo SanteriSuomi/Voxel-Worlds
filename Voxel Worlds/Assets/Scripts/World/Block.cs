@@ -14,15 +14,6 @@ namespace Voxel.World
         Bedrock,
     }
 
-    public enum CrackType
-    {
-        Level1,
-        Level2,
-        Level3,
-        Level4,
-        Level5
-    }
-
     public enum BlockSide
     {
         Bottom,
@@ -83,80 +74,6 @@ namespace Voxel.World
             }
         };
 
-        private static readonly Vector2[,] uvBlockBreakMap =
-        {
-            // Level 1
-            {
-                new Vector2(0, 0),
-                new Vector2(0.0625f, 0),
-                new Vector2(0, 0.0625f),
-                new Vector2(0.0625f, 0.0625f)
-            },
-            // Level 2
-            {
-                new Vector2(0.0625f, 0),
-                new Vector2(0.125f, 0),
-                new Vector2(0.0625f, 0.0625f),
-                new Vector2(0.125f, 0.0625f)
-            },
-            // Level 3
-            {
-                new Vector2(0.125f, 0),
-                new Vector2(0.1875f, 0),
-                new Vector2(0.125f, 0.0625f),
-                new Vector2(0.1875f, 0.0625f)
-            },
-            // Level 4
-            {
-                new Vector2(0.1875f, 0),
-                new Vector2(0.25f, 0),
-                new Vector2(0.1875f, 0.0625f),
-                new Vector2(0.25f, 0.0625f)
-            },
-            // Level 5
-            {
-                new Vector2(0.25f, 0),
-                new Vector2(0.3125f, 0),
-                new Vector2(0.25f, 0.0625f),
-                new Vector2(0.3125f, 0.0625f)
-            },
-            // Level 6
-            {
-                new Vector2(0.3125f, 0),
-                new Vector2(0.375f, 0),
-                new Vector2(0.3125f, 0.0625f),
-                new Vector2(0.375f, 0.0625f)
-            },
-            // Level 7
-            {
-                new Vector2(0.375f, 0),
-                new Vector2(0.4375f, 0),
-                new Vector2(0.375f, 0.0625f),
-                new Vector2(0.4375f, 0.0625f)
-            },
-            // Level 8
-            {
-                new Vector2(0.4375f, 0),
-                new Vector2(0.5f, 0),
-                new Vector2(0.4375f, 0.0625f),
-                new Vector2(0.5f, 0.0625f)
-            },
-            // Level 9
-            {
-                new Vector2(0.5f, 0),
-                new Vector2(0.5625f, 0),
-                new Vector2(0.5f, 0.0625f),
-                new Vector2(0.5625f, 0.0625f)
-            },
-            // Level 10
-            {
-                new Vector2(0.5625f, 0),
-                new Vector2(0.625f, 0),
-                new Vector2(0.5625f, 0.0625f),
-                new Vector2(0.625f, 0.0625f)
-            }
-        };
-
         // All the points that make 2 triangles, which in turn makes a quad
         private static readonly int[] triangles = new int[]
         {
@@ -176,21 +93,21 @@ namespace Voxel.World
         private static Vector3 rightTop0 = new Vector3(0.5f, 0.5f, 0.5f);
         private static Vector3 rightTop1 = new Vector3(0.5f, 0.5f, -0.5f);
         private static Vector3 leftTop1 = new Vector3(-0.5f, 0.5f, -0.5f);
+
+        private static readonly int quadCount = 6;
         #endregion
 
-        public bool IsSolid { get; private set; } // Bool for checking if this block is solid material
-        public BlockType BlockType { get; private set; } // What type this block is (for UV maps)
-        public int Health { get; private set; }
+        public bool IsSolid { get; private set; }
+        public BlockType BlockType { get; private set; }
+
+        /// <summary>
+        /// The average position of block's all quads (the middle of the block).
+        /// </summary>
+        public Vector3 BlockPositionAverage { get; private set; }
 
         private readonly GameObject parentChunk; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3Int position; // Position relative to the chunk
-
-        public void UpdateType(BlockType type)
-        {
-            BlockType = type;
-            IsSolid = BlockType != BlockType.Air;
-        }
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
         {
@@ -198,6 +115,12 @@ namespace Voxel.World
             this.position = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
             parentChunk = parent;
             chunkOwner = owner;
+            IsSolid = BlockType != BlockType.Air;
+        }
+
+        public void UpdateBlockType(BlockType type)
+        {
+            BlockType = type;
             IsSolid = BlockType != BlockType.Air;
         }
 
@@ -209,40 +132,78 @@ namespace Voxel.World
                 return;
             }
 
-            CheckNeighbours(position.x, position.y, position.z);
+            CheckNeighbours();
         }
 
-        private void CheckNeighbours(int posX, int posY, int posZ)
+        private void CheckNeighbours()
         {
-            if (!HasSolidNeighbour(posX, posY, posZ + 1))
+            List<Vector3> quadPositions = new List<Vector3>(quadCount);
+
+            // Front quad
+            Vector3Int quadPos = new Vector3Int(position.x, position.y, position.z + 1);
+            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Front);
             }
+            quadPositions.Add(quadPos);
 
-            if (!HasSolidNeighbour(posX, posY, posZ - 1))
+            // Back quad
+            quadPos = new Vector3Int(position.x, position.y, position.z - 1);
+            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Back);
             }
+            quadPositions.Add(quadPos);
 
-            if (!HasSolidNeighbour(posX - 1, posY, posZ))
+            // Left quad
+            quadPos = new Vector3Int(position.x - 1, position.y, position.z);
+            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Left);
             }
+            quadPositions.Add(quadPos);
 
-            if (!HasSolidNeighbour(posX + 1, posY, posZ))
+            // Right quad
+            quadPos = new Vector3Int(position.x + 1, position.y, position.z);
+            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Right);
             }
+            quadPositions.Add(quadPos);
 
-            if (!HasSolidNeighbour(posX, posY + 1, posZ))
+            // Top quad
+            quadPos = new Vector3Int(position.x, position.y + 1, position.z);
+            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Top);
             }
+            quadPositions.Add(quadPos);
 
-            if (!HasSolidNeighbour(posX, posY - 1, posZ))
+            // Bottom quad
+            quadPos = new Vector3Int(position.x, position.y - 1, position.z);
+            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Bottom);
             }
+            quadPositions.Add(quadPos);
+
+            CalculateBlockPositionAverage(quadPositions);
+        }
+
+        private void CalculateBlockPositionAverage(List<Vector3> quadPositions)
+        {
+            Vector3 blockPositionAverageTemp = Vector3.zero;
+            for (int i = 0; i < quadPositions.Count; i++)
+            {
+                blockPositionAverageTemp.x += chunkOwner.GameObject.transform.position.x + quadPositions[i].x;
+                blockPositionAverageTemp.y += chunkOwner.GameObject.transform.position.y + quadPositions[i].y;
+                blockPositionAverageTemp.z += chunkOwner.GameObject.transform.position.z + quadPositions[i].z;
+            }
+
+            blockPositionAverageTemp.x /= quadCount;
+            blockPositionAverageTemp.y /= quadCount;
+            blockPositionAverageTemp.z /= quadCount;
+            BlockPositionAverage = blockPositionAverageTemp;
         }
 
         private bool HasSolidNeighbour(int x, int y, int z)
@@ -329,7 +290,6 @@ namespace Voxel.World
                 List<Vector3> vertices = new List<Vector3>();
                 Vector3[] normals = new Vector3[4];
 
-                // Build a quad side and assign it's normals
                 switch (side)
                 {
                     case BlockSide.Bottom:
@@ -363,7 +323,6 @@ namespace Voxel.World
                         break;
                 }
 
-
                 Vector2[] uvs = new Vector2[4];
                 AssignUVs(side, uvs);
 
@@ -373,8 +332,8 @@ namespace Voxel.World
                 };
 
                 mesh.SetVertices(vertices);
-                mesh.normals = normals;
-                mesh.uv = uvs;
+                mesh.SetNormals(normals);
+                mesh.SetUVs(0, uvs);
                 mesh.SetTriangles(triangles, 0);
 
                 GameObject quad = new GameObject($"Quad {side}");

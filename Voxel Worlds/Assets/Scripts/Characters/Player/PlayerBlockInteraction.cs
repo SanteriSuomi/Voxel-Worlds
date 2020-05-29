@@ -67,7 +67,7 @@ namespace Voxel.Player
                 yield return null;
             }
         }
-
+        private Vector3 asd;
         private void BlockHit(RaycastHit hit)
         {
             Vector3 hitChunkPosition = hit.transform.position;
@@ -83,11 +83,20 @@ namespace Voxel.Player
             if (localChunk != null)
             {
                 Block localBlock = localChunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
+                asd = localBlock.BlockPositionAverage;
+                Debug.Log(asd);
+                Debug.DrawLine(transform.position, localBlock.BlockPositionAverage, Color.red, 5);
                 if (IsPermittedBlock(localBlock))
                 {
                     RebuildAffectedChunks(hitChunkPosition, localChunk);
                 }
             }
+        }
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(asd, 0.2f);
         }
 
         private bool IsPermittedBlock(Block block)
@@ -165,7 +174,7 @@ namespace Voxel.Player
         private void UpdateBlockType(Chunk chunk)
         {
             Block chunkHitBlock = chunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
-            chunkHitBlock.UpdateType(BlockType.Air);
+            chunkHitBlock.UpdateBlockType(BlockType.Air);
             BlockType[,,] blockTypeData = chunk.GetBlockTypeData();
             blockTypeData[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z] = BlockType.Air;
         }

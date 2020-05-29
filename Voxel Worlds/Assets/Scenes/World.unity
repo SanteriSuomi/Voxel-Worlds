@@ -745,11 +745,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: WorldManager
       objectReference: {fileID: 0}
-    - target: {fileID: 7081502516914564491, guid: d70f0509e3e475b4eb34bf8ba651d940,
-        type: 3}
-      propertyPath: worldTextureAtlas
-      value: 
-      objectReference: {fileID: 2100000, guid: c17e763c77fbfbc4d92a1c37437e2d60, type: 2}
     - target: {fileID: 7081502516914564492, guid: d70f0509e3e475b4eb34bf8ba651d940,
         type: 3}
       propertyPath: m_LocalPosition.x
