@@ -95,15 +95,6 @@ namespace Voxel.Player
             }
         }
 
-        private static void InstantiateHitDecal(Block localBlock)
-        {
-            string decalDatabaseKey = localBlock.BlockPositionAverage.ToString();
-            if (!WorldManager.Instance.HitDecalDatabase.ContainsKey(decalDatabaseKey))
-            {
-                HitDecalPool.Instance.Get().Activate(localBlock, decalDatabaseKey);
-            }
-        }
-
         private bool IsPermittedBlock(Block block)
         {
             for (int i = 0; i < nonMineableBlockTypes.Length; i++)
@@ -115,6 +106,15 @@ namespace Voxel.Player
             }
 
             return true;
+        }
+
+        private static void InstantiateHitDecal(Block localBlock)
+        {
+            string decalDatabaseKey = localBlock.BlockPositionAverage.ToString();
+            if (!WorldManager.Instance.HitDecalDatabase.ContainsKey(decalDatabaseKey))
+            {
+                HitDecalPool.Instance.Get().Activate(localBlock, decalDatabaseKey);
+            }
         }
 
         private void RebuildNeighbouringChunks(Vector3 localChunkPosition)

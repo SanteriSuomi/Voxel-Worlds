@@ -27,18 +27,18 @@ namespace Voxel.World
     public class Block
     {
         #region Static Block Settings
-        // Amount of times a block needs to be until it gets destroyed.
+        // Amount of times a block needs to be until it gets destroyed. Same order as BlockType enum.
         private static readonly int[] blockHealthMap =
         {
             0, // Air
-            3, // Grass
-            3, // Dirt
-            6, // Stone
+            4, // Grass
+            4, // Dirt
+            7, // Stone
             9, // Diamond
             0 // Bedrock
         };
 
-        // UV coordinates for the material on the UV atlas
+        // UV coordinates for different blocks on the UV atlas
         private static readonly Vector2[,] uvAtlasMap =
         {
             // Grass Top
@@ -91,34 +91,38 @@ namespace Voxel.World
             3, 2, 1, 3, 1, 0
         };
 
-        // All possible points on a cube made out of quads with clockwise ordering
+        // All possible points on a cube made out of quads with clockwise ordering.
         // left/right: position of X (or "left/right")
         // Bottom/Top: position of Y (or "bottom/top")
         // 0/1: position of Z (or "depth")
         // https://cglearn.codelight.eu/files/course/3/cube.png
         private static Vector3 leftBottom0 = new Vector3(-0.5f, -0.5f, 0.5f);
+        private static Vector3 leftBottom1 = new Vector3(-0.5f, -0.5f, -0.5f);
         private static Vector3 rightBottom0 = new Vector3(0.5f, -0.5f, 0.5f);
         private static Vector3 rightBottom1 = new Vector3(0.5f, -0.5f, -0.5f);
-        private static Vector3 leftBottom1 = new Vector3(-0.5f, -0.5f, -0.5f);
-        private static Vector3 leftTop0 = new Vector3(-0.5f, 0.5f, 0.5f);
         private static Vector3 rightTop0 = new Vector3(0.5f, 0.5f, 0.5f);
         private static Vector3 rightTop1 = new Vector3(0.5f, 0.5f, -0.5f);
+        private static Vector3 leftTop0 = new Vector3(-0.5f, 0.5f, 0.5f);
         private static Vector3 leftTop1 = new Vector3(-0.5f, 0.5f, -0.5f);
 
-        private static readonly int quadCount = 6;
+        private const int maxQuadCount = 6;
         #endregion
 
         public bool IsSolid { get; private set; }
         public BlockType BlockType { get; private set; }
+
         public int BlockHealth { get; private set; }
+        public int MaxBlockHealth => blockHealthMap[(int)BlockType];
+        public int MidBlockHealth => MaxBlockHealth / 2;
+        public int MinBlockHealth => 1;
 
         /// <summary>
         /// The average position of block's all quads (the middle of the block).
         /// </summary>
         public Vector3 BlockPositionAverage { get; private set; }
 
-        private readonly GameObject chunkGameObject; // Object (chunk) this block is parented to
-        private readonly Chunk chunkOwner; // Chunk reference to get chunk data
+        private readonly GameObject chunkGameObject;
+        private readonly Chunk chunkOwner;
         private readonly Vector3Int position; // Position relative to the chunk
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
@@ -168,7 +172,7 @@ namespace Voxel.World
 
         private void CheckNeighbours()
         {
-            List<Vector3> quadPositions = new List<Vector3>(quadCount);
+            List<Vector3> quadPositions = new List<Vector3>(maxQuadCount);
 
             // Front quad
             Vector3Int quadPos = new Vector3Int(position.x, position.y, position.z + 1);
@@ -231,9 +235,9 @@ namespace Voxel.World
                 blockPositionAverageTemp.z += chunkOwner.GameObject.transform.position.z + quadPositions[i].z;
             }
 
-            blockPositionAverageTemp.x /= quadCount;
-            blockPositionAverageTemp.y /= quadCount;
-            blockPositionAverageTemp.z /= quadCount;
+            blockPositionAverageTemp.x /= maxQuadCount;
+            blockPositionAverageTemp.y /= maxQuadCount;
+            blockPositionAverageTemp.z /= maxQuadCount;
             BlockPositionAverage = blockPositionAverageTemp;
         }
 
@@ -243,23 +247,20 @@ namespace Voxel.World
             {
                 int chunkSize = WorldManager.Instance.ChunkSize - 1;
                 Block[,,] chunkData;
-                // If the neighbour position we're checking isn't in the bounds of this chunk, we must be in another one
+
+                // Check if the position we're checking is in a neighbouring chunk
                 if (x < 0 || x >= chunkSize
                     || y < 0 || y >= chunkSize
                     || z < 0 || z >= chunkSize)
                 {
-                    // Convert the X Y and Z position to the neigbouring chunk
-                    Vector3 neighbouringChunkPosition
-                        = chunkGameObject.transform.position
-                        + new Vector3((x - position.x) * chunkSize,
-                                      (y - position.y) * chunkSize,
-                                      (z - position.z) * chunkSize);
+                    Vector3 neighbouringChunkPosition = chunkGameObject.transform.position
+                                                      + new Vector3((x - position.x) * chunkSize,
+                                                                    (y - position.y) * chunkSize,
+                                                                    (z - position.z) * chunkSize);
+                    x = CheckBlockEdge(x);
+                    y = CheckBlockEdge(y);
+                    z = CheckBlockEdge(z);
 
-                    x = CheckBlockEdgeCase(x);
-                    y = CheckBlockEdgeCase(y);
-                    z = CheckBlockEdgeCase(z);
-
-                    // Finally check if this chunk exists by consulting the chunk dictionary from it's ID
                     Chunk chunk = WorldManager.Instance.GetChunk(neighbouringChunkPosition);
                     if (chunk != null)
                     {
@@ -267,17 +268,14 @@ namespace Voxel.World
                     }
                     else
                     {
-                        // Since we couldn't find a the chunk in the dictionary, there is no chunk at this position
                         return false;
                     }
                 }
                 else
                 {
-                    // The neighbour position is in this chunk...
                     chunkData = chunkOwner.GetChunkData();
                 }
 
-                // Then at last check the neighbour that the neighbour is solid
                 if (chunkData != null
                     && x <= chunkData.GetUpperBound(0)
                     && x >= chunkData.GetLowerBound(0)
@@ -289,24 +287,24 @@ namespace Voxel.World
                     return chunkData[x, y, z].IsSolid;
                 }
 
-                // We've checked everything absolutely isn't a neighbour
                 return false;
             }
             catch (NullReferenceException)
             {
-                // On any error we return false
                 return false;
             }
         }
 
-        private int CheckBlockEdgeCase(int index)
+        // Checks if a given axis is not a local coordinate, but a neighbouring one (chunk). 
+        // Axis must be in between 0 and ChunkSize for it to be a local chunk.
+        private int CheckBlockEdge(int index)
         {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
-            if (index <= -1) // We must be at the end of another chunk as there is no index -1
+            if (index <= -1)
             {
                 return chunkSize - 1;
             }
-            else if (index >= chunkSize) // We must be at the start of another chunk as there is no index at ChunkSize, only ChunkSize - 1
+            else if (index >= chunkSize)
             {
                 return 0;
             }
