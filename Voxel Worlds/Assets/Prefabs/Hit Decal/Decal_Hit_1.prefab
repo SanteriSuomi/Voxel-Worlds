@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6564103030536467665}
   - component: {fileID: 7293553456474440723}
   m_Layer: 0
-  m_Name: 0,0_0.0625,0_0,0.0625_0.0625,0.0625
+  m_Name: Decal_Hit_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -49,7 +49,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 26731eedeaa6aba4bb996705e83780d3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

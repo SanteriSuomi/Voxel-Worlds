@@ -2,8 +2,8 @@
 using System.Collections;
 using UnityEngine;
 using Voxel.Game;
-using Voxel.Saving;
 using Voxel.Utility;
+using Voxel.Utility.Pooling;
 using Voxel.World;
 
 namespace Voxel.Player
@@ -11,10 +11,11 @@ namespace Voxel.Player
     public class PlayerBlockInteraction : MonoBehaviour
     {
         [SerializeField]
-        private BlockType[] nonMineableBlockTypes = default;
+        private InputActionsController inputActionsController = default;
 
         [SerializeField]
-        private InputActionsController inputActionsController = default;
+        private BlockType[] nonMineableBlockTypes = default;
+
         [SerializeField]
         private float interactionMaxDistance = 2;
 
@@ -60,15 +61,15 @@ namespace Voxel.Player
                     Ray ray = ReferenceManager.Instance.MainCamera.ScreenPointToRay(rayPosition);
                     if (Physics.Raycast(ray, out RaycastHit hit, interactionMaxDistance))
                     {
-                        BlockHit(hit);
+                        OnBlockHit(hit);
                     }
                 }
 
                 yield return null;
             }
         }
-        private Vector3 asd;
-        private void BlockHit(RaycastHit hit)
+
+        private void OnBlockHit(RaycastHit hit)
         {
             Vector3 hitChunkPosition = hit.transform.position;
             Vector3 worldBlockPosition = hit.point - (hit.normal / 2);
@@ -83,20 +84,24 @@ namespace Voxel.Player
             if (localChunk != null)
             {
                 Block localBlock = localChunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
-                asd = localBlock.BlockPositionAverage;
-                Debug.Log(asd);
-                Debug.DrawLine(transform.position, localBlock.BlockPositionAverage, Color.red, 5);
                 if (IsPermittedBlock(localBlock))
                 {
-                    RebuildAffectedChunks(hitChunkPosition, localChunk);
+                    InstantiateHitDecal(localBlock);
+                    if (localBlock.DamageBlock())
+                    {
+                        RebuildNeighbouringChunks(hitChunkPosition);
+                    }
                 }
             }
         }
 
-        private void OnDrawGizmos()
+        private static void InstantiateHitDecal(Block localBlock)
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(asd, 0.2f);
+            string decalDatabaseKey = localBlock.BlockPositionAverage.ToString();
+            if (!WorldManager.Instance.HitDecalDatabase.ContainsKey(decalDatabaseKey))
+            {
+                HitDecalPool.Instance.Get().Activate(localBlock, decalDatabaseKey);
+            }
         }
 
         private bool IsPermittedBlock(Block block)
@@ -110,12 +115,6 @@ namespace Voxel.Player
             }
 
             return true;
-        }
-
-        private void RebuildAffectedChunks(Vector3 hitChunkPosition, Chunk hitChunk)
-        {
-            RebuildChunk(hitChunk, setBlockType: true);
-            RebuildNeighbouringChunks(hitChunkPosition);
         }
 
         private void RebuildNeighbouringChunks(Vector3 localChunkPosition)
@@ -153,30 +152,7 @@ namespace Voxel.Player
         private void RebuildNeighbourChunk(Func<Chunk> chunkGetMethod)
         {
             Chunk neighbourChunk = chunkGetMethod();
-            if (neighbourChunk != null)
-            {
-                RebuildChunk(neighbourChunk, setBlockType: false);
-            }
-        }
-
-        private void RebuildChunk(Chunk chunk, bool setBlockType)
-        {
-            if (setBlockType)
-            {
-                UpdateBlockType(chunk);
-            }
-
-            chunk.DestroyChunkMesh();
-            chunk.BuildBlocks();
-            SaveManager.Instance.Save(chunk);
-        }
-
-        private void UpdateBlockType(Chunk chunk)
-        {
-            Block chunkHitBlock = chunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
-            chunkHitBlock.UpdateBlockType(BlockType.Air);
-            BlockType[,,] blockTypeData = chunk.GetBlockTypeData();
-            blockTypeData[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z] = BlockType.Air;
+            neighbourChunk?.RebuildChunk((false, Vector3Int.zero));
         }
 
         private void DisableInteractCoroutine()

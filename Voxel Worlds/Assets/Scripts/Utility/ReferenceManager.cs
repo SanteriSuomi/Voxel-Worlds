@@ -23,11 +23,15 @@ namespace Voxel.Utility
         }
 
         [SerializeField]
+        private Material blockAtlas = default;
+        public Material BlockAtlas => blockAtlas;
+
+        [SerializeField]
         private Camera uiCamera = default;
         public Camera UICamera => uiCamera;
 
         [SerializeField]
-        private Image crosshair = default;
-        public Image Crosshair => crosshair;
+        private RawImage crosshair = default;
+        public RawImage Crosshair => crosshair;
     }
 }

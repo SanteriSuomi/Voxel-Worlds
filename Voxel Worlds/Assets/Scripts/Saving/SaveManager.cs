@@ -18,6 +18,11 @@ namespace Voxel.Saving
         protected override void Awake()
         {
             base.Awake();
+            InitializeBinaryFormatter();
+        }
+
+        private void InitializeBinaryFormatter()
+        {
             var surrogates = new SurrogateSelector();
             surrogates.AddSurrogate(typeof(Vector3), new StreamingContext(StreamingContextStates.All), new Vector3Surrogate());
             surrogates.AddSurrogate(typeof(Quaternion), new StreamingContext(StreamingContextStates.All), new QuaternionSurrogate());

@@ -16,44 +16,55 @@ namespace Voxel.World
     {
         public ChunkStatus ChunkStatus { get; set; }
 
-        public GameObject GameObject { get; } // This is the chunk's gameobject in the world
+        public GameObject GameObject { get; }
         public MeshFilter MeshFilter { get; private set; }
         public MeshRenderer MeshRenderer { get; private set; }
         public Collider Collider { get; private set; }
 
-        private readonly Material chunkMaterial; // This is the world texture atlas, the block uses it to get the texture using the UV map coordinates (set in block)
-        private readonly Block[,,] chunkData; // The 3D voxel data array for this chunk, contains the data for all this chunk's blocks
-        public Block[,,] GetChunkData()
-        {
-            return chunkData;
-        }
+        private readonly Block[,,] chunkData;
+        public Block[,,] GetChunkData() => chunkData;
 
         private readonly BlockType[,,] blockTypeData;
-        public BlockType[,,] GetBlockTypeData()
-        {
-            return blockTypeData;
-        }
+        public BlockType[,,] GetBlockTypeData() => blockTypeData;
 
-        public Chunk(Vector3 position, Material material, Transform parent)
+        public Chunk(Vector3 position, Transform parent)
         {
-            // Create a new gameobject for the chunk and set it's name to it's position in the gameworld
             GameObject = new GameObject
             {
                 name = position.ToString(),
                 tag = "Chunk"
             };
 
-            GameObject.transform.position = position; // Chunk position in the world
-            GameObject.transform.SetParent(parent); // Set this chunk to be the parent of the world object
+            GameObject.transform.position = position;
+            GameObject.transform.SetParent(parent);
 
-            chunkMaterial = material; // Chunk texture (world atlas texture from world)
             int chunkSize = WorldManager.Instance.ChunkSize;
             chunkData = new Block[chunkSize, chunkSize, chunkSize];
             blockTypeData = new BlockType[chunkSize, chunkSize, chunkSize];
             ChunkStatus = ChunkStatus.None;
         }
 
-        // Build all the blocks for this chunk object
+        public void RebuildChunk((bool resetBlock, Vector3Int blockPosition) resetData)
+        {
+            if (resetData.resetBlock)
+            {
+                ResetBlockType(resetData.blockPosition);
+            }
+
+            DestroyChunkMesh();
+            BuildBlocks();
+            SaveManager.Instance.Save(this);
+        }
+
+        private void ResetBlockType(Vector3Int position) => GetChunkData()[position.x, position.y, position.z].UpdateBlockType(BlockType.Air);
+
+        private void DestroyChunkMesh()
+        {
+            Object.DestroyImmediate(MeshFilter);
+            Object.DestroyImmediate(MeshRenderer);
+            Object.DestroyImmediate(Collider);
+        }
+
         public void BuildChunk()
         {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
@@ -70,7 +81,7 @@ namespace Voxel.World
                 {
                     int chunkTopIndex = chunkSize;
                     bool surfaceBlockAlreadyPlaced = false; // Bool to determine is the top block of a certain column has been placed in this Y loop
-                    for (int y = chunkTopIndex; y >= 0; y--) // Start height Y from top so we can easily place the top block
+                    for (int y = chunkTopIndex; y >= 0; y--) // Start from the top so we can easily place the top block
                     {
                         Vector3Int localPosition = new Vector3Int(x, y, z);
                         int worldPositionY = (int)(y + GameObject.transform.position.y);
@@ -86,6 +97,7 @@ namespace Voxel.World
                         int worldPositionZ = (int)(z + GameObject.transform.position.z);
                         int noise2D = (int)(Utils.FBM2D(worldPositionX, worldPositionZ)
                             * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
+
                         // Air
                         if (worldPositionY >= noise2D)
                         {
@@ -93,9 +105,9 @@ namespace Voxel.World
                             continue;
                         }
 
-                        // Underground (stone, diamond, etc)
+                        // Underground layer (stone, diamond, etc)
                         int undergroundLayerStart = noise2D - 6;
-                        if (worldPositionY <= undergroundLayerStart) // If we're certain range below the surface
+                        if (worldPositionY <= undergroundLayerStart)
                         {
                             float noise3D = Utils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
                             if (noise3D >= 0.135f && noise3D <= 0.1325f)
@@ -171,11 +183,11 @@ namespace Voxel.World
         private void FinalizeChunk()
         {
             CombineBlocks();
-            AddCollider();
+            Collider = GameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
             ChunkStatus = ChunkStatus.Keep;
         }
 
-        // Combine all the chunk's cubes in to one to save draw batches
+        // Combine all the chunk's voxels into one mesh to save draw batches
         private void CombineBlocks()
         {
             int childCount = GameObject.transform.childCount;
@@ -195,19 +207,7 @@ namespace Voxel.World
             parentMeshFilter.mesh.CombineMeshes(combinedMeshes, true, true);
             MeshRenderer parentMeshRenderer = GameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
             MeshRenderer = parentMeshRenderer;
-            parentMeshRenderer.material = chunkMaterial;
-        }
-
-        private void AddCollider() => Collider = GameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
-
-        /// <summary>
-        /// Destroy chunk's mesh filter, mesh renderer and collider.
-        /// </summary>
-        public void DestroyChunkMesh()
-        {
-            Object.DestroyImmediate(MeshFilter);
-            Object.DestroyImmediate(MeshRenderer);
-            Object.DestroyImmediate(Collider);
+            parentMeshRenderer.material = ReferenceManager.Instance.BlockAtlas;
         }
     }
 }

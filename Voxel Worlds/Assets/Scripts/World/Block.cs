@@ -11,7 +11,7 @@ namespace Voxel.World
         Dirt,
         Stone,
         Diamond,
-        Bedrock,
+        Bedrock
     }
 
     public enum BlockSide
@@ -27,6 +27,17 @@ namespace Voxel.World
     public class Block
     {
         #region Static Block Settings
+        // Amount of times a block needs to be until it gets destroyed.
+        private static readonly int[] blockHealthMap =
+        {
+            0, // Air
+            3, // Grass
+            3, // Dirt
+            6, // Stone
+            9, // Diamond
+            0 // Bedrock
+        };
+
         // UV coordinates for the material on the UV atlas
         private static readonly Vector2[,] uvAtlasMap =
         {
@@ -99,13 +110,14 @@ namespace Voxel.World
 
         public bool IsSolid { get; private set; }
         public BlockType BlockType { get; private set; }
+        public int BlockHealth { get; private set; }
 
         /// <summary>
         /// The average position of block's all quads (the middle of the block).
         /// </summary>
         public Vector3 BlockPositionAverage { get; private set; }
 
-        private readonly GameObject parentChunk; // Object (chunk) this block is parented to
+        private readonly GameObject chunkGameObject; // Object (chunk) this block is parented to
         private readonly Chunk chunkOwner; // Chunk reference to get chunk data
         private readonly Vector3Int position; // Position relative to the chunk
 
@@ -113,15 +125,34 @@ namespace Voxel.World
         {
             BlockType = type;
             this.position = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
-            parentChunk = parent;
+            chunkGameObject = parent;
             chunkOwner = owner;
             IsSolid = BlockType != BlockType.Air;
+            ResetBlockHealth();
         }
+
+        /// <summary>
+        /// Damage the block. Return true if block was destroyed.
+        /// </summary>
+        public bool DamageBlock()
+        {
+            BlockHealth--;
+            if (BlockHealth <= 0)
+            {
+                chunkOwner.RebuildChunk((true, position));
+                return true;
+            }
+
+            return false;
+        }
+
+        public void ResetBlockHealth() => BlockHealth = blockHealthMap[(int)BlockType];
 
         public void UpdateBlockType(BlockType type)
         {
             BlockType = type;
             IsSolid = BlockType != BlockType.Air;
+            chunkOwner.GetBlockTypeData()[position.x, position.y, position.z] = type;
         }
 
         public void BuildBlock()
@@ -219,7 +250,7 @@ namespace Voxel.World
                 {
                     // Convert the X Y and Z position to the neigbouring chunk
                     Vector3 neighbouringChunkPosition
-                        = parentChunk.transform.position
+                        = chunkGameObject.transform.position
                         + new Vector3((x - position.x) * chunkSize,
                                       (y - position.y) * chunkSize,
                                       (z - position.z) * chunkSize);
@@ -338,7 +369,7 @@ namespace Voxel.World
 
                 GameObject quad = new GameObject($"Quad {side}");
                 quad.transform.position = position;
-                quad.transform.SetParent(parentChunk.transform);
+                quad.transform.SetParent(chunkGameObject.transform);
                 MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
                 meshFilter.mesh = mesh;
             }

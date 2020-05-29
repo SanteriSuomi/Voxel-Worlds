@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Voxel.Game;
+using Voxel.Other;
 using Voxel.Player;
 using Voxel.Utility;
 
@@ -18,6 +19,10 @@ namespace Voxel.World
     public class WorldManager : Singleton<WorldManager>
     {
         private ConcurrentDictionary<string, Chunk> chunkDatabase;
+        /// <summary>
+        /// All currently active hit decals in the world.
+        /// </summary>
+        public ConcurrentDictionary<string, HitDecal> HitDecalDatabase { get; private set; }
         private readonly Stack<string> chunksToRemove = new Stack<string>();
 
         /// <summary>
@@ -59,8 +64,6 @@ namespace Voxel.World
 
         [Header("Misc. Dependencies")]
         [SerializeField]
-        private Material worldTextureAtlas = default;
-        [SerializeField]
         private Transform playerTransform = default;
 
         [Header("Chunk and World Settings")]
@@ -100,6 +103,7 @@ namespace Voxel.World
         {
             base.Awake();
             chunkDatabase = new ConcurrentDictionary<string, Chunk>();
+            HitDecalDatabase = new ConcurrentDictionary<string, HitDecal>();
             ChunkSize = chunkSize;
         }
 
@@ -218,7 +222,7 @@ namespace Voxel.World
             Chunk currentChunk = GetChunkFromID(chunkID);
             if (currentChunk == null)
             {
-                currentChunk = new Chunk(chunkPosition, worldTextureAtlas, transform)
+                currentChunk = new Chunk(chunkPosition, transform)
                 {
                     ChunkStatus = ChunkStatus.Draw // Signal that this chunk can be drawn
                 };

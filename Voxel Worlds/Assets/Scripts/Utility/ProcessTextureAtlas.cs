@@ -22,7 +22,7 @@ namespace Voxel.Utility
 
         private static void WriteUVs()
         {
-            const string path = "Assets/blockuvs.txt";
+            const string path = "Assets/Scripts/Utility/BlockUVs.txt";
 
             var writer = new StreamWriter(path);
             foreach (string s in uvs)
