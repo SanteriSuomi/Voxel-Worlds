@@ -38,9 +38,17 @@
                     "interactions": ""
                 },
                 {
-                    "name": "Interact",
+                    "name": "Destroy Block",
                     "type": "Button",
                     "id": "ba56d270-9793-47d5-8b01-24fb2ac5b353",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Place Block",
+                    "type": "Button",
+                    "id": "da1c12f0-cc08-4b18-884f-7d311ed96b16",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
@@ -150,7 +158,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "Interact",
+                    "action": "Destroy Block",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -162,6 +170,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Menu",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8dd22770-e031-49bc-9a06-2431190c099d",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Place Block",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

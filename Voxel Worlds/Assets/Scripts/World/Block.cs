@@ -123,12 +123,16 @@ namespace Voxel.World
 
         private readonly GameObject chunkGameObject;
         private readonly Chunk chunkOwner;
-        private readonly Vector3Int position; // Position relative to the chunk
+
+        /// <summary>
+        /// Position relative to the owner chunk's position.
+        /// </summary>
+        public Vector3Int Position { get; }
 
         public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
         {
             BlockType = type;
-            this.position = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
+            Position = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
             chunkGameObject = parent;
             chunkOwner = owner;
             IsSolid = BlockType != BlockType.Air;
@@ -143,11 +147,22 @@ namespace Voxel.World
             BlockHealth--;
             if (BlockHealth <= 0)
             {
-                chunkOwner.RebuildChunk((true, position));
+                chunkOwner.RebuildChunk((true, Position));
                 return true;
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Replace block with a specific type. Performs reset and chunk rebuild.
+        /// </summary>
+        /// <param name="type">Type to replace the current block with.</param>
+        public void ReplaceBlock(BlockType type)
+        {
+            UpdateBlockType(type);
+            ResetBlockHealth();
+            chunkOwner.RebuildChunk((false, Position));
         }
 
         public void ResetBlockHealth() => BlockHealth = blockHealthMap[(int)BlockType];
@@ -156,7 +171,7 @@ namespace Voxel.World
         {
             BlockType = type;
             IsSolid = BlockType != BlockType.Air;
-            chunkOwner.GetBlockTypeData()[position.x, position.y, position.z] = type;
+            chunkOwner.GetBlockTypeData()[Position.x, Position.y, Position.z] = type;
         }
 
         public void BuildBlock()
@@ -175,7 +190,7 @@ namespace Voxel.World
             List<Vector3> quadPositions = new List<Vector3>(maxQuadCount);
 
             // Front quad
-            Vector3Int quadPos = new Vector3Int(position.x, position.y, position.z + 1);
+            Vector3Int quadPos = new Vector3Int(Position.x, Position.y, Position.z + 1);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Front);
@@ -183,7 +198,7 @@ namespace Voxel.World
             quadPositions.Add(quadPos);
 
             // Back quad
-            quadPos = new Vector3Int(position.x, position.y, position.z - 1);
+            quadPos = new Vector3Int(Position.x, Position.y, Position.z - 1);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Back);
@@ -191,7 +206,7 @@ namespace Voxel.World
             quadPositions.Add(quadPos);
 
             // Left quad
-            quadPos = new Vector3Int(position.x - 1, position.y, position.z);
+            quadPos = new Vector3Int(Position.x - 1, Position.y, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Left);
@@ -199,7 +214,7 @@ namespace Voxel.World
             quadPositions.Add(quadPos);
 
             // Right quad
-            quadPos = new Vector3Int(position.x + 1, position.y, position.z);
+            quadPos = new Vector3Int(Position.x + 1, Position.y, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Right);
@@ -207,7 +222,7 @@ namespace Voxel.World
             quadPositions.Add(quadPos);
 
             // Top quad
-            quadPos = new Vector3Int(position.x, position.y + 1, position.z);
+            quadPos = new Vector3Int(Position.x, Position.y + 1, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Top);
@@ -215,7 +230,7 @@ namespace Voxel.World
             quadPositions.Add(quadPos);
 
             // Bottom quad
-            quadPos = new Vector3Int(position.x, position.y - 1, position.z);
+            quadPos = new Vector3Int(Position.x, Position.y - 1, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
                 CreateQuad(BlockSide.Bottom);
@@ -254,9 +269,9 @@ namespace Voxel.World
                     || z < 0 || z >= chunkSize)
                 {
                     Vector3 neighbouringChunkPosition = chunkGameObject.transform.position
-                                                      + new Vector3((x - position.x) * chunkSize,
-                                                                    (y - position.y) * chunkSize,
-                                                                    (z - position.z) * chunkSize);
+                                                      + new Vector3((x - Position.x) * chunkSize,
+                                                                    (y - Position.y) * chunkSize,
+                                                                    (z - Position.z) * chunkSize);
                     x = CheckBlockEdge(x);
                     y = CheckBlockEdge(y);
                     z = CheckBlockEdge(z);
@@ -366,7 +381,7 @@ namespace Voxel.World
                 mesh.SetTriangles(triangles, 0);
 
                 GameObject quad = new GameObject($"Quad {side}");
-                quad.transform.position = position;
+                quad.transform.position = Position;
                 quad.transform.SetParent(chunkGameObject.transform);
                 MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
                 meshFilter.mesh = mesh;

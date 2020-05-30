@@ -9,6 +9,7 @@ namespace Voxel.Other
     {
         [SerializeField]
         private GameObject[] decals = default;
+        private GameObject currentlyActiveDecal;
 
         private const int maxTimeAlive = 5;
         private string currentDecalDatabaseKey;
@@ -18,7 +19,7 @@ namespace Voxel.Other
             transform.position = block.BlockPositionAverage;
             currentDecalDatabaseKey = databaseKey;
             WorldManager.Instance.HitDecalDatabase.TryAdd(currentDecalDatabaseKey, this);
-            decals[0].SetActive(true); // Activate the first decal (smallest breakage)
+            ActivateNewDecal(decals[0]);
             StartCoroutine(DecalCoroutine(block));
         }
 
@@ -50,12 +51,23 @@ namespace Voxel.Other
         {
             if (block.BlockHealth == block.MidBlockHealth)
             {
-                decals[decals.Length / 2].SetActive(true);
+                ActivateNewDecal(decals[decals.Length / 2]);
             }
             else if (block.BlockHealth == block.MinBlockHealth)
             {
-                decals[decals.Length - 1].SetActive(true);
+                ActivateNewDecal(decals[decals.Length - 1]);
             }
+        }
+
+        private void ActivateNewDecal(GameObject decal)
+        {
+            if (currentlyActiveDecal != null)
+            {
+                currentlyActiveDecal.SetActive(false);
+            }
+            
+            currentlyActiveDecal = decal;
+            currentlyActiveDecal.SetActive(true);
         }
 
         public void Deactivate(Block block, bool resetBlockHealth)
@@ -65,10 +77,7 @@ namespace Voxel.Other
                 block.ResetBlockHealth();
             }
 
-            for (int i = 0; i < decals.Length; i++)
-            {
-                decals[i].SetActive(false);
-            }
+            currentlyActiveDecal.SetActive(false);
 
             WorldManager.Instance.HitDecalDatabase.TryRemove(currentDecalDatabaseKey, out _);
             HitDecalPool.Instance.Return(this);

@@ -8,6 +8,20 @@ using Voxel.World;
 
 namespace Voxel.Player
 {
+    public struct BlockActionData
+    {
+        public Chunk Chunk { get; }
+        public Block Block { get; }
+        public RaycastHit HitInfo { get; }
+
+        public BlockActionData(Chunk chunk, Block block, RaycastHit hit)
+        {
+            Chunk = chunk;
+            Block = block;
+            HitInfo = hit;
+        }
+    }
+
     public class PlayerBlockInteraction : MonoBehaviour
     {
         [SerializeField]
@@ -21,6 +35,7 @@ namespace Voxel.Player
 
         private Vector3Int currentLocalBlockPosition;
         private Coroutine interactCoroutine;
+        private BlockType blockReplaceType;
 
         private int ChunkEdge => WorldManager.Instance.ChunkSize - 2;
 
@@ -48,31 +63,48 @@ namespace Voxel.Player
         {
             while (enabled)
             {
-                bool interactionTriggered = inputActionsController.InputActions.Player.Interact.triggered;
+                bool destroyBlockTriggered = inputActionsController.InputActions.Player.DestroyBlock.triggered;
+                bool placeBlockTriggered = inputActionsController.InputActions.Player.PlaceBlock.triggered;
                 if (GameManager.Instance.IsGamePaused)
                 {
                     yield return new WaitUntil(() => !GameManager.Instance.IsGamePaused);
-                    interactionTriggered = false;
+                    destroyBlockTriggered = false;
+                    placeBlockTriggered = false;
                 }
 
-                if (interactionTriggered)
+                if (destroyBlockTriggered)
                 {
-                    Vector2 rayPosition = new Vector2(Screen.width / 2, Screen.height / 2);
-                    Ray ray = ReferenceManager.Instance.MainCamera.ScreenPointToRay(rayPosition);
-                    if (Physics.Raycast(ray, out RaycastHit hit, interactionMaxDistance))
-                    {
-                        OnBlockHit(hit);
-                    }
+                    BlockAction(DamageBlock);
+                }
+                else if (placeBlockTriggered)
+                {
+                    blockReplaceType = BlockType.Dirt;
+                    BlockAction(BuildBlock);
                 }
 
                 yield return null;
             }
         }
 
-        private void OnBlockHit(RaycastHit hit)
+        #region Block Validation
+        /// <summary>
+        /// Activate the block world position detection and consequently the block validation.
+        /// </summary>
+        /// <param name="onValidatedAction">Action delegate that gets executed if block is succesfully validated.</param>
+        private void BlockAction(Action<BlockActionData> onValidatedAction)
         {
-            Vector3 hitChunkPosition = hit.transform.position;
-            Vector3 worldBlockPosition = hit.point - (hit.normal / 2);
+            Vector2 rayPosition = new Vector2(Screen.width / 2, Screen.height / 2);
+            Ray ray = ReferenceManager.Instance.MainCamera.ScreenPointToRay(rayPosition);
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, interactionMaxDistance))
+            {
+                ValidateBlock(hitInfo, onValidatedAction);
+            }
+        }
+
+        private void ValidateBlock(RaycastHit hitInfo, Action<BlockActionData> onValidatedAction)
+        {
+            Vector3 hitChunkPosition = hitInfo.transform.position;
+            Vector3 worldBlockPosition = hitInfo.point - (hitInfo.normal / 2);
             currentLocalBlockPosition = new Vector3Int
             {
                 x = Mathf.RoundToInt(worldBlockPosition.x - hitChunkPosition.x),
@@ -80,17 +112,13 @@ namespace Voxel.Player
                 z = Mathf.RoundToInt(worldBlockPosition.z - hitChunkPosition.z)
             };
 
-            Chunk localChunk = WorldManager.Instance.GetChunk(hitChunkPosition);
-            if (localChunk != null)
+            Chunk hitChunk = WorldManager.Instance.GetChunk(hitChunkPosition);
+            if (hitChunk != null)
             {
-                Block localBlock = localChunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
-                if (IsPermittedBlock(localBlock))
+                Block hitBlock = hitChunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
+                if (IsPermittedBlock(hitBlock))
                 {
-                    InstantiateHitDecal(localBlock);
-                    if (localBlock.DamageBlock())
-                    {
-                        RebuildNeighbouringChunks(hitChunkPosition);
-                    }
+                    onValidatedAction(new BlockActionData(hitChunk, hitBlock, hitInfo));
                 }
             }
         }
@@ -106,6 +134,17 @@ namespace Voxel.Player
             }
 
             return true;
+        }
+        #endregion
+
+        #region Damage Block
+        private void DamageBlock(BlockActionData data)
+        {
+            InstantiateHitDecal(data.Block);
+            if (data.Block.DamageBlock())
+            {
+                RebuildNeighbouringChunks(data.Chunk.GameObject.transform.position);
+            }
         }
 
         private static void InstantiateHitDecal(Block localBlock)
@@ -153,6 +192,31 @@ namespace Voxel.Player
         {
             Chunk neighbourChunk = chunkGetMethod();
             neighbourChunk?.RebuildChunk((false, Vector3Int.zero));
+        }
+        #endregion
+
+        private void BuildBlock(BlockActionData data)
+        {
+            // Offset the hit position so we're not replacing the hit block itself but rather the block next to it, as air blocks cannot be hit by raycast.
+            Vector3Int adjustedBlockPosition = new Vector3Int
+            {
+                x = Mathf.RoundToInt(data.Block.Position.x + data.HitInfo.normal.x),
+                y = Mathf.RoundToInt(data.Block.Position.y + data.HitInfo.normal.y),
+                z = Mathf.RoundToInt(data.Block.Position.z + data.HitInfo.normal.z)
+            };
+
+            Block[,,] chunkData = data.Chunk.GetChunkData();
+            if (adjustedBlockPosition.x >= 0 && adjustedBlockPosition.x <= chunkData.GetUpperBound(0)
+                && adjustedBlockPosition.y >= 0 && adjustedBlockPosition.y <= chunkData.GetUpperBound(1)
+                && adjustedBlockPosition.z >= 0 && adjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+            {
+                Block adjustedBlock = chunkData[adjustedBlockPosition.x, adjustedBlockPosition.y, adjustedBlockPosition.z];
+                if (adjustedBlock != null 
+                    && adjustedBlock.BlockType == BlockType.Air)
+                {
+                    adjustedBlock.ReplaceBlock(blockReplaceType);
+                }
+            }
         }
 
         private void DisableInteractCoroutine()
