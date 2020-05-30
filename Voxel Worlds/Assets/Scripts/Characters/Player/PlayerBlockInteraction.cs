@@ -74,12 +74,12 @@ namespace Voxel.Player
 
                 if (destroyBlockTriggered)
                 {
-                    BlockAction(DamageBlock);
+                    BlockAction(DamageBlock, true);
                 }
                 else if (placeBlockTriggered)
                 {
                     blockReplaceType = BlockType.Dirt;
-                    BlockAction(BuildBlock);
+                    BlockAction(BuildBlock, false);
                 }
 
                 yield return null;
@@ -91,17 +91,18 @@ namespace Voxel.Player
         /// Activate the block world position detection and consequently the block validation.
         /// </summary>
         /// <param name="onValidatedAction">Action delegate that gets executed if block is succesfully validated.</param>
-        private void BlockAction(Action<BlockActionData> onValidatedAction)
+        /// <param name="checkPermission">Should the block be checked for permission? (using the nonMineableBlockTypes array).</param>
+        private void BlockAction(Action<BlockActionData> onValidatedAction, bool checkPermission)
         {
             Vector2 rayPosition = new Vector2(Screen.width / 2, Screen.height / 2);
             Ray ray = ReferenceManager.Instance.MainCamera.ScreenPointToRay(rayPosition);
             if (Physics.Raycast(ray, out RaycastHit hitInfo, interactionMaxDistance))
             {
-                ValidateBlock(hitInfo, onValidatedAction);
+                ValidateBlock(hitInfo, onValidatedAction, checkPermission);
             }
         }
 
-        private void ValidateBlock(RaycastHit hitInfo, Action<BlockActionData> onValidatedAction)
+        private void ValidateBlock(RaycastHit hitInfo, Action<BlockActionData> onValidatedAction, bool checkPermission)
         {
             Vector3 hitChunkPosition = hitInfo.transform.position;
             Vector3 worldBlockPosition = hitInfo.point - (hitInfo.normal / 2);
@@ -116,7 +117,11 @@ namespace Voxel.Player
             if (hitChunk != null)
             {
                 Block hitBlock = hitChunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
-                if (IsPermittedBlock(hitBlock))
+                if (checkPermission && IsPermittedBlock(hitBlock))
+                {
+                    onValidatedAction(new BlockActionData(hitChunk, hitBlock, hitInfo));
+                }
+                else if (!checkPermission)
                 {
                     onValidatedAction(new BlockActionData(hitChunk, hitBlock, hitInfo));
                 }

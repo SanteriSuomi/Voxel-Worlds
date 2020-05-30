@@ -86,8 +86,8 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
+  near clip plane: 0.01
+  far clip plane: 100
   field of view: 90
   orthographic: 0
   orthographic size: 5
@@ -177,7 +177,7 @@ Transform:
   m_GameObject: {fileID: 9171768461920612256}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.75, y: 1, z: 0.75}
   m_Children:
   - {fileID: 9171768461707996300}
   - {fileID: 597396429882515071}
@@ -290,7 +290,7 @@ MonoBehaviour:
   leftRightRayAngle: 20
   lookState: {fileID: 11400000, guid: 57b033d6c1fd7824bba28883e2d43541, type: 2}
   lookSpeedMultiplier: 10
-  lookVerticalClampRange: 77.5
+  lookVerticalClampRange: 90
   jumpState: {fileID: 11400000, guid: c18e0274860fb74479677f3f0bb6346b, type: 2}
   jumpStartValue: 1
   newJumpDelay: 0.175
