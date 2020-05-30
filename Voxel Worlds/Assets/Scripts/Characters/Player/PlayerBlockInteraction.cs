@@ -14,11 +14,11 @@ namespace Voxel.Player
         public Block Block { get; }
         public RaycastHit HitInfo { get; }
 
-        public BlockActionData(Chunk chunk, Block block, RaycastHit hit)
+        public BlockActionData(Chunk chunk, Block block, RaycastHit hitInfo)
         {
             Chunk = chunk;
             Block = block;
-            HitInfo = hit;
+            HitInfo = hitInfo;
         }
     }
 
@@ -69,6 +69,11 @@ namespace Voxel.Player
 
         private IEnumerator OnInteractPerformedCoroutine()
         {
+            #region Mouse Start Hold Bugfix
+            // TODO: find alternative solution to mouse input 1 at game start
+            GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTDOWN);
+            GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTUP);
+            #endregion
             while (enabled)
             {
                 CalculateCanDestroyBlock();
@@ -76,6 +81,7 @@ namespace Voxel.Player
                 if (GameManager.Instance.IsGamePaused)
                 {
                     yield return new WaitUntil(() => !GameManager.Instance.IsGamePaused);
+                    DisableDestroyBlockInput();
                     placeBlockTriggered = false;
                 }
 
@@ -95,6 +101,7 @@ namespace Voxel.Player
             }
         }
 
+        #region Destroy Block Input Methods
         private void CalculateCanDestroyBlock()
         {
             if (canPerformDestroyBlock)
@@ -106,11 +113,17 @@ namespace Voxel.Player
 
         private IEnumerator WaitForDestroyBlockReactivation()
         {
-            canPerformDestroyBlock = false;
-            destroyBlockTriggered = false;
+            DisableDestroyBlockInput();
             yield return destroyBlockWFS;
             canPerformDestroyBlock = true;
         }
+
+        private void DisableDestroyBlockInput()
+        {
+            canPerformDestroyBlock = false;
+            destroyBlockTriggered = false;
+        }
+        #endregion
 
         #region Block Validation
         /// <summary>
@@ -174,7 +187,7 @@ namespace Voxel.Player
             InstantiateHitDecal(data.Block);
             if (data.Block.DamageBlock())
             {
-                RebuildNeighbouringChunks(data.Chunk.GameObject.transform.position);
+                RebuildNeighbouringChunks(data.Chunk);
             }
         }
 
@@ -187,35 +200,33 @@ namespace Voxel.Player
             }
         }
 
-        private void RebuildNeighbouringChunks(Vector3 localChunkPosition)
+        private void RebuildNeighbouringChunks(Chunk chunk)
         {
-            int chunkSize = WorldManager.Instance.ChunkSize - 1;
-
             if (currentLocalBlockPosition.x == 0)
             {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x - chunkSize, localChunkPosition.y, localChunkPosition.z)));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Left));
             }
             if (currentLocalBlockPosition.x == ChunkEdge)
             {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x + chunkSize, localChunkPosition.y, localChunkPosition.z)));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Right));
             }
 
             if (currentLocalBlockPosition.y == 0)
             {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y - chunkSize, localChunkPosition.z)));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Bottom));
             }
             if (currentLocalBlockPosition.y == ChunkEdge)
             {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y + chunkSize, localChunkPosition.z)));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Top));
             }
 
             if (currentLocalBlockPosition.z == 0)
             {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y, localChunkPosition.z - chunkSize)));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Back));
             }
             if (currentLocalBlockPosition.z == ChunkEdge)
             {
-                RebuildNeighbourChunk(() => WorldManager.Instance.GetChunk(new Vector3(localChunkPosition.x, localChunkPosition.y, localChunkPosition.z + chunkSize)));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Front));
             }
         }
 
@@ -236,16 +247,32 @@ namespace Voxel.Player
                 z = Mathf.RoundToInt(data.Block.Position.z + data.HitInfo.normal.z)
             };
 
-            Block[,,] chunkData = data.Chunk.GetChunkData();
-            if (adjustedBlockPosition.x >= 0 && adjustedBlockPosition.x <= chunkData.GetUpperBound(0)
-                && adjustedBlockPosition.y >= 0 && adjustedBlockPosition.y <= chunkData.GetUpperBound(1)
-                && adjustedBlockPosition.z >= 0 && adjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+            
+            if (adjustedBlockPosition.x == -1)
             {
-                Block adjustedBlock = chunkData[adjustedBlockPosition.x, adjustedBlockPosition.y, adjustedBlockPosition.z];
-                if (adjustedBlock != null
-                    && adjustedBlock.BlockType == BlockType.Air)
+                Debug.Log("Left");
+                Chunk chunk = data.Chunk.GetChunkNeighbour(ChunkNeighbour.Left);
+                Vector3Int reAdjustedBlockPosition = adjustedBlockPosition;
+                reAdjustedBlockPosition.x = ChunkEdge;
+                Debug.Log(reAdjustedBlockPosition);
+                Block adjustedBlock = chunk.GetChunkData()[reAdjustedBlockPosition.x, reAdjustedBlockPosition.y, reAdjustedBlockPosition.z];
+                if (adjustedBlock?.BlockType == BlockType.Air)
                 {
                     adjustedBlock.ReplaceBlock(blockReplaceType);
+                }
+            }
+            else
+            {
+                Block[,,] chunkData = data.Chunk.GetChunkData();
+                if (adjustedBlockPosition.x >= 0 && adjustedBlockPosition.x <= chunkData.GetUpperBound(0)
+                && adjustedBlockPosition.y >= 0 && adjustedBlockPosition.y <= chunkData.GetUpperBound(1)
+                && adjustedBlockPosition.z >= 0 && adjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+                {
+                    Block adjustedBlock = chunkData[adjustedBlockPosition.x, adjustedBlockPosition.y, adjustedBlockPosition.z];
+                    if (adjustedBlock?.BlockType == BlockType.Air)
+                    {
+                        adjustedBlock.ReplaceBlock(blockReplaceType);
+                    }
                 }
             }
         }

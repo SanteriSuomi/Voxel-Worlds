@@ -12,6 +12,16 @@ namespace Voxel.World
         Keep
     }
 
+    public enum ChunkNeighbour
+    {
+        Left,
+        Right,
+        Bottom,
+        Top,
+        Back,
+        Front
+    }
+
     public class Chunk
     {
         public ChunkStatus ChunkStatus { get; set; }
@@ -63,6 +73,34 @@ namespace Voxel.World
             Object.DestroyImmediate(MeshFilter);
             Object.DestroyImmediate(MeshRenderer);
             Object.DestroyImmediate(Collider);
+        }
+
+        public Chunk GetChunkNeighbour(ChunkNeighbour neighbour)
+        {
+            int chunkSize = WorldManager.Instance.ChunkSize - 1;
+            Vector3 chunkPosition = GameObject.transform.position;
+            switch (neighbour)
+            {
+                case ChunkNeighbour.Left:
+                    return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x - chunkSize, chunkPosition.y, chunkPosition.z));
+
+                case ChunkNeighbour.Right:
+                    return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x + chunkSize, chunkPosition.y, chunkPosition.z));
+
+                case ChunkNeighbour.Bottom:
+                    return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x, chunkPosition.y - chunkSize, chunkPosition.z));
+
+                case ChunkNeighbour.Top:
+                    return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x, chunkPosition.y + chunkSize, chunkPosition.z));
+
+                case ChunkNeighbour.Back:
+                    return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z - chunkSize));
+
+                case ChunkNeighbour.Front:
+                    return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z + chunkSize));
+            }
+
+            return null;
         }
 
         public void BuildChunk()
