@@ -32,12 +32,20 @@ namespace Voxel.Player
 
         [SerializeField]
         private float interactionMaxDistance = 2;
+        [SerializeField]
+        private float destroyBlockMaxSpeed = 0.5f;
 
         private Vector3Int currentLocalBlockPosition;
         private Coroutine interactCoroutine;
+        private WaitForSeconds destroyBlockWFS;
         private BlockType blockReplaceType;
 
+        private bool canPerformDestroyBlock = true;
+        private bool destroyBlockTriggered;
+
         private int ChunkEdge => WorldManager.Instance.ChunkSize - 2;
+
+        private void Awake() => destroyBlockWFS = new WaitForSeconds(destroyBlockMaxSpeed);
 
         private void OnEnable()
         {
@@ -63,20 +71,21 @@ namespace Voxel.Player
         {
             while (enabled)
             {
-                bool destroyBlockTriggered = inputActionsController.InputActions.Player.DestroyBlock.triggered;
+                CalculateCanDestroyBlock();
                 bool placeBlockTriggered = inputActionsController.InputActions.Player.PlaceBlock.triggered;
                 if (GameManager.Instance.IsGamePaused)
                 {
                     yield return new WaitUntil(() => !GameManager.Instance.IsGamePaused);
-                    destroyBlockTriggered = false;
                     placeBlockTriggered = false;
                 }
 
                 if (destroyBlockTriggered)
                 {
+                    StartCoroutine(WaitForDestroyBlockReactivation());
                     BlockAction(DamageBlock, true);
                 }
-                else if (placeBlockTriggered)
+
+                if (placeBlockTriggered)
                 {
                     blockReplaceType = BlockType.Dirt;
                     BlockAction(BuildBlock, false);
@@ -84,6 +93,23 @@ namespace Voxel.Player
 
                 yield return null;
             }
+        }
+
+        private void CalculateCanDestroyBlock()
+        {
+            if (canPerformDestroyBlock)
+            {
+                float destroyBlockValue = inputActionsController.InputActions.Player.DestroyBlock.ReadValue<float>();
+                destroyBlockTriggered = destroyBlockValue > 0;
+            }
+        }
+
+        private IEnumerator WaitForDestroyBlockReactivation()
+        {
+            canPerformDestroyBlock = false;
+            destroyBlockTriggered = false;
+            yield return destroyBlockWFS;
+            canPerformDestroyBlock = true;
         }
 
         #region Block Validation
@@ -216,7 +242,7 @@ namespace Voxel.Player
                 && adjustedBlockPosition.z >= 0 && adjustedBlockPosition.z <= chunkData.GetUpperBound(2))
             {
                 Block adjustedBlock = chunkData[adjustedBlockPosition.x, adjustedBlockPosition.y, adjustedBlockPosition.z];
-                if (adjustedBlock != null 
+                if (adjustedBlock != null
                     && adjustedBlock.BlockType == BlockType.Air)
                 {
                     adjustedBlock.ReplaceBlock(blockReplaceType);
