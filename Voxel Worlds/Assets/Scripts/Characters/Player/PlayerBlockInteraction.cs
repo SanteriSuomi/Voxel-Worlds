@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using Voxel.Game;
+using Voxel.Saving;
 using Voxel.Utility;
 using Voxel.Utility.Pooling;
 using Voxel.World;
@@ -14,11 +15,15 @@ namespace Voxel.Player
         public Block Block { get; }
         public RaycastHit HitInfo { get; }
 
+        // Used in build block UpdateBlock solely
+        public Vector3Int AdjustedBlockPosition { get; set; }
+
         public BlockActionData(Chunk chunk, Block block, RaycastHit hitInfo)
         {
             Chunk = chunk;
             Block = block;
             HitInfo = hitInfo;
+            AdjustedBlockPosition = Vector3Int.zero;
         }
     }
 
@@ -38,6 +43,7 @@ namespace Voxel.Player
         private Vector3Int currentLocalBlockPosition;
         private Coroutine interactCoroutine;
         private WaitForSeconds destroyBlockWFS;
+        private WaitUntil gameIsPausedWU;
         private BlockType blockReplaceType;
 
         private bool canPerformDestroyBlock = true;
@@ -45,12 +51,17 @@ namespace Voxel.Player
 
         private int ChunkEdge => WorldManager.Instance.ChunkSize - 2;
 
-        private void Awake() => destroyBlockWFS = new WaitForSeconds(destroyBlockMaxSpeed);
+        private void Awake()
+        {
+            destroyBlockWFS = new WaitForSeconds(destroyBlockMaxSpeed);
+            gameIsPausedWU = new WaitUntil(() => !GameManager.Instance.IsGamePaused);
+        }
 
         private void OnEnable()
         {
             GameManager.Instance.OnGameActiveStateChangeEvent += OnGameActiveStateChange;
             DisableInteractCoroutine();
+            LeftMouseClick();
             interactCoroutine = StartCoroutine(OnInteractPerformedCoroutine());
         }
 
@@ -69,19 +80,16 @@ namespace Voxel.Player
 
         private IEnumerator OnInteractPerformedCoroutine()
         {
-            #region Mouse Start Hold Bugfix
-            // TODO: find alternative solution to mouse input 1 at game start
-            GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTDOWN);
-            GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTUP);
-            #endregion
             while (enabled)
             {
                 CalculateCanDestroyBlock();
                 bool placeBlockTriggered = inputActionsController.InputActions.Player.PlaceBlock.triggered;
                 if (GameManager.Instance.IsGamePaused)
                 {
-                    yield return new WaitUntil(() => !GameManager.Instance.IsGamePaused);
-                    DisableDestroyBlockInput();
+                    yield return gameIsPausedWU;
+                    LeftMouseClick();
+                    canPerformDestroyBlock = true;
+                    destroyBlockTriggered = false;
                     placeBlockTriggered = false;
                 }
 
@@ -124,6 +132,13 @@ namespace Voxel.Player
             destroyBlockTriggered = false;
         }
         #endregion
+
+        // TODO: Simulate a mouse left click. Used here for fixing a bug related to the destroy block hold. Temporary solution.
+        private static void LeftMouseClick()
+        {
+            GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTDOWN);
+            GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTUP);
+        }
 
         #region Block Validation
         /// <summary>
@@ -247,32 +262,57 @@ namespace Voxel.Player
                 z = Mathf.RoundToInt(data.Block.Position.z + data.HitInfo.normal.z)
             };
 
-            
+            data.AdjustedBlockPosition = adjustedBlockPosition;
             if (adjustedBlockPosition.x == -1)
             {
-                Debug.Log("Left");
-                Chunk chunk = data.Chunk.GetChunkNeighbour(ChunkNeighbour.Left);
-                Vector3Int reAdjustedBlockPosition = adjustedBlockPosition;
-                reAdjustedBlockPosition.x = ChunkEdge;
-                Debug.Log(reAdjustedBlockPosition);
-                Block adjustedBlock = chunk.GetChunkData()[reAdjustedBlockPosition.x, reAdjustedBlockPosition.y, reAdjustedBlockPosition.z];
-                if (adjustedBlock?.BlockType == BlockType.Air)
-                {
-                    adjustedBlock.ReplaceBlock(blockReplaceType);
-                }
+                UpdateBlock(data, (true, ChunkNeighbour.Left, new Vector3Int(ChunkEdge + 1, 0, 0)));
+            }
+            else if (adjustedBlockPosition.x == ChunkEdge + 1)
+            {
+                UpdateBlock(data, (true, ChunkNeighbour.Right, new Vector3Int(-(ChunkEdge + 1), 0, 0)));
+            }
+            else if (adjustedBlockPosition.y == -1)
+            {
+                UpdateBlock(data, (true, ChunkNeighbour.Bottom, new Vector3Int(0, ChunkEdge + 1, 0)));
+            }
+            else if (adjustedBlockPosition.y == ChunkEdge + 1)
+            {
+                UpdateBlock(data, (true, ChunkNeighbour.Top, new Vector3Int(0, -(ChunkEdge + 1), 0)));
+            }
+            else if (adjustedBlockPosition.z == -1)
+            {
+                UpdateBlock(data, (true, ChunkNeighbour.Back, new Vector3Int(0, 0, ChunkEdge + 1)));
+            }
+            else if (adjustedBlockPosition.z == ChunkEdge + 1)
+            {
+                UpdateBlock(data, (true, ChunkNeighbour.Front, new Vector3Int(0, 0, -(ChunkEdge + 1))));
             }
             else
             {
-                Block[,,] chunkData = data.Chunk.GetChunkData();
-                if (adjustedBlockPosition.x >= 0 && adjustedBlockPosition.x <= chunkData.GetUpperBound(0)
-                && adjustedBlockPosition.y >= 0 && adjustedBlockPosition.y <= chunkData.GetUpperBound(1)
-                && adjustedBlockPosition.z >= 0 && adjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+                // Update local block
+                UpdateBlock(data, (false, 0, Vector3Int.zero));
+            }
+        }
+
+        private void UpdateBlock(BlockActionData data, (bool updateNeighbour, ChunkNeighbour neighbour, Vector3Int offset) updateData)
+        {
+            Chunk chunk = data.Chunk;
+            Vector3Int reAdjustedBlockPosition = data.AdjustedBlockPosition;
+            if (updateData.updateNeighbour)
+            {
+                chunk = data.Chunk.GetChunkNeighbour(updateData.neighbour);
+                reAdjustedBlockPosition += updateData.offset;
+            }
+
+            Block[,,] chunkData = chunk.GetChunkData();
+            if (reAdjustedBlockPosition.x >= 0 && reAdjustedBlockPosition.x <= chunkData.GetUpperBound(0)
+                && reAdjustedBlockPosition.y >= 0 && reAdjustedBlockPosition.y <= chunkData.GetUpperBound(1)
+                && reAdjustedBlockPosition.z >= 0 && reAdjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+            {
+                Block adjustedBlock = chunkData[reAdjustedBlockPosition.x, reAdjustedBlockPosition.y, reAdjustedBlockPosition.z];
+                if (adjustedBlock?.BlockType == BlockType.Air)
                 {
-                    Block adjustedBlock = chunkData[adjustedBlockPosition.x, adjustedBlockPosition.y, adjustedBlockPosition.z];
-                    if (adjustedBlock?.BlockType == BlockType.Air)
-                    {
-                        adjustedBlock.ReplaceBlock(blockReplaceType);
-                    }
+                    adjustedBlock.ReplaceBlock(blockReplaceType);
                 }
             }
         }
