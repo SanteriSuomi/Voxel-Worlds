@@ -133,7 +133,7 @@ namespace Voxel.World
 
                         int worldPositionX = (int)(x + GameObject.transform.position.x);
                         int worldPositionZ = (int)(z + GameObject.transform.position.z);
-                        int noise2D = (int)(Utils.FBM2D(worldPositionX, worldPositionZ)
+                        int noise2D = (int)(NoiseUtils.FBM2D(worldPositionX, worldPositionZ)
                             * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
 
                         // Air
@@ -147,7 +147,7 @@ namespace Voxel.World
                         int undergroundLayerStart = noise2D - 6;
                         if (worldPositionY <= undergroundLayerStart)
                         {
-                            float noise3D = Utils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
+                            float noise3D = NoiseUtils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
                             if (noise3D >= 0.135f && noise3D <= 0.1325f)
                             {
                                 NewBlock(BlockType.Diamond, localPosition);

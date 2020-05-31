@@ -1,13 +1,8 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-
-namespace Voxel.Utility
+﻿namespace Voxel.Utility
 {
-	public static class Utils
+	public static class NoiseUtils
 	{
 		private static readonly FastNoise noise = new FastNoise(seed: 1000);
-		private static readonly MarchingCubes marchingCubes = new MarchingCubes(0);
-		private static readonly MarchingTertrahedron marchingTertrahedron = new MarchingTertrahedron(0);
 
 		// Values for 2D fractal brownian motion
 		private const int octaves2D = 2;
@@ -58,26 +53,6 @@ namespace Voxel.Utility
 			return value * scale3D;
 		}
 
-		public static void MarchingCubes(IList<float> voxels, int size, IList<Vector3> verts, IList<int> indices)
-		{
-			marchingCubes.Generate(voxels, size, verts, indices);
-		}
-
-		public static void MarchingTertrahedron(IList<float> voxels, int size, IList<Vector3> verts, IList<int> indices)
-		{
-			marchingTertrahedron.Generate(voxels, size, verts, indices);
-		}
-
-		public static float FastAbs(float value)
-		{
-			return value >= 0 ? value : -value;
-		}
-
-		public static float FastClamp(float value, float min, float max)
-		{
-			if (value >= max) return max;
-			else if (value <= min) return min;
-			else return value;
-		}
+		private static float FastAbs(float value) => value >= 0 ? value : -value;
 	}
 }
