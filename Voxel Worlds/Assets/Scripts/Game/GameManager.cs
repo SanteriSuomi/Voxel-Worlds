@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DG.Tweening;
+using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using Voxel.Utility;
@@ -12,6 +13,8 @@ namespace Voxel.Game
 
         public bool IsGameRunning { get; private set; }
         public bool IsGamePaused => Mathf.Approximately(Time.deltaTime, 0);
+
+        protected override void Awake() => DOTween.Init(true, true, LogBehaviour.ErrorsOnly);
 
         private void OnEnable() => IsGameRunning = true;
 

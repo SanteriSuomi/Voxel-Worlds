@@ -1,6 +1,7 @@
 ﻿using DG.Tweening;
 using System.Collections;
 using UnityEngine;
+using Voxel.Items.Inventory;
 using Voxel.Utility;
 using Voxel.World;
 
@@ -8,7 +9,7 @@ namespace Voxel.Items
 {
     public class BlockPickup: MonoBehaviour, IPickupable
     {
-        private const float maxTimeAlive = 10;
+        private const float maxTimeAlive = 30;
 
         private const float upMoveLength = 0.4f;
         private const float upMoveDuration = 2;
@@ -39,8 +40,10 @@ namespace Voxel.Items
 
             // Back and forth movement
             Vector3 moveOffset = new Vector3(0, upMoveLength, 0);
-            moveSequence.Append(transform.DOLocalMove(transform.localPosition + moveOffset, upMoveDuration).SetEase(Ease.InOutQuad))
-                        .Append(transform.DOLocalMove(transform.localPosition + moveOffset - moveOffset, upMoveDuration).SetEase(Ease.InOutQuad));
+            moveSequence.Append(transform.DOLocalMove(transform.localPosition + moveOffset, upMoveDuration)
+                        .SetEase(Ease.InOutQuad))
+                        .Append(transform.DOLocalMove(transform.localPosition + moveOffset - moveOffset, upMoveDuration)
+                        .SetEase(Ease.InOutQuad));
 
             // 360 rotation
             transform.DOLocalRotate(new Vector3(0, 360, 0), rotationMoveDuration, RotateMode.FastBeyond360)
@@ -51,6 +54,7 @@ namespace Voxel.Items
 
         public void Pickup()
         {
+            InventoryManager.Instance.Add(BlockType);
             DeactivePickup();
         }
 

@@ -6,6 +6,9 @@ namespace Voxel.UI
 {
     public class UIStateGameMenu : UIState
     {
+        [SerializeField]
+        private GameObject inventory = default;
+
         private void Awake()
         {
             UnityAction buildWorldComplete = new UnityAction(DisableMenuCamera);
@@ -16,11 +19,11 @@ namespace Voxel.UI
         {
             Cursor.lockState = CursorLockMode.Locked;
             ReferenceManager.Instance.Crosshair.gameObject.SetActive(true);
+            inventory.SetActive(true);
         }
 
-        private void DisableMenuCamera()
-        {
-            ReferenceManager.Instance.UICamera.gameObject.SetActive(false);
-        }
+        protected override void OnStateDisable() => inventory.SetActive(false);
+
+        private void DisableMenuCamera() => ReferenceManager.Instance.UICamera.gameObject.SetActive(false);
     }
 }
