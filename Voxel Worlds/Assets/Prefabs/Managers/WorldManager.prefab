@@ -43,15 +43,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 721f1619b26f9464085399c1a03d0f83, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  worldTextureAtlas: {fileID: 2100000, guid: c17e763c77fbfbc4d92a1c37437e2d60, type: 2}
   playerTransform: {fileID: 9171768461920612257, guid: c68f0e5ef5db7fa44a1747f2a1d6305b,
     type: 3}
   chunkRowHeight: 4
   chunkSize: 8
   buildRadius: 5
   initialBuildRadius: 5
-  buildNearPlayerDistanceMultiplier: 0.5
+  buildNearPlayerDistanceMultiplier: 1
   removeOldChunksDistanceMultiplier: 10
   amountOfBuildsUntilRemoving: 2
   loopsUntilWaitingAFrame: 3
-  buildForwardMultiplier: 4
+  buildForwardMultiplier: 4.5

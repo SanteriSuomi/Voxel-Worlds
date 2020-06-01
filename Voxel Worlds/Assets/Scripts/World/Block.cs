@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Voxel.Utility;
 
 namespace Voxel.World
 {
@@ -22,6 +23,22 @@ namespace Voxel.World
         Right,
         Front,
         Back
+    }
+
+    public struct BlockCreationData
+    {
+        public Transform Parent { get; }
+        public Vector3Int Position { get; }
+        public BlockType BlockType { get; }
+        public BlockSide BlockSide { get; }
+
+        public BlockCreationData(Transform parent, Vector3Int position, BlockType blockType, BlockSide blockSide)
+        {
+            Parent = parent;
+            Position = position;
+            BlockType = blockType;
+            BlockSide = blockSide;
+        }
     }
 
     public class Block
@@ -111,10 +128,12 @@ namespace Voxel.World
         public bool IsSolid { get; private set; }
         public BlockType BlockType { get; private set; }
 
+        #region Block Health Properties
         public int BlockHealth { get; private set; }
         public int MaxBlockHealth => blockHealthMap[(int)BlockType];
         public int MidBlockHealth => MaxBlockHealth / 2;
         public int MinBlockHealth => 1;
+        #endregion
 
         /// <summary>
         /// The average position of block's all quads (the middle of the block).
@@ -129,10 +148,10 @@ namespace Voxel.World
         /// </summary>
         public Vector3Int Position { get; }
 
-        public Block(BlockType type, Vector3 position, GameObject parent, Chunk owner)
+        public Block(BlockType type, Vector3Int position, GameObject parent, Chunk owner)
         {
             BlockType = type;
-            Position = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
+            Position = position;
             chunkGameObject = parent;
             chunkOwner = owner;
             IsSolid = BlockType != BlockType.Air;
@@ -147,7 +166,7 @@ namespace Voxel.World
             BlockHealth--;
             if (BlockHealth <= 0)
             {
-                chunkOwner.RebuildChunk((true, Position));
+                chunkOwner.RebuildChunk(new ChunkResetData(true, Position));
                 return true;
             }
 
@@ -155,14 +174,14 @@ namespace Voxel.World
         }
 
         /// <summary>
-        /// Replace block with a specific type. Performs reset and chunk rebuild.
+        /// Replace block with a specific type. Performs health reset and chunk rebuild.
         /// </summary>
         /// <param name="type">Type to replace the current block with.</param>
         public void ReplaceBlock(BlockType type)
         {
             UpdateBlockType(type);
             ResetBlockHealth();
-            chunkOwner.RebuildChunk((false, Position));
+            chunkOwner.RebuildChunk(new ChunkResetData(false, Position));
         }
 
         public void ResetBlockHealth() => BlockHealth = blockHealthMap[(int)BlockType];
@@ -172,6 +191,32 @@ namespace Voxel.World
             BlockType = type;
             IsSolid = BlockType != BlockType.Air;
             chunkOwner.GetBlockTypeData()[Position.x, Position.y, Position.z] = type;
+        }
+
+        /// <summary>
+        /// Create a block GameObject (not a voxel mesh) of type and spawn it at the specified position.
+        /// </summary>
+        /// <param name="type">Block type to create.</param>
+        /// <param name="position">Position to spawn the block at.</param>
+        /// <returns>Block as a GameObject</returns>
+        public static GameObject InstantiateBlock(BlockType type, Vector3 position)
+        {
+            if (type == BlockType.Air)
+            {
+                Debug.LogWarning("Attempted to create an air block.");
+                return null;
+            }
+
+            GameObject block = new GameObject($"{type}_{position}");
+            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, type, BlockSide.Left));
+            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, type, BlockSide.Right));
+            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, type, BlockSide.Bottom));
+            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, type, BlockSide.Top));
+            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, type, BlockSide.Back));
+            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, type, BlockSide.Front));
+            MeshUtils.CombineMesh<BoxCollider>(block, ReferenceManager.Instance.BlockAtlas);
+            block.transform.position = position;
+            return block;
         }
 
         public void BuildBlock()
@@ -193,7 +238,7 @@ namespace Voxel.World
             Vector3Int quadPos = new Vector3Int(Position.x, Position.y, Position.z + 1);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(BlockSide.Front);
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Front));
             }
             quadPositions.Add(quadPos);
 
@@ -201,7 +246,7 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x, Position.y, Position.z - 1);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(BlockSide.Back);
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Back));
             }
             quadPositions.Add(quadPos);
 
@@ -209,7 +254,7 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x - 1, Position.y, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(BlockSide.Left);
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Left));
             }
             quadPositions.Add(quadPos);
 
@@ -217,7 +262,7 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x + 1, Position.y, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(BlockSide.Right);
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Right));
             }
             quadPositions.Add(quadPos);
 
@@ -225,7 +270,7 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x, Position.y + 1, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(BlockSide.Top);
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Top));
             }
             quadPositions.Add(quadPos);
 
@@ -233,7 +278,7 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x, Position.y - 1, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(BlockSide.Bottom);
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Bottom));
             }
             quadPositions.Add(quadPos);
 
@@ -327,14 +372,14 @@ namespace Voxel.World
             return index;
         }
 
-        private void CreateQuad(BlockSide side)
+        private static void CreateQuad(BlockCreationData data)
         {
             try
             {
                 List<Vector3> vertices = new List<Vector3>();
                 Vector3[] normals = new Vector3[4];
 
-                switch (side)
+                switch (data.BlockSide)
                 {
                     case BlockSide.Bottom:
                         AssignVertices(vertices, new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 });
@@ -368,11 +413,11 @@ namespace Voxel.World
                 }
 
                 Vector2[] uvs = new Vector2[4];
-                AssignUVs(side, uvs);
+                AssignUVs(data.BlockType, data.BlockSide, uvs);
 
                 Mesh mesh = new Mesh
                 {
-                    name = $"Quad {side} Mesh"
+                    name = $"Quad {data.BlockSide} Mesh"
                 };
 
                 mesh.SetVertices(vertices);
@@ -380,9 +425,9 @@ namespace Voxel.World
                 mesh.SetUVs(0, uvs);
                 mesh.SetTriangles(triangles, 0);
 
-                GameObject quad = new GameObject($"Quad {side}");
-                quad.transform.position = Position;
-                quad.transform.SetParent(chunkGameObject.transform);
+                GameObject quad = new GameObject($"Quad {data.BlockSide}");
+                quad.transform.position = data.Position;
+                quad.transform.SetParent(data.Parent);
                 MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
                 meshFilter.mesh = mesh;
             }
@@ -392,7 +437,7 @@ namespace Voxel.World
             }
         }
 
-        private void AssignVertices(List<Vector3> vertices, Vector3[] verticesToAssign)
+        private static void AssignVertices(List<Vector3> vertices, Vector3[] verticesToAssign)
         {
             for (int i = 0; i < verticesToAssign.Length; i++)
             {
@@ -400,7 +445,7 @@ namespace Voxel.World
             }
         }
 
-        private void AssignNormals(Vector3[] normals, Vector3 direction)
+        private static void AssignNormals(Vector3[] normals, Vector3 direction)
         {
             for (int i = 0; i < normals.Length; i++)
             {
@@ -408,9 +453,9 @@ namespace Voxel.World
             }
         }
 
-        private void AssignUVs(BlockSide side, Vector2[] uvs)
+        private static void AssignUVs(BlockType blockType, BlockSide side, Vector2[] uvs)
         {
-            if (BlockType == BlockType.Grass && (side == BlockSide.Back
+            if (blockType == BlockType.Grass && (side == BlockSide.Back
                                              || side == BlockSide.Front
                                              || side == BlockSide.Left
                                              || side == BlockSide.Right))
@@ -420,35 +465,35 @@ namespace Voxel.World
                 uvs[2] = uvAtlasMap[5, 2];
                 uvs[3] = uvAtlasMap[5, 3];
             }
-            else if (BlockType == BlockType.Grass && side == BlockSide.Top)
+            else if (blockType == BlockType.Grass && side == BlockSide.Top)
             {
                 uvs[0] = uvAtlasMap[0, 0];
                 uvs[1] = uvAtlasMap[0, 1];
                 uvs[2] = uvAtlasMap[0, 2];
                 uvs[3] = uvAtlasMap[0, 3];
             }
-            else if (BlockType == BlockType.Dirt || BlockType == BlockType.Grass)
+            else if (blockType == BlockType.Dirt || blockType == BlockType.Grass)
             {
                 uvs[0] = uvAtlasMap[1, 0];
                 uvs[1] = uvAtlasMap[1, 1];
                 uvs[2] = uvAtlasMap[1, 2];
                 uvs[3] = uvAtlasMap[1, 3];
             }
-            else if (BlockType == BlockType.Stone)
+            else if (blockType == BlockType.Stone)
             {
                 uvs[0] = uvAtlasMap[2, 0];
                 uvs[1] = uvAtlasMap[2, 1];
                 uvs[2] = uvAtlasMap[2, 2];
                 uvs[3] = uvAtlasMap[2, 3];
             }
-            else if (BlockType == BlockType.Diamond)
+            else if (blockType == BlockType.Diamond)
             {
                 uvs[0] = uvAtlasMap[3, 0];
                 uvs[1] = uvAtlasMap[3, 1];
                 uvs[2] = uvAtlasMap[3, 2];
                 uvs[3] = uvAtlasMap[3, 3];
             }
-            else if (BlockType == BlockType.Bedrock)
+            else if (blockType == BlockType.Bedrock)
             {
                 uvs[0] = uvAtlasMap[4, 0];
                 uvs[1] = uvAtlasMap[4, 1];
@@ -458,11 +503,11 @@ namespace Voxel.World
             else
             {
                 Debug.LogWarning("No blocktype assigned, probably shouldn't be here.");
-                int blockType = (int)BlockType;
-                uvs[0] = uvAtlasMap[blockType, 0];
-                uvs[1] = uvAtlasMap[blockType, 1];
-                uvs[2] = uvAtlasMap[blockType, 2];
-                uvs[3] = uvAtlasMap[blockType, 3];
+                int blockTypeAsInt = (int)blockType;
+                uvs[0] = uvAtlasMap[blockTypeAsInt, 0];
+                uvs[1] = uvAtlasMap[blockTypeAsInt, 1];
+                uvs[2] = uvAtlasMap[blockTypeAsInt, 2];
+                uvs[3] = uvAtlasMap[blockTypeAsInt, 3];
             }
         }
     }

@@ -2,7 +2,6 @@
 using System.Collections;
 using UnityEngine;
 using Voxel.Game;
-using Voxel.Saving;
 using Voxel.Utility;
 using Voxel.Utility.Pooling;
 using Voxel.World;
@@ -25,6 +24,22 @@ namespace Voxel.Player
             HitInfo = hitInfo;
             AdjustedBlockPosition = Vector3Int.zero;
         }
+    }
+
+    public struct BlockUpdateData
+    {
+        public bool Update { get; }
+        public ChunkNeighbour Neighbour { get; }
+        public Vector3Int Offset { get; }
+
+        public BlockUpdateData(bool update, ChunkNeighbour neighbour, Vector3Int position)
+        {
+            Update = update;
+            Neighbour = neighbour;
+            Offset = position;
+        }
+
+        public static BlockUpdateData GetEmpty() => new BlockUpdateData(false, 0, Vector3Int.zero);
     }
 
     public class PlayerBlockInteraction : MonoBehaviour
@@ -131,6 +146,14 @@ namespace Voxel.Player
             canPerformDestroyBlock = false;
             destroyBlockTriggered = false;
         }
+
+        private void DisableInteractCoroutine()
+        {
+            if (interactCoroutine != null)
+            {
+                StopCoroutine(interactCoroutine);
+            }
+        }
         #endregion
 
         // TODO: Simulate a mouse left click. Used here for fixing a bug related to the destroy block hold. Temporary solution.
@@ -199,14 +222,19 @@ namespace Voxel.Player
         #region Damage Block
         private void DamageBlock(BlockActionData data)
         {
-            InstantiateHitDecal(data.Block);
+            BlockType damagedBlockType = data.Block.BlockType;
+            Vector3 damagedBlockPosition = data.Block.BlockPositionAverage;
+            SetHitDecal(data.Block);
             if (data.Block.DamageBlock())
             {
+                // TODO: continue block destroying and picking up etc
+                GameObject worldBlock = Block.InstantiateBlock(damagedBlockType, damagedBlockPosition);
+                worldBlock.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
                 RebuildNeighbouringChunks(data.Chunk);
             }
         }
 
-        private static void InstantiateHitDecal(Block localBlock)
+        private static void SetHitDecal(Block localBlock)
         {
             string decalDatabaseKey = localBlock.BlockPositionAverage.ToString();
             if (!WorldManager.Instance.HitDecalDatabase.ContainsKey(decalDatabaseKey))
@@ -248,7 +276,7 @@ namespace Voxel.Player
         private void RebuildNeighbourChunk(Func<Chunk> chunkGetMethod)
         {
             Chunk neighbourChunk = chunkGetMethod();
-            neighbourChunk?.RebuildChunk((false, Vector3Int.zero));
+            neighbourChunk?.RebuildChunk(ChunkResetData.GetEmpty());
         }
         #endregion
 
@@ -265,43 +293,44 @@ namespace Voxel.Player
             data.AdjustedBlockPosition = adjustedBlockPosition;
             if (adjustedBlockPosition.x == -1)
             {
-                UpdateBlock(data, (true, ChunkNeighbour.Left, new Vector3Int(ChunkEdge + 1, 0, 0)));
+                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Left, new Vector3Int(ChunkEdge + 1, 0, 0)));
             }
             else if (adjustedBlockPosition.x == ChunkEdge + 1)
             {
-                UpdateBlock(data, (true, ChunkNeighbour.Right, new Vector3Int(-(ChunkEdge + 1), 0, 0)));
+                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Right, new Vector3Int(-(ChunkEdge + 1), 0, 0)));
             }
             else if (adjustedBlockPosition.y == -1)
             {
-                UpdateBlock(data, (true, ChunkNeighbour.Bottom, new Vector3Int(0, ChunkEdge + 1, 0)));
+                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Bottom, new Vector3Int(0, ChunkEdge + 1, 0)));
             }
             else if (adjustedBlockPosition.y == ChunkEdge + 1)
             {
-                UpdateBlock(data, (true, ChunkNeighbour.Top, new Vector3Int(0, -(ChunkEdge + 1), 0)));
+                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Top, new Vector3Int(0, -(ChunkEdge + 1), 0)));
             }
             else if (adjustedBlockPosition.z == -1)
             {
-                UpdateBlock(data, (true, ChunkNeighbour.Back, new Vector3Int(0, 0, ChunkEdge + 1)));
+                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Back, new Vector3Int(0, 0, ChunkEdge + 1)));
             }
             else if (adjustedBlockPosition.z == ChunkEdge + 1)
             {
-                UpdateBlock(data, (true, ChunkNeighbour.Front, new Vector3Int(0, 0, -(ChunkEdge + 1))));
+                
+                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Front, new Vector3Int(0, 0, -(ChunkEdge + 1))));
             }
             else
             {
                 // Update local block
-                UpdateBlock(data, (false, 0, Vector3Int.zero));
+                UpdateBlock(data, BlockUpdateData.GetEmpty());
             }
         }
 
-        private void UpdateBlock(BlockActionData data, (bool updateNeighbour, ChunkNeighbour neighbour, Vector3Int offset) updateData)
+        private void UpdateBlock(BlockActionData actionData, BlockUpdateData updateData)
         {
-            Chunk chunk = data.Chunk;
-            Vector3Int reAdjustedBlockPosition = data.AdjustedBlockPosition;
-            if (updateData.updateNeighbour)
+            Chunk chunk = actionData.Chunk;
+            Vector3Int reAdjustedBlockPosition = actionData.AdjustedBlockPosition;
+            if (updateData.Update)
             {
-                chunk = data.Chunk.GetChunkNeighbour(updateData.neighbour);
-                reAdjustedBlockPosition += updateData.offset;
+                chunk = actionData.Chunk.GetChunkNeighbour(updateData.Neighbour);
+                reAdjustedBlockPosition += updateData.Offset;
             }
 
             Block[,,] chunkData = chunk.GetChunkData();
@@ -314,14 +343,6 @@ namespace Voxel.Player
                 {
                     adjustedBlock.ReplaceBlock(blockReplaceType);
                 }
-            }
-        }
-
-        private void DisableInteractCoroutine()
-        {
-            if (interactCoroutine != null)
-            {
-                StopCoroutine(interactCoroutine);
             }
         }
 

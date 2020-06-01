@@ -19,6 +19,7 @@ namespace Voxel.World
     public class WorldManager : Singleton<WorldManager>
     {
         private ConcurrentDictionary<string, Chunk> chunkDatabase;
+
         /// <summary>
         /// All currently active hit decals in the world.
         /// </summary>
@@ -87,7 +88,7 @@ namespace Voxel.World
         [SerializeField]
         private int loopsUntilWaitingAFrame = 5;
         [SerializeField]
-        private int buildForwardMultiplier = 5;
+        private float buildForwardMultiplier = 5;
 
         public WorldStatus WorldStatus { get; private set; }
         public int Radius { get { return buildRadius; } }
@@ -269,8 +270,7 @@ namespace Voxel.World
                 chunk.ChunkStatus = ChunkStatus.Done;
                 chunkStatusDoneAmount++;
 
-                if (PlayerManager.Instance.ActivePlayer != null
-                    && chunk.GameObject != null)
+                if (PlayerManager.Instance.ActivePlayer != null && chunk.GameObject != null)
                 {
                     float distanceToChunk = (PlayerManager.Instance.ActivePlayer.position - chunk.GameObject.transform.position).magnitude;
                     if (distanceToChunk > ChunkSize * removeOldChunksDistanceMultiplier)
