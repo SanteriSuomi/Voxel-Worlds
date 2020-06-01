@@ -4,13 +4,13 @@ using Voxel.World;
 namespace Voxel.Saving
 {
     [Serializable]
-    public class ChunkData
+    public class ChunkSaveData
     {
         public BlockType[,,] BlockTypeData { get; }
 
-        public ChunkData() { }
+        public ChunkSaveData() { }
 
-        public ChunkData(BlockType[,,] blockTypeData)
+        public ChunkSaveData(BlockType[,,] blockTypeData)
         {
             BlockTypeData = blockTypeData;
         }

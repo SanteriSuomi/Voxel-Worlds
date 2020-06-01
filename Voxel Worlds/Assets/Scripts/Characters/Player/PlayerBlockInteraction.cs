@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using Voxel.Game;
+using Voxel.Items;
 using Voxel.Utility;
 using Voxel.Utility.Pooling;
 using Voxel.World;
@@ -14,7 +15,7 @@ namespace Voxel.Player
         public Block Block { get; }
         public RaycastHit HitInfo { get; }
 
-        // Used in build block UpdateBlock solely
+        // Used in build block BuildBlock solely
         public Vector3Int AdjustedBlockPosition { get; set; }
 
         public BlockActionData(Chunk chunk, Block block, RaycastHit hitInfo)
@@ -54,6 +55,10 @@ namespace Voxel.Player
         private float interactionMaxDistance = 2;
         [SerializeField]
         private float destroyBlockMaxSpeed = 0.5f;
+        [SerializeField]
+        private Vector3 blockDestroyScale = new Vector3(0.35f, 0.35f, 0.35f);
+        [SerializeField]
+        private float destroyBlockSpawnUpOffset = 0.2f;
 
         private Vector3Int currentLocalBlockPosition;
         private Coroutine interactCoroutine;
@@ -154,7 +159,7 @@ namespace Voxel.Player
         }
         #endregion
 
-        // TODO: Simulate a mouse left click. Used here for fixing a bug related to the destroy block hold. Temporary solution.
+        // TODO: Simulate a mouse left click. Used here for fixing a bug related to the destroy block hold. Possible find another solution?
         private static void LeftMouseClick()
         {
             GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTDOWN);
@@ -221,20 +226,23 @@ namespace Voxel.Player
         private void DamageBlock(BlockActionData data)
         {
             BlockType damagedBlockType = data.Block.BlockType;
-            Vector3 damagedBlockPosition = data.Block.BlockPositionAverage;
             SetHitDecal(data.Block);
             if (data.Block.DamageBlock())
             {
-                // TODO: continue block destroying and picking up etc
-                GameObject worldBlock = Block.InstantiateBlock(damagedBlockType, damagedBlockPosition);
-                worldBlock.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
+                Vector3 spawnOffset = new Vector3(0, destroyBlockSpawnUpOffset, 0); // Roughly slightly above the surface of the block beneath this block
+                Vector3 worldBlockSpawnPosition = data.Block.WorldPositionAverage - spawnOffset;
+                BlockPickup blockAsPickup = Block.InstantiateBlock<BoxCollider, BlockPickup>(new InstantiateBlockData(damagedBlockType,
+                                                                                                                      worldBlockSpawnPosition,
+                                                                                                                      blockDestroyScale,
+                                                                                                                      true));
+                blockAsPickup.BlockType = damagedBlockType;
                 RebuildNeighbouringChunks(data.Chunk);
             }
         }
 
         private static void SetHitDecal(Block localBlock)
         {
-            string decalDatabaseKey = localBlock.BlockPositionAverage.ToString();
+            string decalDatabaseKey = localBlock.WorldPositionAverage.ToString();
             if (!WorldManager.Instance.HitDecalDatabase.ContainsKey(decalDatabaseKey))
             {
                 HitDecalPool.Instance.Get().Activate(localBlock, decalDatabaseKey);
@@ -289,36 +297,32 @@ namespace Voxel.Player
                 z = Mathf.RoundToInt(data.Block.Position.z + data.HitInfo.normal.z)
             };
 
-            int chunkEdge = WorldManager.Instance.ChunkEdge;
+            int chunkEdge = WorldManager.Instance.ChunkEdge + 1;
             data.AdjustedBlockPosition = adjustedBlockPosition;
             if (adjustedBlockPosition.x == -1)
             {
-                // TODO: finish implementing block getneighbour
-                var asd = data.Block.GetBlockNeighbour(Neighbour.Left);
-                Debug.Log("block left");
-                Debug.DrawLine(transform.position, asd.BlockPositionAverage, Color.red, 10);
-                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Left, new Vector3Int(chunkEdge + 1, 0, 0)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Left, new Vector3Int(chunkEdge, 0, 0)));
             }
-            else if (adjustedBlockPosition.x == chunkEdge + 1)
+            else if (adjustedBlockPosition.x == chunkEdge)
             {
-                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Right, new Vector3Int(-(chunkEdge + 1), 0, 0)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Right, new Vector3Int(-chunkEdge, 0, 0)));
             }
             else if (adjustedBlockPosition.y == -1)
             {
-                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Bottom, new Vector3Int(0, chunkEdge + 1, 0)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Bottom, new Vector3Int(0, chunkEdge, 0)));
             }
-            else if (adjustedBlockPosition.y == chunkEdge + 1)
+            else if (adjustedBlockPosition.y == chunkEdge)
             {
-                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Top, new Vector3Int(0, -(chunkEdge + 1), 0)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Top, new Vector3Int(0, -chunkEdge, 0)));
             }
             else if (adjustedBlockPosition.z == -1)
             {
-                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Back, new Vector3Int(0, 0, chunkEdge + 1)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Back, new Vector3Int(0, 0, chunkEdge)));
             }
-            else if (adjustedBlockPosition.z == chunkEdge + 1)
+            else if (adjustedBlockPosition.z == chunkEdge)
             {
-                
-                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Front, new Vector3Int(0, 0, -(chunkEdge + 1))));
+
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Front, new Vector3Int(0, 0, -chunkEdge)));
             }
             else
             {

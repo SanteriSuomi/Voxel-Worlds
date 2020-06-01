@@ -7,16 +7,17 @@ namespace Voxel.Other
 {
     public class HitDecal : MonoBehaviour
     {
+        private const int maxTimeAlive = 5;
+
         [SerializeField]
         private GameObject[] decals = default;
         private GameObject currentlyActiveDecal;
 
-        private const int maxTimeAlive = 5;
         private string currentDecalDatabaseKey;
 
         public void Activate(Block block, string databaseKey)
         {
-            transform.position = block.BlockPositionAverage;
+            transform.position = block.WorldPositionAverage;
             currentDecalDatabaseKey = databaseKey;
             WorldManager.Instance.HitDecalDatabase.TryAdd(currentDecalDatabaseKey, this);
             ActivateNewDecal(decals[0]);

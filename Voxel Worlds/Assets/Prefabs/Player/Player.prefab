@@ -157,9 +157,11 @@ GameObject:
   - component: {fileID: 9171768461920612260}
   - component: {fileID: 9171768461920612263}
   - component: {fileID: 9171768461920612262}
+  - component: {fileID: 7630560619793536917}
   - component: {fileID: 3816025110728520974}
   - component: {fileID: 1374924915}
   - component: {fileID: 8269590369259728606}
+  - component: {fileID: 4433588445686002977}
   - component: {fileID: 1374924916}
   m_Layer: 8
   m_Name: Player
@@ -249,6 +251,20 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!136 &7630560619793536917
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171768461920612256}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  m_Radius: 0.5000001
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!114 &3816025110728520974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -312,6 +328,21 @@ MonoBehaviour:
     type: 2}
   nonMineableBlockTypes: 05000000
   interactionMaxDistance: 4
+  destroyBlockMaxSpeed: 0.5
+  blockDestroyScale: {x: 0.35, y: 0.35, z: 0.35}
+  destroyBlockSpawnUpOffset: 0.2
+--- !u!114 &4433588445686002977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171768461920612256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 875e90a94d6bc6f48a5c9b31a210cf9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1374924916
 MonoBehaviour:
   m_ObjectHideFlags: 0

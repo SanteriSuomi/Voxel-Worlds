@@ -66,7 +66,7 @@ namespace Voxel.Saving
                                                                  (int)chunk.GameObject.transform.position.y,
                                                                  (int)chunk.GameObject.transform.position.z));
             ValidateDirectory(chunkFile);
-            ChunkData newChunkData = new ChunkData(chunk.GetBlockTypeData());
+            ChunkSaveData newChunkData = new ChunkSaveData(chunk.GetBlockTypeData());
             using (var fs = new FileStream(chunkFile, FileMode.Create))
             {
                 bf.Serialize(fs, newChunkData);
@@ -80,17 +80,17 @@ namespace Voxel.Saving
         /// </summary>
         /// <param name="chunk"></param>
         /// <returns>Tuple that includes whether or not the load was succesfull and the chunk's data if so.</returns>
-        public (bool, ChunkData) Load(Chunk chunk)
+        public (bool, ChunkSaveData) Load(Chunk chunk)
         {
             string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
                                                                  (int)chunk.GameObject.transform.position.y,
                                                                  (int)chunk.GameObject.transform.position.z));
             if (File.Exists(chunkFile))
             {
-                ChunkData chunkData;
+                ChunkSaveData chunkData;
                 using (var fs = new FileStream(chunkFile, FileMode.Open))
                 {
-                    chunkData = (ChunkData)bf.Deserialize(fs);
+                    chunkData = (ChunkSaveData)bf.Deserialize(fs);
                 }
 
                 return (true, chunkData);

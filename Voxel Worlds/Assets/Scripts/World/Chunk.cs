@@ -111,7 +111,7 @@ namespace Voxel.World
         public void BuildChunk()
         {
             
-            (bool saveExists, ChunkData chunkData) = SaveManager.Instance.Load(this);
+            (bool saveExists, ChunkSaveData chunkData) = SaveManager.Instance.Load(this);
             if (saveExists)
             {
                 LoadChunk(chunkData);
@@ -186,7 +186,7 @@ namespace Voxel.World
             }
         }
 
-        private void LoadChunk(ChunkData chunkData)
+        private void LoadChunk(ChunkSaveData chunkData)
         {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
             for (int x = 0; x < chunkSize; x++)

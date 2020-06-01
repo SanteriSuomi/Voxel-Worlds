@@ -33,5 +33,16 @@ namespace Voxel.Utility
         [SerializeField]
         private RawImage crosshair = default;
         public RawImage Crosshair => crosshair;
+
+        private WaitForSeconds blockPickupWFS;
+        public WaitForSeconds GetBlockPickupWFS(float time)
+        {
+            if (blockPickupWFS == null)
+            {
+                blockPickupWFS = new WaitForSeconds(time);
+            }
+
+            return blockPickupWFS;
+        }
     }
 }
