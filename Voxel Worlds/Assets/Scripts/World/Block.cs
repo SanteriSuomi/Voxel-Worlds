@@ -219,6 +219,71 @@ namespace Voxel.World
             return block;
         }
 
+        public Block GetBlockNeighbour(Neighbour neighbour)
+        {
+            switch (neighbour)
+            {
+                case Neighbour.Left:
+                    return GetBlockAt(new Vector3Int(Position.x - 1, Position.y, Position.z));
+
+                case Neighbour.Right:
+                    return GetBlockAt(new Vector3Int(Position.x + 1, Position.y, Position.z));
+
+                case Neighbour.Bottom:
+                    return GetBlockAt(new Vector3Int(Position.x, Position.y - 1, Position.z));
+
+                case Neighbour.Top:
+                    return GetBlockAt(new Vector3Int(Position.x, Position.y + 1, Position.z));
+
+                case Neighbour.Back:
+                    return GetBlockAt(new Vector3Int(Position.x, Position.y, Position.z - 1));
+
+                case Neighbour.Front:
+                    return GetBlockAt(new Vector3Int(Position.x, Position.y, Position.z + 1));
+            }
+
+            return null;
+        }
+
+        private Block GetBlockAt(Vector3Int position)
+        {
+            int chunkEdge = WorldManager.Instance.ChunkEdge;
+
+            Block[,,] chunkData = chunkOwner.GetChunkData();
+            if (position.x == -1)
+            {
+                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Left).GetChunkData();
+                position.x += chunkEdge + 1;
+            }
+            else if (position.x == chunkEdge + 1)
+            {
+                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Right).GetChunkData();
+                position.x += -(chunkEdge + 1);
+            }
+            else if (position.y == -1)
+            {
+                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Bottom).GetChunkData();
+                position.y += chunkEdge + 1;
+            }
+            else if (position.y == chunkEdge + 1)
+            {
+                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Top).GetChunkData();
+                position.y += -(chunkEdge + 1);
+            }
+            else if (position.z == -1)
+            {
+                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Back).GetChunkData();
+                position.z += chunkEdge + 1;
+            }
+            else if (position.z == chunkEdge + 1)
+            {
+                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Front).GetChunkData();
+                position.z += -(chunkEdge + 1);
+            }
+
+            return chunkData[position.x, position.x, position.z];
+        }
+
         public void BuildBlock()
         {
             if (BlockType == BlockType.Air)

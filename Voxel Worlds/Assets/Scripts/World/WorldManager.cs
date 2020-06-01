@@ -94,10 +94,10 @@ namespace Voxel.World
         public int Radius { get { return buildRadius; } }
         public int MaxWorldHeight { get { return chunkRowHeight * ChunkSize; } }
         public int BuildWorldProgress { get; private set; } // Used for loading bar
+        public int ChunkEdge => ChunkSize - 2;
 
         private int chunkStatusDoneAmount; // Amount of chunks with the "completed" status, used by loading bar.
         private int removeOldChunksIndex;
-
         private Vector3 lastBuildPosition; // Keep track of where chunks we build around player last time
 
         protected override void Awake()

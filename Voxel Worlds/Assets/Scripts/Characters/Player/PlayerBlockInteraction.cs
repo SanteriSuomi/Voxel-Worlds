@@ -29,10 +29,10 @@ namespace Voxel.Player
     public struct BlockUpdateData
     {
         public bool Update { get; }
-        public ChunkNeighbour Neighbour { get; }
+        public Neighbour Neighbour { get; }
         public Vector3Int Offset { get; }
 
-        public BlockUpdateData(bool update, ChunkNeighbour neighbour, Vector3Int position)
+        public BlockUpdateData(bool update, Neighbour neighbour, Vector3Int position)
         {
             Update = update;
             Neighbour = neighbour;
@@ -63,8 +63,6 @@ namespace Voxel.Player
 
         private bool canPerformDestroyBlock = true;
         private bool destroyBlockTriggered;
-
-        private int ChunkEdge => WorldManager.Instance.ChunkSize - 2;
 
         private void Awake()
         {
@@ -245,31 +243,32 @@ namespace Voxel.Player
 
         private void RebuildNeighbouringChunks(Chunk chunk)
         {
+            int chunkEdge = WorldManager.Instance.ChunkEdge;
             if (currentLocalBlockPosition.x == 0)
             {
-                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Left));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(Neighbour.Left));
             }
-            if (currentLocalBlockPosition.x == ChunkEdge)
+            if (currentLocalBlockPosition.x == chunkEdge)
             {
-                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Right));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(Neighbour.Right));
             }
 
             if (currentLocalBlockPosition.y == 0)
             {
-                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Bottom));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(Neighbour.Bottom));
             }
-            if (currentLocalBlockPosition.y == ChunkEdge)
+            if (currentLocalBlockPosition.y == chunkEdge)
             {
-                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Top));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(Neighbour.Top));
             }
 
             if (currentLocalBlockPosition.z == 0)
             {
-                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Back));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(Neighbour.Back));
             }
-            if (currentLocalBlockPosition.z == ChunkEdge)
+            if (currentLocalBlockPosition.z == chunkEdge)
             {
-                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(ChunkNeighbour.Front));
+                RebuildNeighbourChunk(() => chunk.GetChunkNeighbour(Neighbour.Front));
             }
         }
 
@@ -290,31 +289,36 @@ namespace Voxel.Player
                 z = Mathf.RoundToInt(data.Block.Position.z + data.HitInfo.normal.z)
             };
 
+            int chunkEdge = WorldManager.Instance.ChunkEdge;
             data.AdjustedBlockPosition = adjustedBlockPosition;
             if (adjustedBlockPosition.x == -1)
             {
-                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Left, new Vector3Int(ChunkEdge + 1, 0, 0)));
+                // TODO: finish implementing block getneighbour
+                var asd = data.Block.GetBlockNeighbour(Neighbour.Left);
+                Debug.Log("block left");
+                Debug.DrawLine(transform.position, asd.BlockPositionAverage, Color.red, 10);
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Left, new Vector3Int(chunkEdge + 1, 0, 0)));
             }
-            else if (adjustedBlockPosition.x == ChunkEdge + 1)
+            else if (adjustedBlockPosition.x == chunkEdge + 1)
             {
-                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Right, new Vector3Int(-(ChunkEdge + 1), 0, 0)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Right, new Vector3Int(-(chunkEdge + 1), 0, 0)));
             }
             else if (adjustedBlockPosition.y == -1)
             {
-                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Bottom, new Vector3Int(0, ChunkEdge + 1, 0)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Bottom, new Vector3Int(0, chunkEdge + 1, 0)));
             }
-            else if (adjustedBlockPosition.y == ChunkEdge + 1)
+            else if (adjustedBlockPosition.y == chunkEdge + 1)
             {
-                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Top, new Vector3Int(0, -(ChunkEdge + 1), 0)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Top, new Vector3Int(0, -(chunkEdge + 1), 0)));
             }
             else if (adjustedBlockPosition.z == -1)
             {
-                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Back, new Vector3Int(0, 0, ChunkEdge + 1)));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Back, new Vector3Int(0, 0, chunkEdge + 1)));
             }
-            else if (adjustedBlockPosition.z == ChunkEdge + 1)
+            else if (adjustedBlockPosition.z == chunkEdge + 1)
             {
                 
-                UpdateBlock(data, new BlockUpdateData(true, ChunkNeighbour.Front, new Vector3Int(0, 0, -(ChunkEdge + 1))));
+                UpdateBlock(data, new BlockUpdateData(true, Neighbour.Front, new Vector3Int(0, 0, -(chunkEdge + 1))));
             }
             else
             {

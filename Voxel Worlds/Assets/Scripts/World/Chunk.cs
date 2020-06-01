@@ -12,24 +12,14 @@ namespace Voxel.World
         Keep
     }
 
-    public enum ChunkNeighbour
-    {
-        Left,
-        Right,
-        Bottom,
-        Top,
-        Back,
-        Front
-    }
-
     public struct ChunkResetData
     {
-        public bool Reset { get; }
+        public bool ResetBlockType { get; }
         public Vector3Int Position { get; }
 
         public ChunkResetData(bool reset, Vector3Int position)
         {
-            Reset = reset;
+            ResetBlockType = reset;
             Position = position;
         }
 
@@ -70,7 +60,7 @@ namespace Voxel.World
 
         public void RebuildChunk(ChunkResetData data)
         {
-            if (data.Reset)
+            if (data.ResetBlockType)
             {
                 ResetBlockType(data.Position);
             }
@@ -90,28 +80,28 @@ namespace Voxel.World
             Object.DestroyImmediate(Collider);
         }
 
-        public Chunk GetChunkNeighbour(ChunkNeighbour neighbour)
+        public Chunk GetChunkNeighbour(Neighbour neighbour)
         {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
             Vector3 chunkPosition = GameObject.transform.position;
             switch (neighbour)
             {
-                case ChunkNeighbour.Left:
+                case Neighbour.Left:
                     return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x - chunkSize, chunkPosition.y, chunkPosition.z));
 
-                case ChunkNeighbour.Right:
+                case Neighbour.Right:
                     return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x + chunkSize, chunkPosition.y, chunkPosition.z));
 
-                case ChunkNeighbour.Bottom:
+                case Neighbour.Bottom:
                     return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x, chunkPosition.y - chunkSize, chunkPosition.z));
 
-                case ChunkNeighbour.Top:
+                case Neighbour.Top:
                     return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x, chunkPosition.y + chunkSize, chunkPosition.z));
 
-                case ChunkNeighbour.Back:
+                case Neighbour.Back:
                     return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z - chunkSize));
 
-                case ChunkNeighbour.Front:
+                case Neighbour.Front:
                     return WorldManager.Instance.GetChunk(new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z + chunkSize));
             }
 
