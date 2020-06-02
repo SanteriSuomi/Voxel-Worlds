@@ -28,32 +28,44 @@ namespace Voxel.World
     public struct BlockCreationData
     {
         public Transform Parent { get; }
-        public Vector3Int Position { get; }
+        public Vector3Int Position { get; set; }
         public BlockType BlockType { get; }
         public BlockSide BlockSide { get; }
 
-        public BlockCreationData(Transform parent, Vector3Int position, BlockType blockType, BlockSide blockSide)
+        public BlockCreationData(Transform parent, BlockType blockType, BlockSide blockSide)
         {
             Parent = parent;
-            Position = position;
+            Position = Vector3Int.zero;
             BlockType = blockType;
             BlockSide = blockSide;
         }
     }
 
-    public struct InstantiateBlockData
+    public struct InstantiateBlockInputData
     {
         public BlockType BlockType { get; }
         public Vector3 Position { get; }
         public Vector3 LocalScale { get; }
-        public bool IsTrigger { get; }
 
-        public InstantiateBlockData(BlockType type, Vector3 position, Vector3 localScale, bool isTrigger)
+        public InstantiateBlockInputData(BlockType type, Vector3 position, Vector3 localScale)
         {
             BlockType = type;
             Position = position;
             LocalScale = localScale;
-            IsTrigger = isTrigger;
+        }
+    }
+
+    public struct InstantiateBlockOutputData<T>
+    {
+        public MeshComponents MeshComponents { get; }
+        public Rigidbody Rigidbody { get; }
+        public T Obj { get; }
+
+        public InstantiateBlockOutputData(MeshComponents meshComponents, Rigidbody rigidbody, T obj)
+        {
+            MeshComponents = meshComponents;
+            Rigidbody = rigidbody;
+            Obj = obj;
         }
     }
 
@@ -211,34 +223,51 @@ namespace Voxel.World
 
         /// <returns>Block as a GameObject</returns>
         /// <summary>
-        /// Create a block GameObject (not a voxel mesh) of type and spawn it at the specified position in world space.
+        /// Create a world-space block GameObject (not a chunk voxel) of type and spawn it at the specified position.
         /// </summary>
         /// <typeparam name="T1">Type of Collider to apply.</typeparam>
         /// <typeparam name="T2">GameObject script to apply.</typeparam>
         /// <param name="data">Data to construct the block with.</param>
         /// <returns>The block GameObject.</returns>
-        public static T2 InstantiateBlock<T1, T2>(InstantiateBlockData data)
-            where T1: Collider
-            where T2: MonoBehaviour
+        public static InstantiateBlockOutputData<T2> InstantiateWorldBlock<T1, T2>(InstantiateBlockInputData data)
+            where T1 : Collider
+            where T2 : MonoBehaviour
         {
             if (data.BlockType == BlockType.Air)
             {
-                Debug.LogWarning("Attempted to create an air block.");
-                return null;
+                Debug.LogWarning("Attempted to create an air block. Are you sure this is intended?");
+                return default;
             }
 
-            GameObject block = new GameObject($"{data.BlockType}_{data.Position}");
-            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, data.BlockType, BlockSide.Left));
-            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, data.BlockType, BlockSide.Right));
-            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, data.BlockType, BlockSide.Bottom));
-            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, data.BlockType, BlockSide.Top));
-            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, data.BlockType, BlockSide.Back));
-            CreateQuad(new BlockCreationData(block.transform, Vector3Int.zero, data.BlockType, BlockSide.Front));
-            MeshComponents components = MeshUtils.CombineMesh<T1>(block, ReferenceManager.Instance.BlockAtlas);
-            components.Collider.isTrigger = data.IsTrigger;
-            block.transform.position = data.Position;
-            block.transform.localScale = data.LocalScale;
-            return block.AddComponent(typeof(T2)) as T2;
+            GameObject block = new GameObject("Block");
+            CreateQuad(new BlockCreationData(block.transform, data.BlockType, BlockSide.Left));
+            CreateQuad(new BlockCreationData(block.transform, data.BlockType, BlockSide.Right));
+            CreateQuad(new BlockCreationData(block.transform, data.BlockType, BlockSide.Bottom));
+            CreateQuad(new BlockCreationData(block.transform, data.BlockType, BlockSide.Top));
+            CreateQuad(new BlockCreationData(block.transform, data.BlockType, BlockSide.Back));
+            CreateQuad(new BlockCreationData(block.transform, data.BlockType, BlockSide.Front));
+            MeshComponents components = MeshUtils.CombineMesh<BoxCollider>(block, ReferenceManager.Instance.BlockAtlas);
+
+            // Block parent
+            GameObject blockParent = new GameObject($"Block_{data.BlockType}_{data.Position}");
+            SetTransformAndLayer(blockParent.transform, Vector3.one);
+            blockParent.AddComponent(typeof(T1));
+            Rigidbody rigidbody = blockParent.AddComponent(typeof(Rigidbody)) as Rigidbody;
+            blockParent.tag = "Pickup";
+            
+            // Block itself
+            SetTransformAndLayer(block.transform, data.LocalScale);
+            block.transform.SetParent(blockParent.transform);
+            T2 obj = block.AddComponent(typeof(T2)) as T2;
+
+            return new InstantiateBlockOutputData<T2>(components, rigidbody, obj);
+
+            void SetTransformAndLayer(Transform blockTransform, Vector3 scale)
+            {
+                blockTransform.position = data.Position;
+                blockTransform.localScale = scale;
+                blockTransform.gameObject.layer = LayerMask.NameToLayer("Pickup");
+            }
         }
 
         // TODO: Fix GetBlockNeighbour to return blocks correctly.
@@ -319,13 +348,15 @@ namespace Voxel.World
 
         private void CheckNeighbours()
         {
+            // TODO: refactor for more compact code
             List<Vector3> quadPositions = new List<Vector3>(maxQuadCount);
 
             // Front quad
             Vector3Int quadPos = new Vector3Int(Position.x, Position.y, Position.z + 1);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Front));
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Front)
+                { Position = Position });
             }
             quadPositions.Add(quadPos);
 
@@ -333,7 +364,8 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x, Position.y, Position.z - 1);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Back));
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Back)
+                { Position = Position });
             }
             quadPositions.Add(quadPos);
 
@@ -341,7 +373,8 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x - 1, Position.y, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Left));
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Left)
+                { Position = Position });
             }
             quadPositions.Add(quadPos);
 
@@ -349,7 +382,8 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x + 1, Position.y, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Right));
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Right)
+                { Position = Position });
             }
             quadPositions.Add(quadPos);
 
@@ -357,7 +391,8 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x, Position.y + 1, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Top));
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Top)
+                { Position = Position });
             }
             quadPositions.Add(quadPos);
 
@@ -365,7 +400,8 @@ namespace Voxel.World
             quadPos = new Vector3Int(Position.x, Position.y - 1, Position.z);
             if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
             {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, Position, BlockType, BlockSide.Bottom));
+                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Bottom)
+                { Position = Position });
             }
             quadPositions.Add(quadPos);
 
@@ -488,7 +524,7 @@ namespace Voxel.World
                         AssignNormals(normals, Vector3.right);
                         break;
 
-                    case BlockSide.Front: /*rightBottom0, leftBottom0, leftTop0, rightTop0*/
+                    case BlockSide.Front:
                         AssignVertices(vertices, new Vector3[] { leftTop0, rightTop0, rightBottom0, leftBottom0 });
                         AssignNormals(normals, Vector3.forward);
                         break;

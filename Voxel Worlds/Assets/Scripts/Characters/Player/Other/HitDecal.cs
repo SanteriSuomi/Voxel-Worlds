@@ -21,10 +21,10 @@ namespace Voxel.Other
             currentDecalDatabaseKey = databaseKey;
             WorldManager.Instance.HitDecalDatabase.TryAdd(currentDecalDatabaseKey, this);
             ActivateNewDecal(decals[0]);
-            StartCoroutine(DecalCoroutine(block));
+            StartCoroutine(HitDecalCoroutine(block));
         }
 
-        private IEnumerator DecalCoroutine(Block block)
+        private IEnumerator HitDecalCoroutine(Block block)
         {
             BlockType blockTypeAtStart = block.BlockType;
 

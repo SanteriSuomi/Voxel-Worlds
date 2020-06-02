@@ -57,8 +57,6 @@ namespace Voxel.Player
         private float destroyBlockMaxSpeed = 0.5f;
         [SerializeField]
         private Vector3 blockDestroyScale = new Vector3(0.35f, 0.35f, 0.35f);
-        [SerializeField]
-        private float destroyBlockSpawnUpOffset = 0.2f;
 
         private Vector3Int currentLocalBlockPosition;
         private Coroutine interactCoroutine;
@@ -229,13 +227,11 @@ namespace Voxel.Player
             SetHitDecal(data.Block);
             if (data.Block.DamageBlock())
             {
-                Vector3 spawnOffset = new Vector3(0, destroyBlockSpawnUpOffset, 0); // Roughly slightly above the surface of the block beneath this block
-                Vector3 worldBlockSpawnPosition = data.Block.WorldPositionAverage - spawnOffset;
-                BlockPickup blockAsPickup = Block.InstantiateBlock<BoxCollider, BlockPickup>(new InstantiateBlockData(damagedBlockType,
-                                                                                                                      worldBlockSpawnPosition,
-                                                                                                                      blockDestroyScale,
-                                                                                                                      true));
-                blockAsPickup.BlockType = damagedBlockType;
+                // On block destroy
+                var outputData = Block.InstantiateWorldBlock<BoxCollider, BlockPickup>(new InstantiateBlockInputData(damagedBlockType,
+                                                                                                                     data.Block.WorldPositionAverage,
+                                                                                                                     blockDestroyScale));
+                outputData.Obj.BlockType = damagedBlockType;
                 RebuildNeighbouringChunks(data.Chunk);
             }
         }

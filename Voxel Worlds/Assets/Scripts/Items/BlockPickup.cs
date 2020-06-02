@@ -61,7 +61,8 @@ namespace Voxel.Items
         private void DeactivePickup()
         {
             DOTween.Kill(this);
-            Destroy(gameObject);
+            // Destroy the whole object tree, starting from the parent of the block.
+            Destroy(transform.parent.gameObject);
         }
     }
 }
