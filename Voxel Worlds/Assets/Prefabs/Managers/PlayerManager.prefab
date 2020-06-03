@@ -45,6 +45,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 9171768461920612256, guid: c68f0e5ef5db7fa44a1747f2a1d6305b,
     type: 3}
+  mainUICanvas: {fileID: 0}
   playerSpawnOffset: 1
   rayHitSpawnOffset: 2
   playerSaveFileName: PlayerData.dat

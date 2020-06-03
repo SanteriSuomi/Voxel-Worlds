@@ -495,7 +495,12 @@ namespace Voxel.World
             return index;
         }
 
-        private static void CreateQuad(BlockCreationData data)
+        /// <summary>
+        /// Create a one-sided quad with the supplied data.
+        /// </summary>
+        /// <param name="data">Data to build the quad with.</param>
+        /// <returns>The quad as a GameObject.</returns>
+        public static GameObject CreateQuad(BlockCreationData data)
         {
             try
             {
@@ -553,10 +558,12 @@ namespace Voxel.World
                 quad.transform.SetParent(data.Parent);
                 MeshFilter meshFilter = quad.AddComponent(typeof(MeshFilter)) as MeshFilter;
                 meshFilter.mesh = mesh;
+                return quad;
             }
             catch (NullReferenceException e)
             {
                 Debug.LogWarning(e);
+                return default;
             }
         }
 

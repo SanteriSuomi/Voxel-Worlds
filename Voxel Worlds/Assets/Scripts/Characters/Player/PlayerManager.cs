@@ -13,9 +13,14 @@ namespace Voxel.Player
         public Transform ActivePlayer { get; private set; }
 
         [SerializeField]
+        private Canvas mainUICanvas = default;
+
+        [SerializeField]
         private float playerSpawnOffset = 1;
         [SerializeField]
         private float rayHitSpawnOffset = 2;
+        [SerializeField]
+        private float cameraPlaneRenderDistance = 0.1f;
         [SerializeField]
         private string playerSaveFileName = "PlayerData.dat";
 
@@ -71,7 +76,15 @@ namespace Voxel.Player
         {
             GameObject player = Instantiate(playerPrefab, position, rotation);
             ActivePlayer = player.transform;
+            SetScreenSpaceCanvas();
             return ActivePlayer;
+        }
+
+        private void SetScreenSpaceCanvas()
+        {
+            mainUICanvas.renderMode = RenderMode.ScreenSpaceCamera;
+            mainUICanvas.worldCamera = ReferenceManager.Instance.MainCamera;
+            mainUICanvas.planeDistance = cameraPlaneRenderDistance;
         }
 
         public void SavePlayer()

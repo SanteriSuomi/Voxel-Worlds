@@ -26,20 +26,22 @@ namespace Voxel.Player
             {
                 for (int i = 0; i < collisions.Length; i++)
                 {
-                    CheckCollisionIndex(i);
+                    if (collisions[i] != null)
+                    {
+                        CheckCollisionIndex(collisions[i]);
+                    }
                 }
             }
         }
 
-        private void CheckCollisionIndex(int i)
+        private void CheckCollisionIndex(Collider collider)
         {
-            if (collisions[i] != null
-                && collisions[i].transform != null
-                && collisions[i].transform.childCount > 0)
+            if (collider.transform != null
+                && collider.transform.childCount > 0)
             {
                 // Pickup script is contained in a child object of the the pickup parent
-                Transform child = collisions[i].transform.GetChild(0);
-                if (collisions[i].CompareTag(pickupDetectionTag)
+                Transform child = collider.transform.GetChild(0);
+                if (collider.CompareTag(pickupDetectionTag)
                     && child.TryGetComponent(out IPickupable pickup))
                 {
                     pickup.Pickup();
