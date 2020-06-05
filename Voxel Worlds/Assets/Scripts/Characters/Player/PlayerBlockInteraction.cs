@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using Voxel.Game;
 using Voxel.Items;
+using Voxel.Items.Inventory;
 using Voxel.Utility;
 using Voxel.Utility.Pooling;
 using Voxel.World;
@@ -62,10 +63,13 @@ namespace Voxel.Player
         private Coroutine interactCoroutine;
         private WaitForSeconds destroyBlockWFS;
         private WaitUntil gameIsPausedWU;
-        private BlockType blockReplaceType;
 
         private bool canPerformDestroyBlock = true;
         private bool destroyBlockTriggered;
+
+        // Does the player have valid block selected from inventory?
+        private bool validBlockSelected;
+        private BlockType selectedBlockType;
 
         private void Awake()
         {
@@ -76,6 +80,7 @@ namespace Voxel.Player
         private void OnEnable()
         {
             GameManager.Instance.OnGameActiveStateChangeEvent += OnGameActiveStateChange;
+            Slot.OnSelectedItemChangedEvent += OnInventorySelectedItemChanged;
             DisableInteractCoroutine();
             LeftMouseClick();
             interactCoroutine = StartCoroutine(OnInteractPerformedCoroutine());
@@ -92,6 +97,12 @@ namespace Voxel.Player
             {
                 DisableInteractCoroutine();
             }
+        }
+
+        private void OnInventorySelectedItemChanged(SelectedItemData selectedItemData)
+        {
+            validBlockSelected = selectedItemData.ValidItemSelected;
+            selectedBlockType = selectedItemData.SelectedBlockType;
         }
 
         private IEnumerator OnInteractPerformedCoroutine()
@@ -115,10 +126,10 @@ namespace Voxel.Player
                     BlockAction(DamageBlock, true);
                 }
 
-                if (placeBlockTriggered)
+                if (placeBlockTriggered && validBlockSelected)
                 {
-                    blockReplaceType = BlockType.Dirt;
                     BlockAction(BuildBlock, false);
+                    InventoryManager.Instance.Remove(selectedBlockType);
                 }
 
                 yield return null;
@@ -345,7 +356,7 @@ namespace Voxel.Player
                 Block adjustedBlock = chunkData[reAdjustedBlockPosition.x, reAdjustedBlockPosition.y, reAdjustedBlockPosition.z];
                 if (adjustedBlock?.BlockType == BlockType.Air)
                 {
-                    adjustedBlock.ReplaceBlock(blockReplaceType);
+                    adjustedBlock.ReplaceBlock(selectedBlockType);
                 }
             }
         }
@@ -356,6 +367,8 @@ namespace Voxel.Player
             {
                 GameManager.Instance.OnGameActiveStateChangeEvent -= OnGameActiveStateChange;
             }
+
+            Slot.OnSelectedItemChangedEvent -= OnInventorySelectedItemChanged;
         }
     }
 }
