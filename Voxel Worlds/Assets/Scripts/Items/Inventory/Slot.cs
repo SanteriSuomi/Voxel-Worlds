@@ -1,4 +1,5 @@
 ﻿using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Voxel.World;
@@ -39,11 +40,15 @@ namespace Voxel.Items.Inventory
         public GameObject SlotSelectedImage => slotSelectedImage;
 
         [SerializeField]
-        private InputDigit inputKey = default;
+        private TextMeshProUGUI amountText = default;
 
         [SerializeField]
-        private int index = 0;
-        public int Index => index;
+        private InputDigit inputKey = default;
+
+        /// <summary>
+        /// Index of this slot in the inventory manager slots array.
+        /// </summary>
+        public int Index { get; set; }
 
         [SerializeField]
         private int maxAmount = 30;
@@ -53,13 +58,21 @@ namespace Voxel.Items.Inventory
         /// The slot image is a mesh quad of the block.
         /// </summary>
         public GameObject BlockImage { get; set; }
-
         public BlockType BlockType { get; set; }
 
-        public int Amount { get; set; }
+        private int amount;
+        public int Amount
+        {
+            get => amount;
+            set
+            {
+                amount = value;
+                amountText.text = value.ToString();
+            }
+        }
         public bool IsEmpty => Amount == 0;
 
-        public void InvokeOnSelectedItemChanged(SelectedItemData selectedItemData) 
+        public void InvokeOnSelectedItemChanged(SelectedItemData selectedItemData)
             => OnSelectedItemChangedEvent?.Invoke(selectedItemData);
 
         public void Deactivate()
@@ -72,6 +85,12 @@ namespace Voxel.Items.Inventory
 
         private void UpdateInput()
         {
+            if (Keyboard.current == null)
+            {
+                Debug.LogWarning("Keyboard.current is null");
+                return;
+            }
+
             switch (inputKey)
             {
                 case InputDigit.Key1:
@@ -100,7 +119,7 @@ namespace Voxel.Items.Inventory
         {
             if (input() && !IsEmpty)
             {
-                SlotSelectedImage.SetActive(true);
+                InventoryManager.Instance.ChangeSelectedImage(Index);
                 OnSelectedItemChangedEvent?.Invoke(new SelectedItemData(true, BlockType));
             }
         }

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Voxel.Characters.Saving;
+using Voxel.Items.Inventory;
 using Voxel.Saving;
 using Voxel.Utility;
 using Voxel.World;
@@ -43,7 +44,13 @@ namespace Voxel.Player
             InitialRotation = Quaternion.identity;
         }
 
-        public void LoadPlayer()
+        public void Save()
+        {
+            SaveManager.Instance.Save(new CharacterData(ActivePlayer.position, ActivePlayer.rotation),
+                                      SaveManager.Instance.BuildFilePath(playerSaveFileName));
+        }
+
+        public void Load()
         {
             (bool loaded, CharacterData playerData) = SaveManager.Instance.Load<CharacterData>(SaveManager.Instance.BuildFilePath(playerSaveFileName));
             PlayerLoaded = loaded;
@@ -58,10 +65,10 @@ namespace Voxel.Player
         {
             if (PlayerLoaded)
             {
-                return InstantiatePlayer(InitialPosition, InitialRotation);
+                return InitializeAndSpawnPlayer(InitialPosition, InitialRotation);
             }
 
-            return InstantiatePlayer(GetRayHit(), Quaternion.identity);
+            return InitializeAndSpawnPlayer(GetRayHit(), Quaternion.identity);
         }
 
         private Vector3 GetRayHit()
@@ -72,25 +79,20 @@ namespace Voxel.Player
                    : InitialPosition;
         }
 
-        private Transform InstantiatePlayer(Vector3 position, Quaternion rotation)
+        private Transform InitializeAndSpawnPlayer(Vector3 position, Quaternion rotation)
         {
             GameObject player = Instantiate(playerPrefab, position, rotation);
             ActivePlayer = player.transform;
-            SetScreenSpaceCanvas();
+            InitializeUI();
+            InventoryManager.Instance.Load();
             return ActivePlayer;
         }
 
-        private void SetScreenSpaceCanvas()
+        private void InitializeUI()
         {
             mainUICanvas.renderMode = RenderMode.ScreenSpaceCamera;
             mainUICanvas.worldCamera = ReferenceManager.Instance.MainCamera;
             mainUICanvas.planeDistance = cameraPlaneRenderDistance;
-        }
-
-        public void SavePlayer()
-        {
-            SaveManager.Instance.Save(new CharacterData(ActivePlayer.position, ActivePlayer.rotation),
-                                      SaveManager.Instance.BuildFilePath(playerSaveFileName));
         }
     }
 }

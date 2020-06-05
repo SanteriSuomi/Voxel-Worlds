@@ -11,7 +11,7 @@ namespace Voxel.UI.Menu.Buttons
         {
             AddOnClickAction(() =>
             {
-                PlayerManager.Instance.SavePlayer();
+                PlayerManager.Instance.Save();
 
                 #if UNITY_EDITOR
                 if (Application.isEditor)

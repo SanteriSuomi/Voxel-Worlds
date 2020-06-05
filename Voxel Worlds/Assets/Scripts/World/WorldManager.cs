@@ -111,7 +111,7 @@ namespace Voxel.World
         public void InitializeWorld()
         {
             WorldStatus = WorldStatus.Processing;
-            PlayerManager.Instance.LoadPlayer();
+            PlayerManager.Instance.Load();
             StartCoroutine(InitializeWorldCoroutine());
         }
 
@@ -160,7 +160,7 @@ namespace Voxel.World
                 float distanceFromLastBuildPosition = (lastBuildPosition - playerTransform.position).magnitude;
                 if (distanceFromLastBuildPosition > ChunkSize * buildNearPlayerDistanceMultiplier)
                 {
-                    PlayerManager.Instance.SavePlayer();
+                    PlayerManager.Instance.Save();
                     lastBuildPosition = playerTransform.position;
                     Vector3 directionMultiplier = playerTransform.forward * ChunkSize * buildForwardMultiplier;
                     Vector3Int playerChunkPosition = new Vector3Int((int)(lastBuildPosition.x + directionMultiplier.x),
