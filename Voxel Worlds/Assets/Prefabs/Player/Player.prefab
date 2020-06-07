@@ -209,7 +209,7 @@ Transform:
   m_GameObject: {fileID: 9171768461920612256}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.75, y: 1, z: 0.75}
+  m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
   m_Children:
   - {fileID: 9171768461707996300}
   - {fileID: 597396429882515071}
@@ -326,7 +326,7 @@ MonoBehaviour:
   layersToDetect:
     serializedVersion: 2
     m_Bits: 55
-  maxRayDistance: 1.25
+  maxRayDistance: 0.5
   baseGravityMultiplier: 3
   distanceMultiplierMax: 6
   moveState: {fileID: 11400000, guid: 2ee9d5f9c3f8e794c881b48635f13e92, type: 2}
@@ -357,8 +357,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
     type: 2}
-  nonMineableBlockTypes: 05000000
-  interactionMaxDistance: 4
+  nonMineableBlockTypes: 0500000006000000
+  interactionMaxDistance: 3.5
   destroyBlockMaxSpeed: 0.5
   blockDestroyScale: {x: 0.35, y: 0.35, z: 0.35}
 --- !u!114 &4433588445686002977
@@ -378,7 +378,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   pickupDetectionTag: Pickup
-  pickupRadius: 1
+  pickupRadius: 0.9
 --- !u!114 &1374924916
 MonoBehaviour:
   m_ObjectHideFlags: 0

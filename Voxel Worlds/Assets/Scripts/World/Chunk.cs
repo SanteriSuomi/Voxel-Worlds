@@ -31,8 +31,10 @@ namespace Voxel.World
         public ChunkStatus ChunkStatus { get; set; }
 
         public GameObject GameObject { get; }
-        public MeshFilter MeshFilter { get; private set; }
-        public MeshRenderer MeshRenderer { get; private set; }
+        public GameObject FluidGameObject { get; }
+
+        public MeshFilter[] MeshFilters { get; }
+        public MeshRenderer[] MeshRenderers { get; }
         public Collider Collider { get; private set; }
 
         private readonly Block[,,] chunkData;
@@ -51,6 +53,18 @@ namespace Voxel.World
 
             GameObject.transform.position = position;
             GameObject.transform.SetParent(parent);
+
+            FluidGameObject = new GameObject
+            {
+                name = $"{position}_Fluid",
+                tag = "Chunk"
+            };
+
+            FluidGameObject.transform.position = position;
+            FluidGameObject.transform.SetParent(parent);
+
+            MeshFilters = new MeshFilter[2];
+            MeshRenderers = new MeshRenderer[2];
 
             int chunkSize = WorldManager.Instance.ChunkSize;
             chunkData = new Block[chunkSize, chunkSize, chunkSize];
@@ -75,8 +89,16 @@ namespace Voxel.World
 
         private void DestroyChunkMesh()
         {
-            Object.DestroyImmediate(MeshFilter);
-            Object.DestroyImmediate(MeshRenderer);
+            for (int i = 0; i < MeshFilters.Length; i++)
+            {
+                Object.DestroyImmediate(MeshFilters[i]);
+            }
+
+            for (int i = 0; i < MeshRenderers.Length; i++)
+            {
+                Object.DestroyImmediate(MeshRenderers[i]);
+            }
+
             Object.DestroyImmediate(Collider);
         }
 
@@ -110,7 +132,6 @@ namespace Voxel.World
 
         public void BuildChunk()
         {
-            
             (bool saveExists, ChunkSaveData chunkData) = SaveManager.Instance.Load(this);
             if (saveExists)
             {
@@ -119,6 +140,7 @@ namespace Voxel.World
             }
 
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
+
             for (int x = 0; x < chunkSize; x++)
             {
                 for (int z = 0; z < chunkSize; z++)
@@ -141,6 +163,27 @@ namespace Voxel.World
                         int worldPositionZ = (int)(z + GameObject.transform.position.z);
                         int noise2D = (int)(NoiseUtils.FBM2D(worldPositionX, worldPositionZ)
                             * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
+                        int undergroundLayerStart = noise2D - 6; // This is where underground layer starts
+
+                        if (worldPositionY == undergroundLayerStart + 1)
+                        {
+                            NewLocalBlock(BlockType.Dirt, localPosition);
+                            continue;
+                        }
+
+                        // Water
+                        if (worldPositionY > undergroundLayerStart + 1
+                            && worldPositionY < WorldManager.Instance.MaxWorldHeight / 2.25f)
+                        {
+                            if (WorldManager.Instance.ContainsGrassBlock(GameObject.transform, localPosition))
+                            {
+                                NewLocalBlock(BlockType.Dirt, localPosition);
+                                continue;
+                            }
+
+                            NewLocalBlock(BlockType.Water, localPosition);
+                            continue;
+                        }
 
                         // Air
                         if (worldPositionY >= noise2D)
@@ -150,7 +193,6 @@ namespace Voxel.World
                         }
 
                         // Underground layer (stone, diamond, etc)
-                        int undergroundLayerStart = noise2D - 6;
                         if (worldPositionY <= undergroundLayerStart)
                         {
                             float noise3D = NoiseUtils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
@@ -178,6 +220,7 @@ namespace Voxel.World
                         }
                         else
                         {
+                            WorldManager.Instance.AddGrassBlock(GameObject.transform, localPosition);
                             NewLocalBlock(BlockType.Grass, localPosition);
                             surfaceBlockAlreadyPlaced = true;
                         }
@@ -204,7 +247,15 @@ namespace Voxel.World
 
         private void NewLocalBlock(BlockType type, Vector3Int position)
         {
-            chunkData[position.x, position.y, position.z] = new Block(type, position, GameObject, this);
+            if (type == BlockType.Water)
+            {
+                chunkData[position.x, position.y, position.z] = new Block(type, position, FluidGameObject, this);
+            }
+            else
+            {
+                chunkData[position.x, position.y, position.z] = new Block(type, position, GameObject, this);
+            }
+
             blockTypeData[position.x, position.y, position.z] = type;
         }
 
@@ -227,10 +278,15 @@ namespace Voxel.World
 
         private void FinalizeChunk()
         {
-            MeshComponents data = MeshUtils.CombineMesh<MeshCollider>(GameObject, ReferenceManager.Instance.BlockAtlas);
-            MeshFilter = data.MeshFilter;
-            MeshRenderer = data.MeshRenderer;
-            Collider = data.Collider;
+            MeshComponents dataChunk = MeshUtils.CombineMesh<MeshCollider>(GameObject, ReferenceManager.Instance.BlockAtlas);
+            MeshFilters[0] = dataChunk.MeshFilter;
+            MeshRenderers[0] = dataChunk.MeshRenderer;
+            Collider = dataChunk.Collider;
+
+            MeshComponents dataFluidChunk = MeshUtils.CombineMesh(FluidGameObject, ReferenceManager.Instance.BlockAtlasTransparent);
+            MeshFilters[1] = dataFluidChunk.MeshFilter;
+            MeshRenderers[1] = dataFluidChunk.MeshRenderer;
+
             ChunkStatus = ChunkStatus.Keep;
         }
     }

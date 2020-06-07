@@ -12,7 +12,8 @@ namespace Voxel.World
         Dirt,
         Stone,
         Diamond,
-        Bedrock
+        Bedrock,
+        Water
     }
 
     public enum BlockSide
@@ -80,7 +81,8 @@ namespace Voxel.World
             4, // Dirt
             7, // Stone
             9, // Diamond
-            0 // Bedrock
+            0, // Bedrock
+            0 // Water
         };
 
         // UV coordinates for different blocks on the UV atlas
@@ -127,6 +129,13 @@ namespace Voxel.World
                 new Vector2(0.25f, 0.9375f),
                 new Vector2(0.1875f, 1),
                 new Vector2(0.25f, 1)
+            },
+            // Water
+            {
+                new Vector2(0.875f, 0.125f),
+                new Vector2(0.9375f, 0.125f),
+                new Vector2(0.875f, 0.1875f),
+                new Vector2(0.9375f, 0.1875f)
             }
         };
 
@@ -153,7 +162,7 @@ namespace Voxel.World
         private const int maxQuadCount = 6;
         #endregion
 
-        public bool IsSolid { get; private set; }
+        public bool IsSolid { get; set; }
         public BlockType BlockType { get; private set; }
 
         #region Block Health Properties
@@ -182,7 +191,7 @@ namespace Voxel.World
             Position = position;
             chunkGameObject = parent;
             chunkOwner = owner;
-            IsSolid = BlockType != BlockType.Air;
+            UpdateSolidity();
             ResetBlockHealth();
         }
 
@@ -217,9 +226,11 @@ namespace Voxel.World
         public void UpdateBlockType(BlockType type)
         {
             BlockType = type;
-            IsSolid = BlockType != BlockType.Air;
+            UpdateSolidity();
             chunkOwner.GetBlockTypeData()[Position.x, Position.y, Position.z] = type;
         }
+
+        private void UpdateSolidity() => IsSolid = BlockType != BlockType.Air;
 
         /// <returns>Block as a GameObject</returns>
         /// <summary>
@@ -254,7 +265,7 @@ namespace Voxel.World
             blockParent.AddComponent(typeof(T1));
             Rigidbody rigidbody = blockParent.AddComponent(typeof(Rigidbody)) as Rigidbody;
             blockParent.tag = "Pickup";
-            
+
             // Block itself
             SetTransformAndLayer(block.transform, data.LocalScale);
             block.transform.SetParent(blockParent.transform);
@@ -271,75 +282,75 @@ namespace Voxel.World
         }
 
         // TODO: Fix GetBlockNeighbour to return blocks correctly.
-        public Block GetBlockNeighbour(Neighbour neighbour)
-        {
-            switch (neighbour)
-            {
-                case Neighbour.Left:
-                    return GetBlockAt(new Vector3Int(Position.x - 1, Position.y, Position.z));
+        //public Block GetBlockNeighbour(Neighbour neighbour)
+        //{
+        //    switch (neighbour)
+        //    {
+        //        case Neighbour.Left:
+        //            return GetBlockAt(new Vector3Int(Position.x - 1, Position.y, Position.z));
 
-                case Neighbour.Right:
-                    return GetBlockAt(new Vector3Int(Position.x + 1, Position.y, Position.z));
+        //        case Neighbour.Right:
+        //            return GetBlockAt(new Vector3Int(Position.x + 1, Position.y, Position.z));
 
-                case Neighbour.Bottom:
-                    return GetBlockAt(new Vector3Int(Position.x, Position.y - 1, Position.z));
+        //        case Neighbour.Bottom:
+        //            return GetBlockAt(new Vector3Int(Position.x, Position.y - 1, Position.z));
 
-                case Neighbour.Top:
-                    return GetBlockAt(new Vector3Int(Position.x, Position.y + 1, Position.z));
+        //        case Neighbour.Top:
+        //            return GetBlockAt(new Vector3Int(Position.x, Position.y + 1, Position.z));
 
-                case Neighbour.Back:
-                    return GetBlockAt(new Vector3Int(Position.x, Position.y, Position.z - 1));
+        //        case Neighbour.Back:
+        //            return GetBlockAt(new Vector3Int(Position.x, Position.y, Position.z - 1));
 
-                case Neighbour.Front:
-                    return GetBlockAt(new Vector3Int(Position.x, Position.y, Position.z + 1));
-            }
+        //        case Neighbour.Front:
+        //            return GetBlockAt(new Vector3Int(Position.x, Position.y, Position.z + 1));
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
-        private Block GetBlockAt(Vector3Int position)
-        {
-            int chunkEdge = WorldManager.Instance.ChunkEdge + 1;
-            Block[,,] chunkData = chunkOwner.GetChunkData();
-            if (position.x == -1)
-            {
-                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Left).GetChunkData();
-                position.x += chunkEdge;
-            }
-            else if (position.x == chunkEdge)
-            {
-                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Right).GetChunkData();
-                position.x += -chunkEdge;
-            }
-            else if (position.y == -1)
-            {
-                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Bottom).GetChunkData();
-                position.y += chunkEdge;
-            }
-            else if (position.y == chunkEdge)
-            {
-                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Top).GetChunkData();
-                position.y += -chunkEdge;
-            }
-            else if (position.z == -1)
-            {
-                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Back).GetChunkData();
-                position.z += chunkEdge;
-            }
-            else if (position.z == chunkEdge)
-            {
-                chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Front).GetChunkData();
-                position.z += -chunkEdge;
-            }
+        //private Block GetBlockAt(Vector3Int position)
+        //{
+        //    int chunkEdge = WorldManager.Instance.ChunkEdge + 1;
+        //    Block[,,] chunkData = chunkOwner.GetChunkData();
+        //    if (position.x == -1)
+        //    {
+        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Left).GetChunkData();
+        //        position.x += chunkEdge;
+        //    }
+        //    else if (position.x == chunkEdge)
+        //    {
+        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Right).GetChunkData();
+        //        position.x += -chunkEdge;
+        //    }
+        //    else if (position.y == -1)
+        //    {
+        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Bottom).GetChunkData();
+        //        position.y += chunkEdge;
+        //    }
+        //    else if (position.y == chunkEdge)
+        //    {
+        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Top).GetChunkData();
+        //        position.y += -chunkEdge;
+        //    }
+        //    else if (position.z == -1)
+        //    {
+        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Back).GetChunkData();
+        //        position.z += chunkEdge;
+        //    }
+        //    else if (position.z == chunkEdge)
+        //    {
+        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Front).GetChunkData();
+        //        position.z += -chunkEdge;
+        //    }
 
-            return chunkData[position.x, position.x, position.z];
-        }
+        //    return chunkData[position.x, position.x, position.z];
+        //}
 
         public void BuildBlock()
         {
             if (BlockType == BlockType.Air)
             {
-                IsSolid = BlockType != BlockType.Air;
+                UpdateSolidity();
                 return;
             }
 
@@ -428,46 +439,10 @@ namespace Voxel.World
         {
             try
             {
-                int chunkSize = WorldManager.Instance.ChunkSize - 1;
-                Block[,,] chunkData;
-
-                // Check if the position we're checking is in a neighbouring chunk
-                if (x < 0 || x >= chunkSize
-                    || y < 0 || y >= chunkSize
-                    || z < 0 || z >= chunkSize)
+                Block neighbourBlock = GetBlock(x, y, z);
+                if (neighbourBlock != null)
                 {
-                    Vector3 neighbouringChunkPosition = chunkGameObject.transform.position
-                                                      + new Vector3((x - Position.x) * chunkSize,
-                                                                    (y - Position.y) * chunkSize,
-                                                                    (z - Position.z) * chunkSize);
-                    x = CheckBlockEdge(x);
-                    y = CheckBlockEdge(y);
-                    z = CheckBlockEdge(z);
-
-                    Chunk chunk = WorldManager.Instance.GetChunk(neighbouringChunkPosition);
-                    if (chunk != null)
-                    {
-                        chunkData = chunk.GetChunkData();
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    chunkData = chunkOwner.GetChunkData();
-                }
-
-                if (chunkData != null
-                    && x <= chunkData.GetUpperBound(0)
-                    && x >= chunkData.GetLowerBound(0)
-                    && y <= chunkData.GetUpperBound(1)
-                    && y >= chunkData.GetLowerBound(1)
-                    && z <= chunkData.GetUpperBound(2)
-                    && z >= chunkData.GetLowerBound(2))
-                {
-                    return chunkData[x, y, z].IsSolid;
+                    return neighbourBlock.IsSolid || neighbourBlock.BlockType == BlockType;
                 }
 
                 return false;
@@ -478,11 +453,55 @@ namespace Voxel.World
             }
         }
 
-        // Checks if a given axis is not a local coordinate, but a neighbouring one (chunk). 
-        // Axis must be in between 0 and ChunkSize for it to be a local chunk.
-        private int CheckBlockEdge(int index)
+        public Block GetBlock(int x, int y, int z)
         {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
+            Block[,,] chunkData;
+            if (x < 0 || x >= chunkSize
+                || y < 0 || y >= chunkSize
+                || z < 0 || z >= chunkSize)
+            {
+                Vector3 neighbouringChunkPosition = chunkGameObject.transform.position
+                                                  + new Vector3((x - Position.x) * chunkSize,
+                                                                (y - Position.y) * chunkSize,
+                                                                (z - Position.z) * chunkSize);
+                x = CheckBlockEdge(x, chunkSize);
+                y = CheckBlockEdge(y, chunkSize);
+                z = CheckBlockEdge(z, chunkSize);
+
+                Chunk chunk = WorldManager.Instance.GetChunk(neighbouringChunkPosition);
+                if (chunk != null)
+                {
+                    chunkData = chunk.GetChunkData();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                chunkData = chunkOwner.GetChunkData();
+            }
+
+            if (chunkData != null
+                && x <= chunkData.GetUpperBound(0)
+                && x >= chunkData.GetLowerBound(0)
+                && y <= chunkData.GetUpperBound(1)
+                && y >= chunkData.GetLowerBound(1)
+                && z <= chunkData.GetUpperBound(2)
+                && z >= chunkData.GetLowerBound(2))
+            {
+                return chunkData[x, y, z];
+            }
+
+            return null;
+        }
+
+        // Checks if a given axis is not a local coordinate, but a neighbouring one (chunk). 
+        // Axis must be in between 0 and ChunkSize for it to be a local chunk.
+        private int CheckBlockEdge(int index, int chunkSize)
+        {
             if (index <= -1)
             {
                 return chunkSize - 1;
@@ -585,7 +604,14 @@ namespace Voxel.World
 
         private static void AssignUVs(BlockType blockType, BlockSide side, Vector2[] uvs)
         {
-            if (blockType == BlockType.Grass && (side == BlockSide.Back
+            if (blockType == BlockType.Water)
+            {
+                uvs[0] = uvAtlasMap[6, 0];
+                uvs[1] = uvAtlasMap[6, 1];
+                uvs[2] = uvAtlasMap[6, 2];
+                uvs[3] = uvAtlasMap[6, 3];
+            }
+            else if (blockType == BlockType.Grass && (side == BlockSide.Back
                                              || side == BlockSide.Front
                                              || side == BlockSide.Left
                                              || side == BlockSide.Right))

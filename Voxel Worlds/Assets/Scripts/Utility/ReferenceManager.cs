@@ -27,6 +27,10 @@ namespace Voxel.Utility
         public Material BlockAtlas => blockAtlas;
 
         [SerializeField]
+        private Material blockAtlasTransparent = default;
+        public Material BlockAtlasTransparent => blockAtlasTransparent;
+
+        [SerializeField]
         private Camera uiCamera = default;
         public Camera UICamera => uiCamera;
 

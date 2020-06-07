@@ -19,12 +19,25 @@ namespace Voxel.World
     public class WorldManager : Singleton<WorldManager>
     {
         private ConcurrentDictionary<string, Chunk> chunkDatabase;
+        private readonly Stack<string> chunksToRemove = new Stack<string>();
 
         /// <summary>
         /// All currently active hit decals in the world.
         /// </summary>
         public ConcurrentDictionary<string, HitDecal> HitDecalDatabase { get; private set; }
-        private readonly Stack<string> chunksToRemove = new Stack<string>();
+
+        #region Grass Block Database
+        /// <summary>
+        /// Contains a database of if a grass block has already been placed at a location, used when generating water.
+        /// </summary>
+        private ConcurrentDictionary<string, bool> grassBlockDatabase;
+
+        public void AddGrassBlock(Transform chunk, Vector3Int pos)
+            => grassBlockDatabase.TryAdd($"{chunk.position.x + pos.x}_{chunk.position.z + pos.z}", true);
+
+        public bool ContainsGrassBlock(Transform chunk, Vector3Int pos)
+            => grassBlockDatabase.TryGetValue($"{chunk.position.x + pos.x}_{chunk.position.z + pos.z}", out _);
+        #endregion
 
         /// <summary>
         /// Return the ID (as a string) of a chunk at position as specified in the ChunkDictionary.
@@ -105,6 +118,7 @@ namespace Voxel.World
             base.Awake();
             chunkDatabase = new ConcurrentDictionary<string, Chunk>();
             HitDecalDatabase = new ConcurrentDictionary<string, HitDecal>();
+            grassBlockDatabase = new ConcurrentDictionary<string, bool>();
             ChunkSize = chunkSize;
         }
 
@@ -301,7 +315,7 @@ namespace Voxel.World
                 }
             }
 
-            // TODO: test gc and resources.unloadunusedassets
+            // TODO: test gc and resources.unloadunusedassets for performance
             //GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false);
             //Resources.UnloadUnusedAssets();
         }

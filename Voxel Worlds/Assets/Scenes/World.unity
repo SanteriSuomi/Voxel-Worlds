@@ -384,6 +384,11 @@ PrefabInstance:
       propertyPath: blockAtlas
       value: 
       objectReference: {fileID: 2100000, guid: c17e763c77fbfbc4d92a1c37437e2d60, type: 2}
+    - target: {fileID: 4602247852506069742, guid: 18c5eea333b37d94b9c944ab8a095cb9,
+        type: 3}
+      propertyPath: blockAtlasTransparent
+      value: 
+      objectReference: {fileID: 2100000, guid: 9a8538d6ef0ead54cac3e26d698ceaf4, type: 2}
     - target: {fileID: 5037351241437716757, guid: 18c5eea333b37d94b9c944ab8a095cb9,
         type: 3}
       propertyPath: m_Name

@@ -21,6 +21,27 @@ namespace Voxel.Utility
         /// <returns>Data that contains components of the mesh.</returns>
         public static MeshComponents CombineMesh<T>(GameObject gameObject, Material material) where T: Collider
         {
+            CombineInstance[] combinedMeshes = GetChildMeshes(gameObject);
+            MeshComponents data = CombineMeshesAndGetData(gameObject, material, combinedMeshes);
+            data.Collider = gameObject.AddComponent(typeof(T)) as T;
+            return data;
+        }
+
+        /// <summary>
+        /// Combine meshes children to one mesh. Add MeshFilter and MeshRenderer.
+        /// </summary>
+        /// <param name="gameObject">GameObject whose children will get combined.</param>
+        /// <param name="material">Material to apply to the finished mesh.</param>
+        /// <returns>Data that contains components of the mesh.</returns>
+        public static MeshComponents CombineMesh(GameObject gameObject, Material material)
+        {
+            CombineInstance[] combinedMeshes = GetChildMeshes(gameObject);
+            MeshComponents data = CombineMeshesAndGetData(gameObject, material, combinedMeshes);
+            return data;
+        }
+
+        private static CombineInstance[] GetChildMeshes(GameObject gameObject)
+        {
             int childCount = gameObject.transform.childCount;
             CombineInstance[] combinedMeshes = new CombineInstance[childCount];
             for (int i = 0; i < childCount; i++)
@@ -32,6 +53,11 @@ namespace Voxel.Utility
                 Object.Destroy(child.gameObject); // Get rid of redundant children
             }
 
+            return combinedMeshes;
+        }
+
+        private static MeshComponents CombineMeshesAndGetData(GameObject gameObject, Material material, CombineInstance[] combinedMeshes)
+        {
             MeshComponents data = new MeshComponents();
             MeshFilter parentMeshFilter = gameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
             data.MeshFilter = parentMeshFilter;
@@ -40,7 +66,6 @@ namespace Voxel.Utility
             MeshRenderer parentMeshRenderer = gameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;
             data.MeshRenderer = parentMeshRenderer;
             parentMeshRenderer.material = material;
-            data.Collider = gameObject.AddComponent(typeof(T)) as T;
             return data;
         }
     }
