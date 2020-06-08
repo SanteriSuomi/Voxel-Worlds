@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +40,7 @@ namespace Voxel.World
             => grassBlockDatabase.TryGetValue($"{chunk.position.x + pos.x}_{chunk.position.z + pos.z}", out _);
         #endregion
 
+        #region Get Chunk Methods
         /// <summary>
         /// Return the ID (as a string) of a chunk at position as specified in the ChunkDictionary.
         /// </summary>
@@ -76,6 +78,30 @@ namespace Voxel.World
             return null;
         }
 
+        // TODO: improve getchunkfromworldposition and add getblockfromworldposition.
+        /// <summary>
+        /// Get a chunk from a world position.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns>The chunk.</returns>
+        public Chunk GetChunkFromWorldPosition(Vector3 position)
+        {
+            float chunkMidSize = (float)chunkEdgeSize / 2;
+
+            // Get the middle point of a world chunk.
+            Vector3 middlePoint = new Vector3(MathUtils.GetNearestMultipleOf(position.x, chunkMidSize),
+                                              MathUtils.GetNearestMultipleOf(position.y, chunkMidSize),
+                                              MathUtils.GetNearestMultipleOf(position.z, chunkMidSize));
+                                                
+            // Convert that middle point to the chunk position.
+            Vector3 playerChunkPosition = new Vector3((int)MathUtils.GetNearestMultipleOf(middlePoint.x, chunkEdgeSize),
+                                                      (int)MathUtils.GetNearestMultipleOf(middlePoint.y, chunkEdgeSize),
+                                                      (int)MathUtils.GetNearestMultipleOf(middlePoint.z, chunkEdgeSize));
+
+            return GetChunk(playerChunkPosition);
+        }
+        #endregion
+
         [Header("Misc. Dependencies")]
         [SerializeField]
         private Transform playerTransform = default;
@@ -86,6 +112,7 @@ namespace Voxel.World
         [SerializeField]
         private int chunkSize = 16;
         public int ChunkSize { get; private set; }
+        private int chunkEdgeSize; // ChunkSize except taking array indexes into account
         [SerializeField]
         private int buildRadius = 4;
         [SerializeField]
@@ -120,6 +147,7 @@ namespace Voxel.World
             HitDecalDatabase = new ConcurrentDictionary<string, HitDecal>();
             grassBlockDatabase = new ConcurrentDictionary<string, bool>();
             ChunkSize = chunkSize;
+            chunkEdgeSize = ChunkSize - 1;
         }
 
         public void InitializeWorld()
@@ -227,9 +255,9 @@ namespace Voxel.World
 
         private void InitializeChunkAt(int x, int y, int z)
         {
-            Vector3Int chunkPosition = new Vector3Int(x * (ChunkSize - 1), // -1 from chunkSize because otherwise there would be 1 block gap between chunks. 
-                                                      y * (ChunkSize - 1), // Cause unknown at this time.
-                                                      z * (ChunkSize - 1));
+            Vector3Int chunkPosition = new Vector3Int(x * chunkEdgeSize, // -1 from chunkSize because otherwise there would be 1 block gap between chunks. 
+                                                      y * chunkEdgeSize, // Cause unknown at this time.
+                                                      z * chunkEdgeSize);
 
             if (chunkPosition.y < 0) return; // Don't create chunks below a certain threshold (bedrock)
 

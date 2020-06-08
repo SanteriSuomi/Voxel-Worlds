@@ -54,7 +54,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3467652924949916380}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.5, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 9171768461920612257}
@@ -327,8 +327,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 55
   maxRayDistance: 0.5
-  baseGravityMultiplier: 3
-  distanceMultiplierMax: 6
+  baseGravityMultiplier: 7.325
+  minDistanceForMultiplier: 10
+  distanceMultiplierMinMax: {x: 1, y: 1.5}
   moveState: {fileID: 11400000, guid: 2ee9d5f9c3f8e794c881b48635f13e92, type: 2}
   moveSpeed: 4
   sprintSpeedMultiplier: 1.6
@@ -358,6 +359,9 @@ MonoBehaviour:
   inputActionsController: {fileID: 11400000, guid: 3c78d235ee10f644da2668e5a1ff5795,
     type: 2}
   nonMineableBlockTypes: 0500000006000000
+  interactionRayLayerMask:
+    serializedVersion: 2
+    m_Bits: 311
   interactionMaxDistance: 3.5
   destroyBlockMaxSpeed: 0.5
   blockDestroyScale: {x: 0.35, y: 0.35, z: 0.35}
@@ -378,7 +382,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   pickupDetectionTag: Pickup
-  pickupRadius: 0.9
+  pickupRadius: 1
 --- !u!114 &1374924916
 MonoBehaviour:
   m_ObjectHideFlags: 0

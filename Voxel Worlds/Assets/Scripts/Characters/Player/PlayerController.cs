@@ -24,7 +24,9 @@ namespace Voxel.Player
         [SerializeField]
         private float baseGravityMultiplier = 2;
         [SerializeField]
-        private float distanceMultiplierMax = 5;
+        private float minDistanceForMultiplier = 10;
+        [SerializeField]
+        private Vector2 distanceMultiplierMinMax = new Vector2(1, 1.5f);
 
         [Header("Moving")]
         [SerializeField]
@@ -127,8 +129,16 @@ namespace Voxel.Player
                 || jumpState.Value == PlayerJumpState.IsJumping)
             {
                 totalMoveValue += jumpVector;
+                IsInFluid();
                 characterController.Move(totalMoveValue * Time.deltaTime);
             }
+        }
+
+        // TODO: fluid detection + swim.
+        private void IsInFluid()
+        {
+            Chunk localChunk = WorldManager.Instance.GetChunkFromWorldPosition(transform.position);
+            Debug.Log(localChunk.FluidCount >= 1);
         }
 
         private bool IsMovingSidewaysOrBackwards() => moveValue.y < 0 || !Mathf.Approximately(moveValue.x, 0);
@@ -152,9 +162,9 @@ namespace Voxel.Player
 
         private float CalculateDistanceMultiplier(RaycastHit hitInfo)
         {
-            return hitInfo.collider != null
-                   ? Mathf.Clamp(hitInfo.distance, distanceMultiplierMax / 4, distanceMultiplierMax)
-                   : distanceMultiplierMax;
+            return hitInfo.collider != null && hitInfo.distance > minDistanceForMultiplier
+                   ? Mathf.Clamp(hitInfo.distance, distanceMultiplierMinMax.x, distanceMultiplierMinMax.y)
+                   : distanceMultiplierMinMax.x;
         }
 
         private Vector3 Moving()

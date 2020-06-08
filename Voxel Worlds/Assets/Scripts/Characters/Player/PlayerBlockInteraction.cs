@@ -51,6 +51,8 @@ namespace Voxel.Player
 
         [SerializeField]
         private BlockType[] nonMineableBlockTypes = default;
+        [SerializeField]
+        private LayerMask interactionRayLayerMask = default;
 
         [SerializeField]
         private float interactionMaxDistance = 2;
@@ -185,7 +187,7 @@ namespace Voxel.Player
         {
             Vector2 rayPosition = new Vector2(Screen.width / 2, Screen.height / 2);
             Ray ray = ReferenceManager.Instance.MainCamera.ScreenPointToRay(rayPosition);
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, interactionMaxDistance))
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, interactionMaxDistance, interactionRayLayerMask))
             {
                 ValidateBlock(hitInfo, onValidatedAction, checkPermission);
             }
@@ -348,9 +350,12 @@ namespace Voxel.Player
             }
 
             Block[,,] chunkData = chunk.GetChunkData();
-            if (reAdjustedBlockPosition.x >= 0 && reAdjustedBlockPosition.x <= chunkData.GetUpperBound(0)
-                && reAdjustedBlockPosition.y >= 0 && reAdjustedBlockPosition.y <= chunkData.GetUpperBound(1)
-                && reAdjustedBlockPosition.z >= 0 && reAdjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+            if (reAdjustedBlockPosition.x >= 0
+                && reAdjustedBlockPosition.x <= chunkData.GetUpperBound(0)
+                && reAdjustedBlockPosition.y >= 0
+                && reAdjustedBlockPosition.y <= chunkData.GetUpperBound(1)
+                && reAdjustedBlockPosition.z >= 0
+                && reAdjustedBlockPosition.z <= chunkData.GetUpperBound(2))
             {
                 Block adjustedBlock = chunkData[reAdjustedBlockPosition.x, reAdjustedBlockPosition.y, reAdjustedBlockPosition.z];
                 if (adjustedBlock?.BlockType == BlockType.Air)

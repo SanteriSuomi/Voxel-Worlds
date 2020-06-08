@@ -281,70 +281,31 @@ namespace Voxel.World
             }
         }
 
-        // TODO: Fix GetBlockNeighbour to return blocks correctly.
-        //public Block GetBlockNeighbour(Neighbour neighbour)
-        //{
-        //    switch (neighbour)
-        //    {
-        //        case Neighbour.Left:
-        //            return GetBlockAt(new Vector3Int(Position.x - 1, Position.y, Position.z));
+        public Block GetBlockNeighbour(Neighbour neighbour)
+        {
+            switch (neighbour)
+            {
+                case Neighbour.Left:
+                    return GetBlock(Position.x - 1, Position.y, Position.z);
 
-        //        case Neighbour.Right:
-        //            return GetBlockAt(new Vector3Int(Position.x + 1, Position.y, Position.z));
+                case Neighbour.Right:
+                    return GetBlock(Position.x + 1, Position.y, Position.z);
 
-        //        case Neighbour.Bottom:
-        //            return GetBlockAt(new Vector3Int(Position.x, Position.y - 1, Position.z));
+                case Neighbour.Bottom:
+                    return GetBlock(Position.x, Position.y - 1, Position.z);
 
-        //        case Neighbour.Top:
-        //            return GetBlockAt(new Vector3Int(Position.x, Position.y + 1, Position.z));
+                case Neighbour.Top:
+                    return GetBlock(Position.x, Position.y + 1, Position.z);
 
-        //        case Neighbour.Back:
-        //            return GetBlockAt(new Vector3Int(Position.x, Position.y, Position.z - 1));
+                case Neighbour.Back:
+                    return GetBlock(Position.x, Position.y, Position.z - 1);
 
-        //        case Neighbour.Front:
-        //            return GetBlockAt(new Vector3Int(Position.x, Position.y, Position.z + 1));
-        //    }
+                case Neighbour.Front:
+                    return GetBlock(Position.x, Position.y, Position.z + 1);
+            }
 
-        //    return null;
-        //}
-
-        //private Block GetBlockAt(Vector3Int position)
-        //{
-        //    int chunkEdge = WorldManager.Instance.ChunkEdge + 1;
-        //    Block[,,] chunkData = chunkOwner.GetChunkData();
-        //    if (position.x == -1)
-        //    {
-        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Left).GetChunkData();
-        //        position.x += chunkEdge;
-        //    }
-        //    else if (position.x == chunkEdge)
-        //    {
-        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Right).GetChunkData();
-        //        position.x += -chunkEdge;
-        //    }
-        //    else if (position.y == -1)
-        //    {
-        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Bottom).GetChunkData();
-        //        position.y += chunkEdge;
-        //    }
-        //    else if (position.y == chunkEdge)
-        //    {
-        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Top).GetChunkData();
-        //        position.y += -chunkEdge;
-        //    }
-        //    else if (position.z == -1)
-        //    {
-        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Back).GetChunkData();
-        //        position.z += chunkEdge;
-        //    }
-        //    else if (position.z == chunkEdge)
-        //    {
-        //        chunkData = chunkOwner.GetChunkNeighbour(Neighbour.Front).GetChunkData();
-        //        position.z += -chunkEdge;
-        //    }
-
-        //    return chunkData[position.x, position.x, position.z];
-        //}
+            return null;
+        }
 
         public void BuildBlock()
         {
@@ -408,10 +369,8 @@ namespace Voxel.World
         {
             (bool isSolid, Block block) = HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z);
 
-            if (block == null) return; // Don't create faces at edges of the world
-
-            if (!isSolid
-                || (BlockType != BlockType.Fluid && block.BlockType == BlockType.Fluid))
+            if (block != null // Don't create faces at edges of the world
+                && (!isSolid || (BlockType != BlockType.Fluid && block.BlockType == BlockType.Fluid)))
             {
                 CreateQuad(new BlockCreationData(ChunkGameObject.transform, BlockType, side)
                 {

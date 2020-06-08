@@ -32,6 +32,7 @@ namespace Voxel.World
 
         public GameObject GameObject { get; }
         public GameObject FluidGameObject { get; }
+        public int FluidCount { get; private set; }
 
         public MeshFilter[] MeshFilters { get; }
         public MeshRenderer[] MeshRenderers { get; }
@@ -76,10 +77,10 @@ namespace Voxel.World
         {
             if (data.ResetBlockType)
             {
-                Vector3Int position = data.Position;
-                Block block = GetChunkData()[position.x, position.y, position.z];
-                if (HasFluidNeighbour(position, block))
+                Block block = GetChunkData()[data.Position.x, data.Position.y, data.Position.z];
+                if (HasFluidNeighbour(block))
                 {
+                    // TODO: add pseudo-water physics??
                     ResetBlockType(block, BlockType.Fluid);
                 }
                 else
@@ -93,14 +94,12 @@ namespace Voxel.World
             SaveManager.Instance.Save(this);
         }
 
-        private static bool HasFluidNeighbour(Vector3Int position, Block block)
+        private static bool HasFluidNeighbour(Block block)
         {
-            return block?.GetBlock(position.x + 1, position.y, position.z).BlockType == BlockType.Fluid
-                                   || block?.GetBlock(position.x - 1, position.y, position.z).BlockType == BlockType.Fluid
-                                   || block?.GetBlock(position.x, position.y + 1, position.z).BlockType == BlockType.Fluid
-                                   || block?.GetBlock(position.x, position.y - 1, position.z).BlockType == BlockType.Fluid
-                                   || block?.GetBlock(position.x, position.y, position.z + 1).BlockType == BlockType.Fluid
-                                   || block?.GetBlock(position.x, position.y, position.z - 1).BlockType == BlockType.Fluid;
+            return block?.GetBlockNeighbour(Neighbour.Right).BlockType == BlockType.Fluid
+                   || block?.GetBlockNeighbour(Neighbour.Left).BlockType == BlockType.Fluid
+                   || block?.GetBlockNeighbour(Neighbour.Front).BlockType == BlockType.Fluid
+                   || block?.GetBlockNeighbour(Neighbour.Back).BlockType == BlockType.Fluid;
         }
 
         private void ResetBlockType(Block block, BlockType type)
@@ -190,6 +189,7 @@ namespace Voxel.World
                             * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
                         int undergroundLayerStart = noise2D - 6; // This is where underground layer starts
 
+                        // Between water and underground layer
                         if (worldPositionY == undergroundLayerStart + 1)
                         {
                             NewLocalBlock(BlockType.Dirt, localPosition);
@@ -274,6 +274,7 @@ namespace Voxel.World
         {
             if (type == BlockType.Fluid)
             {
+                FluidCount++;
                 chunkData[position.x, position.y, position.z] = new Block(type, position, FluidGameObject, this);
             }
             else
