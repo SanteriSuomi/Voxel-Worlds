@@ -328,7 +328,6 @@ namespace Voxel.Player
             }
             else if (adjustedBlockPosition.z == chunkEdge)
             {
-
                 UpdateBlock(data, new BlockUpdateData(true, Neighbour.Front, new Vector3Int(0, 0, -chunkEdge)));
             }
             else

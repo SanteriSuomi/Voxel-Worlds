@@ -76,7 +76,16 @@ namespace Voxel.World
         {
             if (data.ResetBlockType)
             {
-                ResetBlockType(data.Position);
+                Vector3Int position = data.Position;
+                Block block = GetChunkData()[position.x, position.y, position.z];
+                if (HasFluidNeighbour(position, block))
+                {
+                    ResetBlockType(block, BlockType.Fluid);
+                }
+                else
+                {
+                    ResetBlockType(block, BlockType.Air);
+                }
             }
 
             DestroyChunkMesh();
@@ -84,8 +93,24 @@ namespace Voxel.World
             SaveManager.Instance.Save(this);
         }
 
-        private void ResetBlockType(Vector3Int position)
-            => GetChunkData()[position.x, position.y, position.z].UpdateBlockType(BlockType.Air);
+        private static bool HasFluidNeighbour(Vector3Int position, Block block)
+        {
+            return block?.GetBlock(position.x + 1, position.y, position.z).BlockType == BlockType.Fluid
+                                   || block?.GetBlock(position.x - 1, position.y, position.z).BlockType == BlockType.Fluid
+                                   || block?.GetBlock(position.x, position.y + 1, position.z).BlockType == BlockType.Fluid
+                                   || block?.GetBlock(position.x, position.y - 1, position.z).BlockType == BlockType.Fluid
+                                   || block?.GetBlock(position.x, position.y, position.z + 1).BlockType == BlockType.Fluid
+                                   || block?.GetBlock(position.x, position.y, position.z - 1).BlockType == BlockType.Fluid;
+        }
+
+        private void ResetBlockType(Block block, BlockType type)
+        {
+            block.UpdateBlockType(type);
+            if (type == BlockType.Fluid)
+            {
+                block.ChunkGameObject = FluidGameObject;
+            }
+        }
 
         private void DestroyChunkMesh()
         {
@@ -181,7 +206,7 @@ namespace Voxel.World
                                 continue;
                             }
 
-                            NewLocalBlock(BlockType.Water, localPosition);
+                            NewLocalBlock(BlockType.Fluid, localPosition);
                             continue;
                         }
 
@@ -247,7 +272,7 @@ namespace Voxel.World
 
         private void NewLocalBlock(BlockType type, Vector3Int position)
         {
-            if (type == BlockType.Water)
+            if (type == BlockType.Fluid)
             {
                 chunkData[position.x, position.y, position.z] = new Block(type, position, FluidGameObject, this);
             }

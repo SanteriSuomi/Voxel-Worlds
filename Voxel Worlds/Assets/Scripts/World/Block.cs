@@ -13,7 +13,7 @@ namespace Voxel.World
         Stone,
         Diamond,
         Bedrock,
-        Water
+        Fluid
     }
 
     public enum BlockSide
@@ -177,7 +177,7 @@ namespace Voxel.World
         /// </summary>
         public Vector3 WorldPositionAverage { get; private set; }
 
-        private readonly GameObject chunkGameObject;
+        public GameObject ChunkGameObject { get; set; }
         private readonly Chunk chunkOwner;
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace Voxel.World
         {
             BlockType = type;
             Position = position;
-            chunkGameObject = parent;
+            ChunkGameObject = parent;
             chunkOwner = owner;
             UpdateSolidity();
             ResetBlockHealth();
@@ -359,62 +359,31 @@ namespace Voxel.World
 
         private void CheckNeighbours()
         {
-            // TODO: refactor for more compact code
             List<Vector3> quadPositions = new List<Vector3>(maxQuadCount);
 
             // Front quad
-            Vector3Int quadPos = new Vector3Int(Position.x, Position.y, Position.z + 1);
-            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
-            {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Front)
-                { Position = Position });
-            }
-            quadPositions.Add(quadPos);
+            Vector3Int currentQuadPos = new Vector3Int(Position.x, Position.y, Position.z + 1);
+            CheckSide(quadPositions, currentQuadPos, BlockSide.Front);
 
             // Back quad
-            quadPos = new Vector3Int(Position.x, Position.y, Position.z - 1);
-            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
-            {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Back)
-                { Position = Position });
-            }
-            quadPositions.Add(quadPos);
+            currentQuadPos = new Vector3Int(Position.x, Position.y, Position.z - 1);
+            CheckSide(quadPositions, currentQuadPos, BlockSide.Back);
 
             // Left quad
-            quadPos = new Vector3Int(Position.x - 1, Position.y, Position.z);
-            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
-            {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Left)
-                { Position = Position });
-            }
-            quadPositions.Add(quadPos);
+            currentQuadPos = new Vector3Int(Position.x - 1, Position.y, Position.z);
+            CheckSide(quadPositions, currentQuadPos, BlockSide.Left);
 
             // Right quad
-            quadPos = new Vector3Int(Position.x + 1, Position.y, Position.z);
-            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
-            {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Right)
-                { Position = Position });
-            }
-            quadPositions.Add(quadPos);
+            currentQuadPos = new Vector3Int(Position.x + 1, Position.y, Position.z);
+            CheckSide(quadPositions, currentQuadPos, BlockSide.Right);
 
             // Top quad
-            quadPos = new Vector3Int(Position.x, Position.y + 1, Position.z);
-            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
-            {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Top)
-                { Position = Position });
-            }
-            quadPositions.Add(quadPos);
+            currentQuadPos = new Vector3Int(Position.x, Position.y + 1, Position.z);
+            CheckSide(quadPositions, currentQuadPos, BlockSide.Top);
 
             // Bottom quad
-            quadPos = new Vector3Int(Position.x, Position.y - 1, Position.z);
-            if (!HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z))
-            {
-                CreateQuad(new BlockCreationData(chunkGameObject.transform, BlockType, BlockSide.Bottom)
-                { Position = Position });
-            }
-            quadPositions.Add(quadPos);
+            currentQuadPos = new Vector3Int(Position.x, Position.y - 1, Position.z);
+            CheckSide(quadPositions, currentQuadPos, BlockSide.Bottom);
 
             CalculateBlockPositionAverage(quadPositions);
         }
@@ -435,21 +404,39 @@ namespace Voxel.World
             WorldPositionAverage = blockPositionAverageTemp;
         }
 
-        private bool HasSolidNeighbour(int x, int y, int z)
+        private void CheckSide(List<Vector3> quadPositions, Vector3Int quadPos, BlockSide side)
+        {
+            (bool isSolid, Block block) = HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z);
+
+            if (block == null) return; // Don't create faces at edges of the world
+
+            if (!isSolid
+                || (BlockType != BlockType.Fluid && block.BlockType == BlockType.Fluid))
+            {
+                CreateQuad(new BlockCreationData(ChunkGameObject.transform, BlockType, side)
+                {
+                    Position = Position
+                });
+            }
+
+            quadPositions.Add(quadPos);
+        }
+
+        private (bool, Block) HasSolidNeighbour(int x, int y, int z)
         {
             try
             {
                 Block neighbourBlock = GetBlock(x, y, z);
                 if (neighbourBlock != null)
                 {
-                    return neighbourBlock.IsSolid || neighbourBlock.BlockType == BlockType;
+                    return (neighbourBlock.IsSolid, neighbourBlock);
                 }
 
-                return false;
+                return (false, null);
             }
             catch (NullReferenceException)
             {
-                return false;
+                return (false, null);
             }
         }
 
@@ -461,7 +448,7 @@ namespace Voxel.World
                 || y < 0 || y >= chunkSize
                 || z < 0 || z >= chunkSize)
             {
-                Vector3 neighbouringChunkPosition = chunkGameObject.transform.position
+                Vector3 neighbouringChunkPosition = ChunkGameObject.transform.position
                                                   + new Vector3((x - Position.x) * chunkSize,
                                                                 (y - Position.y) * chunkSize,
                                                                 (z - Position.z) * chunkSize);
@@ -604,7 +591,7 @@ namespace Voxel.World
 
         private static void AssignUVs(BlockType blockType, BlockSide side, Vector2[] uvs)
         {
-            if (blockType == BlockType.Water)
+            if (blockType == BlockType.Fluid)
             {
                 uvs[0] = uvAtlasMap[6, 0];
                 uvs[1] = uvAtlasMap[6, 1];
