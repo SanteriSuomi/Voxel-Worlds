@@ -71,6 +71,14 @@ namespace Voxel.Player
         private WaitForSeconds jumpDelayWFS;
         private Vector3 jumpVector;
 
+        [Header("Swimming")]
+        [SerializeField]
+        private float swimMultiplier = 0.5f;
+        [SerializeField]
+        private float swimJumpMultiplier = 0.8f;
+        [SerializeField]
+        private float swimFallMultiplier = 0.3f;
+
         private void Awake()
         {
             playerCamera = GetComponentInChildren<Camera>().transform;
@@ -129,16 +137,46 @@ namespace Voxel.Player
                 || jumpState.Value == PlayerJumpState.IsJumping)
             {
                 totalMoveValue += jumpVector;
-                IsInFluid();
+                totalMoveValue = ApplySwimmingValue(totalMoveValue);
                 characterController.Move(totalMoveValue * Time.deltaTime);
             }
         }
 
-        // TODO: fluid detection + swim.
-        private void IsInFluid()
+        private Vector3 ApplySwimmingValue(Vector3 totalMoveValue)
         {
-            Chunk localChunk = WorldManager.Instance.GetChunkFromWorldPosition(transform.position);
-            Debug.Log(localChunk.FluidCount >= 1);
+            int chunkSize = WorldManager.Instance.ChunkSize;
+
+            Chunk chunk = WorldManager.Instance.GetChunkFromWorldPosition(transform.position);
+            Vector3Int blockPosition = new Vector3Int
+            {
+                x = Mathf.Clamp(Mathf.RoundToInt(transform.position.x - chunk.GameObject.transform.position.x), 0, chunkSize),
+                y = Mathf.Clamp(Mathf.RoundToInt(transform.position.y - chunk.GameObject.transform.position.y), 0, chunkSize),
+                z = Mathf.Clamp(Mathf.RoundToInt(transform.position.z - chunk.GameObject.transform.position.z), 0, chunkSize)
+            };
+
+            Block block = chunk.GetChunkData()[blockPosition.x, blockPosition.y, blockPosition.z];
+            if (block.BlockType == BlockType.Fluid)
+            {
+                // If falling in fluid
+                if (totalMoveValue.y < 0)
+                {
+                    return GetSwimVector(totalMoveValue, swimFallMultiplier);
+                }
+
+                return GetSwimVector(totalMoveValue, swimJumpMultiplier);
+            }
+
+            return totalMoveValue;
+        }
+
+        private Vector3 GetSwimVector(Vector3 totalMoveValue, float yMultiplier)
+        {
+            return new Vector3
+            {
+                x = totalMoveValue.x *= swimMultiplier,
+                y = totalMoveValue.y *= yMultiplier,
+                z = totalMoveValue.z *= swimMultiplier
+            };
         }
 
         private bool IsMovingSidewaysOrBackwards() => moveValue.y < 0 || !Mathf.Approximately(moveValue.x, 0);
@@ -178,6 +216,8 @@ namespace Voxel.Player
 
             return Vector3.zero;
         }
+
+        private Vector3 GetPlayerSideways() => new Vector3(playerCamera.right.x, 0, playerCamera.right.z);
 
         private void Jump()
         {
@@ -221,8 +261,6 @@ namespace Voxel.Player
         }
 
         private Vector3 GetPlayerForward() => new Vector3(playerCamera.forward.x, 0, playerCamera.forward.z);
-
-        private Vector3 GetPlayerSideways() => new Vector3(playerCamera.right.x, 0, playerCamera.right.z);
 
         private void LateUpdate() => Looking();
 

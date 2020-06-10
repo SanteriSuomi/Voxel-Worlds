@@ -30,6 +30,36 @@ Transform:
   m_Father: {fileID: 9171768461920612257}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1558044251306920458
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8163264702144152633}
+  m_Layer: 8
+  m_Name: FluidChunkScan
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8163264702144152633
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1558044251306920458}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.6, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 9171768461920612257}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3467652924949916380
 GameObject:
   m_ObjectHideFlags: 0
@@ -214,6 +244,7 @@ Transform:
   - {fileID: 9171768461707996300}
   - {fileID: 597396429882515071}
   - {fileID: 8871222061837393463}
+  - {fileID: 8163264702144152633}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -344,6 +375,7 @@ MonoBehaviour:
   newJumpDelay: 0.175
   jumpReduceAmount: 0.02
   jumpTotalMultiplier: 15
+  fluidScanStart: {fileID: 8163264702144152633}
 --- !u!114 &8269590369259728606
 MonoBehaviour:
   m_ObjectHideFlags: 0

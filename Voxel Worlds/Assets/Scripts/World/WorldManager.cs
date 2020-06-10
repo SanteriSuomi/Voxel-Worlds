@@ -88,15 +88,15 @@ namespace Voxel.World
         {
             float chunkMidSize = (float)chunkEdgeSize / 2;
 
-            // Get the middle point of a world chunk.
-            Vector3 middlePoint = new Vector3(MathUtils.GetNearestMultipleOf(position.x, chunkMidSize),
+            // Get the (approx) middle point of a world chunk.
+            Vector3 middlePoint = new Vector3(MathUtils.GetNearestMultipleOf(position.x, chunkMidSize) - 2,
                                               MathUtils.GetNearestMultipleOf(position.y, chunkMidSize),
-                                              MathUtils.GetNearestMultipleOf(position.z, chunkMidSize));
-                                                
+                                              MathUtils.GetNearestMultipleOf(position.z, chunkMidSize) - 2);
+
             // Convert that middle point to the chunk position.
-            Vector3 playerChunkPosition = new Vector3((int)MathUtils.GetNearestMultipleOf(middlePoint.x, chunkEdgeSize),
-                                                      (int)MathUtils.GetNearestMultipleOf(middlePoint.y, chunkEdgeSize),
-                                                      (int)MathUtils.GetNearestMultipleOf(middlePoint.z, chunkEdgeSize));
+            Vector3 playerChunkPosition = new Vector3(Mathf.FloorToInt(MathUtils.GetNearestMultipleOf(middlePoint.x, chunkEdgeSize)),
+                                                      Mathf.FloorToInt(MathUtils.GetNearestMultipleOf(middlePoint.y, chunkEdgeSize)),
+                                                      Mathf.FloorToInt(MathUtils.GetNearestMultipleOf(middlePoint.z, chunkEdgeSize)));
 
             return GetChunk(playerChunkPosition);
         }
@@ -255,8 +255,8 @@ namespace Voxel.World
 
         private void InitializeChunkAt(int x, int y, int z)
         {
-            Vector3Int chunkPosition = new Vector3Int(x * chunkEdgeSize, // -1 from chunkSize because otherwise there would be 1 block gap between chunks. 
-                                                      y * chunkEdgeSize, // Cause unknown at this time.
+            Vector3Int chunkPosition = new Vector3Int(x * chunkEdgeSize,
+                                                      y * chunkEdgeSize,
                                                       z * chunkEdgeSize);
 
             if (chunkPosition.y < 0) return; // Don't create chunks below a certain threshold (bedrock)

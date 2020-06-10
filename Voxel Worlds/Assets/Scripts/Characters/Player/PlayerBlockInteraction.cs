@@ -195,8 +195,8 @@ namespace Voxel.Player
 
         private void ValidateBlock(RaycastHit hitInfo, Action<BlockActionData> onValidatedAction, bool checkPermission)
         {
-            Vector3 hitChunkPosition = hitInfo.transform.position;
             Vector3 worldBlockPosition = hitInfo.point - (hitInfo.normal / 2);
+            Vector3 hitChunkPosition = hitInfo.transform.position;
             currentLocalBlockPosition = new Vector3Int
             {
                 x = Mathf.RoundToInt(worldBlockPosition.x - hitChunkPosition.x),
@@ -350,12 +350,9 @@ namespace Voxel.Player
             }
 
             Block[,,] chunkData = chunk.GetChunkData();
-            if (reAdjustedBlockPosition.x >= 0
-                && reAdjustedBlockPosition.x <= chunkData.GetUpperBound(0)
-                && reAdjustedBlockPosition.y >= 0
-                && reAdjustedBlockPosition.y <= chunkData.GetUpperBound(1)
-                && reAdjustedBlockPosition.z >= 0
-                && reAdjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+            if (reAdjustedBlockPosition.x >= 0 && reAdjustedBlockPosition.x <= chunkData.GetUpperBound(0)
+                && reAdjustedBlockPosition.y >= 0 && reAdjustedBlockPosition.y <= chunkData.GetUpperBound(1)
+                && reAdjustedBlockPosition.z >= 0 && reAdjustedBlockPosition.z <= chunkData.GetUpperBound(2))
             {
                 Block adjustedBlock = chunkData[reAdjustedBlockPosition.x, reAdjustedBlockPosition.y, reAdjustedBlockPosition.z];
                 if (adjustedBlock?.BlockType == BlockType.Air)
