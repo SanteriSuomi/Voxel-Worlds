@@ -78,7 +78,6 @@ namespace Voxel.World
             return null;
         }
 
-        // TODO: improve getchunkfromworldposition and add getblockfromworldposition.
         /// <summary>
         /// Get a chunk from a world position.
         /// </summary>

@@ -357,7 +357,7 @@ namespace Voxel.Player
                 Block adjustedBlock = chunkData[reAdjustedBlockPosition.x, reAdjustedBlockPosition.y, reAdjustedBlockPosition.z];
                 if (adjustedBlock?.BlockType == BlockType.Air)
                 {
-                    adjustedBlock.ReplaceBlock(selectedBlockType);
+                    adjustedBlock.ResetBlockAndChunk(selectedBlockType);
                 }
             }
         }

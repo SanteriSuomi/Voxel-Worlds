@@ -73,19 +73,27 @@ namespace Voxel.World
             ChunkStatus = ChunkStatus.None;
         }
 
+        //TODO: implement the pseudo "water physics"
         public void RebuildChunk(ChunkResetData data)
         {
             if (data.ResetBlockType)
             {
                 Block block = GetChunkData()[data.Position.x, data.Position.y, data.Position.z];
+
                 if (HasFluidNeighbour(block))
                 {
-                    // TODO: add pseudo-water physics??
-                    ResetBlockType(block, BlockType.Fluid);
+                    block.UpdateBlockType(BlockType.Fluid);
                 }
                 else
                 {
-                    ResetBlockType(block, BlockType.Air);
+                    block.UpdateBlockType(BlockType.Air);
+                }
+
+                Block bottomBlock = block.GetBlockNeighbour(Neighbour.Top);
+                if (bottomBlock.BlockType == BlockType.Fluid)
+                {
+                    Debug.Log("starting water physics");
+                    GlobalChunk.Instance.StartWaterPhysicsLoop(block);
                 }
             }
 
@@ -100,15 +108,6 @@ namespace Voxel.World
                    || block?.GetBlockNeighbour(Neighbour.Left).BlockType == BlockType.Fluid
                    || block?.GetBlockNeighbour(Neighbour.Front).BlockType == BlockType.Fluid
                    || block?.GetBlockNeighbour(Neighbour.Back).BlockType == BlockType.Fluid;
-        }
-
-        private void ResetBlockType(Block block, BlockType type)
-        {
-            block.UpdateBlockType(type);
-            if (type == BlockType.Fluid)
-            {
-                block.ChunkGameObject = FluidGameObject;
-            }
         }
 
         private void DestroyChunkMesh()
@@ -190,7 +189,8 @@ namespace Voxel.World
                         int undergroundLayerStart = noise2D - 6; // This is where underground layer starts
 
                         // Between water and underground layer
-                        if (worldPositionY == undergroundLayerStart + 1)
+                        if (worldPositionY == undergroundLayerStart + 1
+                            || worldPositionY == undergroundLayerStart + 2)
                         {
                             NewLocalBlock(BlockType.Dirt, localPosition);
                             continue;

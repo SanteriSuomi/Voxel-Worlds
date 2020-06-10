@@ -211,24 +211,36 @@ namespace Voxel.World
         }
 
         /// <summary>
-        /// Replace block with a specific type. Performs health reset and chunk rebuild.
+        /// Replace the block with the specific type (update). Also erform health and chunk rebuild.
         /// </summary>
         /// <param name="type">Type to replace the current block with.</param>
-        public void ReplaceBlock(BlockType type)
+        public void ResetBlockAndChunk(BlockType type)
         {
             UpdateBlockType(type);
             ResetBlockHealth();
             chunkOwner.RebuildChunk(new ChunkResetData(false, Position));
         }
 
-        public void ResetBlockHealth() => BlockHealth = blockHealthMap[(int)BlockType];
-
+        /// <summary>
+        /// Update the block type.
+        /// </summary>
+        /// <param name="type">Type to replace the current type with.</param>
         public void UpdateBlockType(BlockType type)
         {
             BlockType = type;
             UpdateSolidity();
             chunkOwner.GetBlockTypeData()[Position.x, Position.y, Position.z] = type;
+            if (type == BlockType.Fluid)
+            {
+                ChunkGameObject = chunkOwner.FluidGameObject;
+            }
+            else
+            {
+                ChunkGameObject = chunkOwner.GameObject;
+            }
         }
+
+        public void ResetBlockHealth() => BlockHealth = blockHealthMap[(int)BlockType];
 
         private void UpdateSolidity() => IsSolid = BlockType != BlockType.Air;
 
