@@ -24,12 +24,12 @@ namespace Voxel.World
         private IEnumerator WaterPhysicsLoopCoroutine(Block block)
         {
             Block currentBlock = block.GetBlockNeighbour(Neighbour.Bottom);
-            while (currentBlock?.BlockType == BlockType.Air)
+            do
             {
-                currentBlock.ResetBlockAndChunk(BlockType.Fluid);
+                currentBlock.UpdateBlockAndChunk(BlockType.Fluid);
                 currentBlock = currentBlock.GetBlockNeighbour(Neighbour.Bottom);
                 yield return waterPhysicsLoopWFS;
-            }
+            } while (currentBlock?.BlockType == BlockType.Air);
         }
     }
 }

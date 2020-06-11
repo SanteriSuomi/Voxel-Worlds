@@ -178,7 +178,7 @@ namespace Voxel.World
         public Vector3 WorldPositionAverage { get; private set; }
 
         public GameObject ChunkGameObject { get; set; }
-        private readonly Chunk chunkOwner;
+        public Chunk ChunkOwner { get; }
 
         /// <summary>
         /// Position relative to the owner chunk's position.
@@ -190,7 +190,7 @@ namespace Voxel.World
             BlockType = type;
             Position = position;
             ChunkGameObject = parent;
-            chunkOwner = owner;
+            ChunkOwner = owner;
             UpdateSolidity();
             ResetBlockHealth();
         }
@@ -203,7 +203,19 @@ namespace Voxel.World
             BlockHealth--;
             if (BlockHealth <= 0)
             {
-                chunkOwner.RebuildChunk(new ChunkResetData(true, Position));
+                // Start falling water "physics"
+                if ((BlockType == BlockType.Fluid
+                    || GetBlockNeighbour(Neighbour.Top).BlockType == BlockType.Fluid)
+                    && GetBlockNeighbour(Neighbour.Bottom).BlockType == BlockType.Air)
+                {
+                    UpdateBlockAndChunk(BlockType.Fluid);
+                    GlobalChunk.Instance.StartWaterPhysicsLoop(this);
+                }
+                else
+                {
+                    ChunkOwner.RebuildChunk(new ChunkResetData(true, Position));
+                }
+
                 return true;
             }
 
@@ -214,11 +226,11 @@ namespace Voxel.World
         /// Replace the block with the specific type (update). Also erform health and chunk rebuild.
         /// </summary>
         /// <param name="type">Type to replace the current block with.</param>
-        public void ResetBlockAndChunk(BlockType type)
+        public void UpdateBlockAndChunk(BlockType type)
         {
             UpdateBlockType(type);
             ResetBlockHealth();
-            chunkOwner.RebuildChunk(new ChunkResetData(false, Position));
+            ChunkOwner.RebuildChunk(new ChunkResetData(false, Position));
         }
 
         /// <summary>
@@ -229,14 +241,14 @@ namespace Voxel.World
         {
             BlockType = type;
             UpdateSolidity();
-            chunkOwner.GetBlockTypeData()[Position.x, Position.y, Position.z] = type;
+            ChunkOwner.GetBlockTypeData()[Position.x, Position.y, Position.z] = type;
             if (type == BlockType.Fluid)
             {
-                ChunkGameObject = chunkOwner.FluidGameObject;
+                ChunkGameObject = ChunkOwner.FluidGameObject;
             }
             else
             {
-                ChunkGameObject = chunkOwner.GameObject;
+                ChunkGameObject = ChunkOwner.GameObject;
             }
         }
 
@@ -366,9 +378,9 @@ namespace Voxel.World
             Vector3 blockPositionAverageTemp = Vector3.zero;
             for (int i = 0; i < quadPositions.Count; i++)
             {
-                blockPositionAverageTemp.x += chunkOwner.GameObject.transform.position.x + quadPositions[i].x;
-                blockPositionAverageTemp.y += chunkOwner.GameObject.transform.position.y + quadPositions[i].y;
-                blockPositionAverageTemp.z += chunkOwner.GameObject.transform.position.z + quadPositions[i].z;
+                blockPositionAverageTemp.x += ChunkOwner.GameObject.transform.position.x + quadPositions[i].x;
+                blockPositionAverageTemp.y += ChunkOwner.GameObject.transform.position.y + quadPositions[i].y;
+                blockPositionAverageTemp.z += ChunkOwner.GameObject.transform.position.z + quadPositions[i].z;
             }
 
             blockPositionAverageTemp.x /= maxQuadCount;
@@ -380,7 +392,6 @@ namespace Voxel.World
         private void CheckSide(List<Vector3> quadPositions, Vector3Int quadPos, BlockSide side)
         {
             (bool isSolid, Block block) = HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z);
-
             if (block != null // Don't create faces at edges of the world
                 && (!isSolid || (BlockType != BlockType.Fluid && block.BlockType == BlockType.Fluid)))
             {
@@ -439,7 +450,7 @@ namespace Voxel.World
             }
             else
             {
-                chunkData = chunkOwner.GetChunkData();
+                chunkData = ChunkOwner.GetChunkData();
             }
 
             if (chunkData != null

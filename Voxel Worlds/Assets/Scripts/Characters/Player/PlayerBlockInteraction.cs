@@ -342,22 +342,23 @@ namespace Voxel.Player
         private void UpdateBlock(BlockActionData actionData, BlockUpdateData updateData)
         {
             Chunk chunk = actionData.Chunk;
-            Vector3Int reAdjustedBlockPosition = actionData.AdjustedBlockPosition;
+            Vector3Int adjustedBlockPosition = actionData.AdjustedBlockPosition;
             if (updateData.Update)
             {
                 chunk = actionData.Chunk.GetChunkNeighbour(updateData.Neighbour);
-                reAdjustedBlockPosition += updateData.Offset;
+                adjustedBlockPosition += updateData.Offset;
             }
 
             Block[,,] chunkData = chunk.GetChunkData();
-            if (reAdjustedBlockPosition.x >= 0 && reAdjustedBlockPosition.x <= chunkData.GetUpperBound(0)
-                && reAdjustedBlockPosition.y >= 0 && reAdjustedBlockPosition.y <= chunkData.GetUpperBound(1)
-                && reAdjustedBlockPosition.z >= 0 && reAdjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+            if (adjustedBlockPosition.x >= 0 && adjustedBlockPosition.x <= chunkData.GetUpperBound(0)
+                && adjustedBlockPosition.y >= 0 && adjustedBlockPosition.y <= chunkData.GetUpperBound(1)
+                && adjustedBlockPosition.z >= 0 && adjustedBlockPosition.z <= chunkData.GetUpperBound(2))
             {
-                Block adjustedBlock = chunkData[reAdjustedBlockPosition.x, reAdjustedBlockPosition.y, reAdjustedBlockPosition.z];
-                if (adjustedBlock?.BlockType == BlockType.Air)
+                Block adjustedBlock = chunkData[adjustedBlockPosition.x, adjustedBlockPosition.y, adjustedBlockPosition.z];
+                if (adjustedBlock?.BlockType == BlockType.Air
+                    || adjustedBlock?.BlockType == BlockType.Fluid)
                 {
-                    adjustedBlock.ResetBlockAndChunk(selectedBlockType);
+                    adjustedBlock.UpdateBlockAndChunk(selectedBlockType);
                 }
             }
         }

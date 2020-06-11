@@ -14,12 +14,15 @@ namespace Voxel.World
 
     public struct ChunkResetData
     {
-        public bool ResetBlockType { get; }
+        /// <summary>
+        /// Perform a reset on the block at the specified position?
+        /// </summary>
+        public bool ResetBlock { get; }
         public Vector3Int Position { get; }
 
         public ChunkResetData(bool reset, Vector3Int position)
         {
-            ResetBlockType = reset;
+            ResetBlock = reset;
             Position = position;
         }
 
@@ -32,7 +35,6 @@ namespace Voxel.World
 
         public GameObject GameObject { get; }
         public GameObject FluidGameObject { get; }
-        public int FluidCount { get; private set; }
 
         public MeshFilter[] MeshFilters { get; }
         public MeshRenderer[] MeshRenderers { get; }
@@ -73,13 +75,11 @@ namespace Voxel.World
             ChunkStatus = ChunkStatus.None;
         }
 
-        //TODO: implement the pseudo "water physics"
         public void RebuildChunk(ChunkResetData data)
         {
-            if (data.ResetBlockType)
+            if (data.ResetBlock)
             {
                 Block block = GetChunkData()[data.Position.x, data.Position.y, data.Position.z];
-
                 if (HasFluidNeighbour(block))
                 {
                     block.UpdateBlockType(BlockType.Fluid);
@@ -87,13 +87,6 @@ namespace Voxel.World
                 else
                 {
                     block.UpdateBlockType(BlockType.Air);
-                }
-
-                Block bottomBlock = block.GetBlockNeighbour(Neighbour.Top);
-                if (bottomBlock.BlockType == BlockType.Fluid)
-                {
-                    Debug.Log("starting water physics");
-                    GlobalChunk.Instance.StartWaterPhysicsLoop(block);
                 }
             }
 
@@ -274,7 +267,6 @@ namespace Voxel.World
         {
             if (type == BlockType.Fluid)
             {
-                FluidCount++;
                 chunkData[position.x, position.y, position.z] = new Block(type, position, FluidGameObject, this);
             }
             else
