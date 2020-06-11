@@ -341,10 +341,6 @@ namespace Voxel.World
                     }
                 }
             }
-
-            // TODO: test gc and resources.unloadunusedassets for performance
-            //GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false);
-            //Resources.UnloadUnusedAssets();
         }
 
         private object CheckForFrameWait(ref int value)

@@ -359,6 +359,7 @@ namespace Voxel.Player
                     || adjustedBlock?.BlockType == BlockType.Fluid)
                 {
                     adjustedBlock.UpdateBlockAndChunk(selectedBlockType);
+                    adjustedBlock.TryActivateFluid(false);
                 }
             }
         }

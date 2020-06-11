@@ -78,6 +78,7 @@ namespace Voxel.Player
         private float swimJumpMultiplier = 0.8f;
         [SerializeField]
         private float swimFallMultiplier = 0.3f;
+        private bool isSwimming;
 
         private void Awake()
         {
@@ -157,6 +158,8 @@ namespace Voxel.Player
             Block block = chunk.GetChunkData()[blockPosition.x, blockPosition.y, blockPosition.z];
             if (block.BlockType == BlockType.Fluid)
             {
+                isSwimming = true;
+
                 // If falling in fluid
                 if (totalMoveValue.y < 0)
                 {
@@ -166,6 +169,7 @@ namespace Voxel.Player
                 return GetSwimVector(totalMoveValue, swimJumpMultiplier);
             }
 
+            isSwimming = false;
             return totalMoveValue;
         }
 
@@ -221,7 +225,7 @@ namespace Voxel.Player
 
         private void Jump()
         {
-            if (jumpState.Value == PlayerJumpState.IsJumping) return;
+            if (jumpState.Value == PlayerJumpState.IsJumping && !isSwimming) return;
 
             StartCoroutine(JumpCoroutine());
         }

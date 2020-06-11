@@ -203,19 +203,29 @@ namespace Voxel.World
             BlockHealth--;
             if (BlockHealth <= 0)
             {
-                // Start falling water "physics"
-                if ((BlockType == BlockType.Fluid
-                    || GetBlockNeighbour(Neighbour.Top).BlockType == BlockType.Fluid)
-                    && GetBlockNeighbour(Neighbour.Bottom).BlockType == BlockType.Air)
-                {
-                    UpdateBlockAndChunk(BlockType.Fluid);
-                    GlobalChunk.Instance.StartWaterPhysicsLoop(this);
-                }
-                else
+                if (!TryActivateFluid(true))
                 {
                     ChunkOwner.RebuildChunk(new ChunkResetData(true, Position));
                 }
 
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool TryActivateFluid(bool activateThisBlock)
+        {
+            if ((BlockType == BlockType.Fluid
+                || GetBlockNeighbour(Neighbour.Top).BlockType == BlockType.Fluid)
+                && GetBlockNeighbour(Neighbour.Bottom).BlockType == BlockType.Air)
+            {
+                if (activateThisBlock)
+                {
+                    UpdateBlockAndChunk(BlockType.Fluid);
+                }
+
+                GlobalChunk.Instance.StartWaterPhysicsLoop(this);
                 return true;
             }
 
@@ -330,6 +340,18 @@ namespace Voxel.World
 
             return null;
         }
+
+        public Dictionary<Neighbour, Block> GetAllBlockNeighbours()
+             => new Dictionary<Neighbour, Block>
+             {
+                 { Neighbour.Left, GetBlockNeighbour(Neighbour.Left) },
+                 { Neighbour.Right, GetBlockNeighbour(Neighbour.Right) },
+                 { Neighbour.Bottom, GetBlockNeighbour(Neighbour.Bottom) },
+                 { Neighbour.Top, GetBlockNeighbour(Neighbour.Top) },
+                 { Neighbour.Back, GetBlockNeighbour(Neighbour.Back) },
+                 { Neighbour.Front, GetBlockNeighbour(Neighbour.Front) }
+             };
+
 
         public void BuildBlock()
         {
