@@ -131,7 +131,6 @@ namespace Voxel.Player
                 if (placeBlockTriggered && validBlockSelected)
                 {
                     BlockAction(BuildBlock, false);
-                    InventoryManager.Instance.Remove(selectedBlockType);
                 }
 
                 yield return null;
@@ -354,6 +353,7 @@ namespace Voxel.Player
                 {
                     adjustedBlock.UpdateBlockAndChunk(selectedBlockType);
                     adjustedBlock.TryActivateFluidDynamic(false);
+                    InventoryManager.Instance.Remove(selectedBlockType);
                 }
             }
         }

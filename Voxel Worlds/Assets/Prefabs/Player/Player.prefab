@@ -375,7 +375,9 @@ MonoBehaviour:
   newJumpDelay: 0.175
   jumpReduceAmount: 0.02
   jumpTotalMultiplier: 15
-  fluidScanStart: {fileID: 8163264702144152633}
+  swimMultiplier: 0.5
+  swimJumpMultiplier: 0.8
+  swimFallMultiplier: 0.3
 --- !u!114 &8269590369259728606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -394,7 +396,7 @@ MonoBehaviour:
   interactionRayLayerMask:
     serializedVersion: 2
     m_Bits: 311
-  interactionMaxDistance: 3.5
+  interactionMaxDistance: 3
   destroyBlockMaxSpeed: 0.5
   blockDestroyScale: {x: 0.35, y: 0.35, z: 0.35}
 --- !u!114 &4433588445686002977

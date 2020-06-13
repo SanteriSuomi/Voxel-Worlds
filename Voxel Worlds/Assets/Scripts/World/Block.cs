@@ -217,12 +217,19 @@ namespace Voxel.World
                     ChunkOwner.RebuildChunk(new ChunkResetData(true, Position));
                 }
 
+                TryActivateFallingBlockDynamic();
+
                 return true;
             }
 
             return false;
         }
 
+        /// <summary>
+        /// See if this block has conditions to activate fluid (water) dynamic ("physics")
+        /// </summary>
+        /// <param name="updateThisBlock"></param>
+        /// <returns>True if dynamic can be activated.</returns>
         public bool TryActivateFluidDynamic(bool updateThisBlock)
         {
             if ((BlockType == BlockType.Fluid
@@ -235,6 +242,18 @@ namespace Voxel.World
                 }
 
                 GlobalChunk.Instance.StartWaterDynamic(this);
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool TryActivateFallingBlockDynamic()
+        {
+            Block topNeighbour = GetBlockNeighbour(Neighbour.Top);
+            if (topNeighbour.BlockType == BlockType.Sand)
+            {
+                GlobalChunk.Instance.StartBlockFallingDynamic(topNeighbour);
                 return true;
             }
 

@@ -11,16 +11,20 @@ namespace Voxel.World
     /// </summary>
     public class GlobalChunk : Singleton<GlobalChunk>
     {
-        private WaitForSeconds waterPhysicsLoopWFS;
+        private WaitForSeconds waterDynamicWFS;
+        private WaitForSeconds blockFallingDynamicWFS;
         [SerializeField]
-        private float waterPhysicsLoop = 0.75f;
+        private float waterDynamicUpdateInterval = 0.75f;
+        [SerializeField]
+        private float blockFallingDynamicUpdateInterval = 0.375f;
         [SerializeField]
         private int maxWaterExpansion = 25;
 
         protected override void Awake()
         {
             base.Awake();
-            waterPhysicsLoopWFS = new WaitForSeconds(waterPhysicsLoop);
+            waterDynamicWFS = new WaitForSeconds(waterDynamicUpdateInterval);
+            blockFallingDynamicWFS = new WaitForSeconds(blockFallingDynamicUpdateInterval);
         }
 
         #region Water Dynamics
@@ -33,7 +37,7 @@ namespace Voxel.World
             {
                 currentBlock.UpdateBlockAndChunk(BlockType.Fluid);
                 currentBlock = currentBlock.GetBlockNeighbour(Neighbour.Bottom);
-                yield return waterPhysicsLoopWFS;
+                yield return waterDynamicWFS;
             }
 
             if (currentBlock != null)
@@ -59,9 +63,38 @@ namespace Voxel.World
                     StartCoroutine(WaterDynamicNeighbours(element.Value, counter));
                 }
 
-                yield return waterPhysicsLoopWFS;
+                yield return waterDynamicWFS;
             }
         }
         #endregion
+
+        public void StartBlockFallingDynamic(Block block) => StartCoroutine(BlockFallingDown(block));
+
+        // TODO: block falling down
+        private IEnumerator BlockFallingDown(Block block)
+        {
+            Block currentBlock = block;
+            Block downBlock = currentBlock.GetBlockNeighbour(Neighbour.Bottom);
+            while (downBlock.BlockType == BlockType.Air)
+            {
+                currentBlock.UpdateBlockType(BlockType.Air);
+                downBlock.UpdateBlockType(block.BlockType);
+
+                if (Mathf.Approximately(currentBlock.ChunkOwner.GameObject.transform.position.sqrMagnitude,
+                                        downBlock.ChunkOwner.GameObject.transform.position.sqrMagnitude))
+                {
+                    currentBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
+                }
+                else
+                {
+                    currentBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
+                    downBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
+                }
+                
+                currentBlock = downBlock;
+                downBlock = currentBlock.GetBlockNeighbour(Neighbour.Bottom);
+                yield return blockFallingDynamicWFS;
+            }
+        }
     }
 }

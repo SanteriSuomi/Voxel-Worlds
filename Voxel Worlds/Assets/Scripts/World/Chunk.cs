@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.SocialPlatforms;
 using Voxel.Saving;
 using Voxel.Utility;
 
@@ -181,13 +180,17 @@ namespace Voxel.World
                             * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
                         int undergroundLayerStart = noise2D - 6; // This is where underground layer starts
 
+                        bool containsSandBlock = WorldManager.Instance.ContainsSandBlock(GameObject.transform, localPosition);
+
                         // Between water and underground layer
                         if (worldPositionY == undergroundLayerStart + 1)
                         {
                             NewLocalBlock(BlockType.Dirt, localPosition);
                             continue;
                         }
-                        else if (worldPositionY == undergroundLayerStart + 2)
+
+                        else if (worldPositionY == undergroundLayerStart + 2
+                                 && !containsSandBlock)
                         {
                             NewLocalBlock(BlockType.Sand, localPosition);
                             continue;
@@ -197,7 +200,7 @@ namespace Voxel.World
                         if (worldPositionY > undergroundLayerStart + 1
                             && worldPositionY < WorldManager.Instance.MaxWorldHeight / 2.25f)
                         {
-                            if (WorldManager.Instance.ContainsSandBlock(GameObject.transform, localPosition))
+                            if (containsSandBlock)
                             {
                                 Block block = NewLocalBlock(BlockType.Sand, localPosition);
 
@@ -257,6 +260,9 @@ namespace Voxel.World
         private static void CalculateBeach(Block block)
         {
             Block topBlock = block.GetBlockNeighbour(Neighbour.Top);
+
+            if (topBlock == null) return;
+
             topBlock.UpdateBlockType(BlockType.Sand);
 
             Block topBlockRight = topBlock.GetBlockNeighbour(Neighbour.Right);
@@ -272,7 +278,7 @@ namespace Voxel.World
             {
                 topBlockRight?.UpdateBlockType(BlockType.Sand);
             }
-            if (topBlockFront?.BlockType == BlockType.Fluid)
+            else if (topBlockFront?.BlockType == BlockType.Fluid)
             {
                 topBlockBack?.UpdateBlockType(BlockType.Sand);
             }
