@@ -84,7 +84,7 @@ namespace Voxel.Player
             GameManager.Instance.OnGameActiveStateChangeEvent += OnGameActiveStateChange;
             Slot.OnSelectedItemChangedEvent += OnInventorySelectedItemChanged;
             DisableInteractCoroutine();
-            LeftMouseClick();
+            GameManager.Instance.LeftMouseClick();
             interactCoroutine = StartCoroutine(OnInteractPerformedCoroutine());
         }
 
@@ -116,7 +116,7 @@ namespace Voxel.Player
                 if (GameManager.Instance.IsGamePaused)
                 {
                     yield return gameIsPausedWU;
-                    LeftMouseClick();
+                    GameManager.Instance.LeftMouseClick();
                     canPerformDestroyBlock = true;
                     destroyBlockTriggered = false;
                     placeBlockTriggered = false;
@@ -169,13 +169,6 @@ namespace Voxel.Player
             }
         }
         #endregion
-
-        // TODO: Simulate a mouse left click. Used here for fixing a bug related to the destroy block hold. Possible find another solution?
-        private static void LeftMouseClick()
-        {
-            GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTDOWN);
-            GameManager.Instance.MouseClick(GameManager.MouseEvents.MOUSEEVENTF_LEFTUP);
-        }
 
         #region Block Validation
         /// <summary>
@@ -296,6 +289,7 @@ namespace Voxel.Player
         }
         #endregion
 
+        #region Build/Update Block
         private void BuildBlock(BlockActionData data)
         {
             // Offset the hit position so we're not replacing the hit block itself but rather the block next to it, as air blocks cannot be hit by raycast.
@@ -359,10 +353,11 @@ namespace Voxel.Player
                     || adjustedBlock?.BlockType == BlockType.Fluid)
                 {
                     adjustedBlock.UpdateBlockAndChunk(selectedBlockType);
-                    adjustedBlock.TryActivateFluid(false);
+                    adjustedBlock.TryActivateFluidDynamic(false);
                 }
             }
         }
+        #endregion
 
         private void OnDisable()
         {

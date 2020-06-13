@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.SocialPlatforms;
 using Voxel.Saving;
 using Voxel.Utility;
 
@@ -156,7 +157,6 @@ namespace Voxel.World
             }
 
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
-
             for (int x = 0; x < chunkSize; x++)
             {
                 for (int z = 0; z < chunkSize; z++)
@@ -182,10 +182,14 @@ namespace Voxel.World
                         int undergroundLayerStart = noise2D - 6; // This is where underground layer starts
 
                         // Between water and underground layer
-                        if (worldPositionY == undergroundLayerStart + 1
-                            || worldPositionY == undergroundLayerStart + 2)
+                        if (worldPositionY == undergroundLayerStart + 1)
                         {
                             NewLocalBlock(BlockType.Dirt, localPosition);
+                            continue;
+                        }
+                        else if (worldPositionY == undergroundLayerStart + 2)
+                        {
+                            NewLocalBlock(BlockType.Sand, localPosition);
                             continue;
                         }
 
@@ -193,9 +197,12 @@ namespace Voxel.World
                         if (worldPositionY > undergroundLayerStart + 1
                             && worldPositionY < WorldManager.Instance.MaxWorldHeight / 2.25f)
                         {
-                            if (WorldManager.Instance.ContainsGrassBlock(GameObject.transform, localPosition))
+                            if (WorldManager.Instance.ContainsSandBlock(GameObject.transform, localPosition))
                             {
-                                NewLocalBlock(BlockType.Dirt, localPosition);
+                                Block block = NewLocalBlock(BlockType.Sand, localPosition);
+
+                                // "Beach"
+                                CalculateBeach(block);
                                 continue;
                             }
 
@@ -238,12 +245,40 @@ namespace Voxel.World
                         }
                         else
                         {
-                            WorldManager.Instance.AddGrassBlock(GameObject.transform, localPosition);
+                            WorldManager.Instance.AddSandBlock(GameObject.transform, localPosition);
                             NewLocalBlock(BlockType.Grass, localPosition);
                             surfaceBlockAlreadyPlaced = true;
                         }
                     }
                 }
+            }
+        }
+
+        private static void CalculateBeach(Block block)
+        {
+            Block topBlock = block.GetBlockNeighbour(Neighbour.Top);
+            topBlock.UpdateBlockType(BlockType.Sand);
+
+            Block topBlockRight = topBlock.GetBlockNeighbour(Neighbour.Right);
+            Block topBlockLeft = topBlock.GetBlockNeighbour(Neighbour.Left);
+            Block topBlockFront = topBlock.GetBlockNeighbour(Neighbour.Front);
+            Block topBlockBack = topBlock.GetBlockNeighbour(Neighbour.Back);
+
+            if (topBlockRight?.BlockType == BlockType.Fluid)
+            {
+                topBlockLeft?.UpdateBlockType(BlockType.Sand);
+            }
+            else if (topBlockLeft?.BlockType == BlockType.Fluid)
+            {
+                topBlockRight?.UpdateBlockType(BlockType.Sand);
+            }
+            if (topBlockFront?.BlockType == BlockType.Fluid)
+            {
+                topBlockBack?.UpdateBlockType(BlockType.Sand);
+            }
+            else if (topBlockBack?.BlockType == BlockType.Fluid)
+            {
+                topBlockFront?.UpdateBlockType(BlockType.Sand);
             }
         }
 
@@ -263,18 +298,11 @@ namespace Voxel.World
             }
         }
 
-        private void NewLocalBlock(BlockType type, Vector3Int position)
+        private Block NewLocalBlock(BlockType type, Vector3Int position)
         {
-            if (type == BlockType.Fluid)
-            {
-                chunkData[position.x, position.y, position.z] = new Block(type, position, FluidGameObject, this);
-            }
-            else
-            {
-                chunkData[position.x, position.y, position.z] = new Block(type, position, GameObject, this);
-            }
-
+            GameObject chunkGameObj = type == BlockType.Fluid ? FluidGameObject : GameObject;
             blockTypeData[position.x, position.y, position.z] = type;
+            return chunkData[position.x, position.y, position.z] = new Block(type, position, chunkGameObj, this);
         }
 
         public void BuildBlocks()

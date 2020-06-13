@@ -43,6 +43,12 @@ namespace Voxel.Game
 
         public void MouseClick(MouseEvents mouseEvent) => mouse_event((uint)mouseEvent, 0, 0, 0, new UIntPtr(0));
 
+        public void LeftMouseClick()
+        {
+            MouseClick(MouseEvents.MOUSEEVENTF_LEFTDOWN);
+            MouseClick(MouseEvents.MOUSEEVENTF_LEFTUP);
+        }
+
         public void Pause()
         {
             OnGameActiveStateChangeEvent?.Invoke(false);

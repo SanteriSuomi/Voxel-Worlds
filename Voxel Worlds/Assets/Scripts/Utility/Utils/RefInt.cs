@@ -8,9 +8,5 @@
         public int Value { get; set; }
 
         public RefInt(int value) => Value = value;
-
-        public RefInt()
-        {
-        }
     }
 }

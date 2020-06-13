@@ -23,9 +23,10 @@ namespace Voxel.World
             waterPhysicsLoopWFS = new WaitForSeconds(waterPhysicsLoop);
         }
 
-        public void StartWaterPhysicsLoop(Block block) => StartCoroutine(WaterPhysicsDown(block));
+        #region Water Dynamics
+        public void StartWaterDynamic(Block block) => StartCoroutine(WaterDynamicDown(block));
 
-        private IEnumerator WaterPhysicsDown(Block block)
+        private IEnumerator WaterDynamicDown(Block block)
         {
             Block currentBlock = block.GetBlockNeighbour(Neighbour.Bottom);
             while (currentBlock?.BlockType == BlockType.Air)
@@ -37,11 +38,11 @@ namespace Voxel.World
 
             if (currentBlock != null)
             {
-                StartCoroutine(WaterPhysicsNeighbours(currentBlock.GetBlockNeighbour(Neighbour.Top), new RefInt()));
+                StartCoroutine(WaterDynamicNeighbours(currentBlock.GetBlockNeighbour(Neighbour.Top), new RefInt(0)));
             }
         }
 
-        private IEnumerator WaterPhysicsNeighbours(Block block, RefInt counter)
+        private IEnumerator WaterDynamicNeighbours(Block block, RefInt counter)
         {
             if (counter.Value >= maxWaterExpansion) yield break;
 
@@ -55,11 +56,12 @@ namespace Voxel.World
                 {
                     counter.Value++;
                     element.Value.UpdateBlockAndChunk(BlockType.Fluid);
-                    StartCoroutine(WaterPhysicsNeighbours(element.Value, counter));
+                    StartCoroutine(WaterDynamicNeighbours(element.Value, counter));
                 }
-                
+
                 yield return waterPhysicsLoopWFS;
             }
         }
+        #endregion
     }
 }

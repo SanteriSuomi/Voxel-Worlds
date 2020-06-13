@@ -13,7 +13,8 @@ namespace Voxel.World
         Stone,
         Diamond,
         Bedrock,
-        Fluid
+        Fluid,
+        Sand
     }
 
     public enum BlockSide
@@ -82,7 +83,8 @@ namespace Voxel.World
             7, // Stone
             9, // Diamond
             0, // Bedrock
-            0 // Water
+            0, // Water
+            3 // Sand
         };
 
         // UV coordinates for different blocks on the UV atlas
@@ -136,6 +138,13 @@ namespace Voxel.World
                 new Vector2(0.9375f, 0.125f),
                 new Vector2(0.875f, 0.1875f),
                 new Vector2(0.9375f, 0.1875f)
+            },
+            // Sand
+            {
+                new Vector2(0, 0.25f),
+                new Vector2(0.0625f, 0.25f),
+                new Vector2(0, 0.3125f),
+                new Vector2(0.0625f, 0.3125f)
             }
         };
 
@@ -203,7 +212,7 @@ namespace Voxel.World
             BlockHealth--;
             if (BlockHealth <= 0)
             {
-                if (!TryActivateFluid(true))
+                if (!TryActivateFluidDynamic(true))
                 {
                     ChunkOwner.RebuildChunk(new ChunkResetData(true, Position));
                 }
@@ -214,18 +223,18 @@ namespace Voxel.World
             return false;
         }
 
-        public bool TryActivateFluid(bool activateThisBlock)
+        public bool TryActivateFluidDynamic(bool updateThisBlock)
         {
             if ((BlockType == BlockType.Fluid
                 || GetBlockNeighbour(Neighbour.Top).BlockType == BlockType.Fluid)
                 && GetBlockNeighbour(Neighbour.Bottom).BlockType == BlockType.Air)
             {
-                if (activateThisBlock)
+                if (updateThisBlock)
                 {
                     UpdateBlockAndChunk(BlockType.Fluid);
                 }
 
-                GlobalChunk.Instance.StartWaterPhysicsLoop(this);
+                GlobalChunk.Instance.StartWaterDynamic(this);
                 return true;
             }
 
@@ -233,7 +242,7 @@ namespace Voxel.World
         }
 
         /// <summary>
-        /// Replace the block with the specific type (update). Also erform health and chunk rebuild.
+        /// Replace the block with the specific type (update). Also perform health and chunk rebuild.
         /// </summary>
         /// <param name="type">Type to replace the current block with.</param>
         public void UpdateBlockAndChunk(BlockType type)
@@ -342,16 +351,15 @@ namespace Voxel.World
         }
 
         public Dictionary<Neighbour, Block> GetAllBlockNeighbours()
-             => new Dictionary<Neighbour, Block>
-             {
-                 { Neighbour.Left, GetBlockNeighbour(Neighbour.Left) },
-                 { Neighbour.Right, GetBlockNeighbour(Neighbour.Right) },
-                 { Neighbour.Bottom, GetBlockNeighbour(Neighbour.Bottom) },
-                 { Neighbour.Top, GetBlockNeighbour(Neighbour.Top) },
-                 { Neighbour.Back, GetBlockNeighbour(Neighbour.Back) },
-                 { Neighbour.Front, GetBlockNeighbour(Neighbour.Front) }
-             };
-
+               => new Dictionary<Neighbour, Block>
+               {
+                   { Neighbour.Left, GetBlockNeighbour(Neighbour.Left) },
+                   { Neighbour.Right, GetBlockNeighbour(Neighbour.Right) },
+                   { Neighbour.Bottom, GetBlockNeighbour(Neighbour.Bottom) },
+                   { Neighbour.Top, GetBlockNeighbour(Neighbour.Top) },
+                   { Neighbour.Back, GetBlockNeighbour(Neighbour.Back) },
+                   { Neighbour.Front, GetBlockNeighbour(Neighbour.Front) }
+               };
 
         public void BuildBlock()
         {
@@ -413,9 +421,13 @@ namespace Voxel.World
 
         private void CheckSide(List<Vector3> quadPositions, Vector3Int quadPos, BlockSide side)
         {
-            (bool isSolid, Block block) = HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z);
-            if (block != null // Don't create faces at edges of the world
-                && (!isSolid || (BlockType != BlockType.Fluid && block.BlockType == BlockType.Fluid)))
+            (bool isSolid, Block neighbourBlock) = HasSolidNeighbour(quadPos.x, quadPos.y, quadPos.z);
+
+            // Conditions for not creating faces at the edge of the world when there is water
+            bool fluidWorldEdge = neighbourBlock != null && (!isSolid || (BlockType != BlockType.Fluid && neighbourBlock.BlockType == BlockType.Fluid));
+            // Conditions for reating faces at the edge of the world when there is sand (fixes a invisible face bug)
+            bool otherWorldEdge = BlockType != BlockType.Fluid && neighbourBlock == null;
+            if (fluidWorldEdge || otherWorldEdge)
             {
                 CreateQuad(new BlockCreationData(ChunkGameObject.transform, BlockType, side)
                 {
@@ -646,6 +658,13 @@ namespace Voxel.World
                 uvs[1] = uvAtlasMap[4, 1];
                 uvs[2] = uvAtlasMap[4, 2];
                 uvs[3] = uvAtlasMap[4, 3];
+            }
+            else if (blockType == BlockType.Sand)
+            {
+                uvs[0] = uvAtlasMap[7, 0];
+                uvs[1] = uvAtlasMap[7, 1];
+                uvs[2] = uvAtlasMap[7, 2];
+                uvs[3] = uvAtlasMap[7, 3];
             }
             else
             {
