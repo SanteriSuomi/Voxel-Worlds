@@ -19,6 +19,8 @@ namespace Voxel.Player
         [SerializeField]
         private float playerSpawnOffset = 1;
         [SerializeField]
+        private string fluidGameObjectIdentifier = "Fluid";
+        [SerializeField]
         private float rayHitSpawnOffset = 2;
         [SerializeField]
         private float cameraPlaneRenderDistance = 0.1f;
@@ -68,15 +70,7 @@ namespace Voxel.Player
                 return InitializeAndSpawnPlayer(InitialPosition, InitialRotation);
             }
 
-            return InitializeAndSpawnPlayer(GetRayHit(), Quaternion.identity);
-        }
-
-        private Vector3 GetRayHit()
-        {
-            InitialPosition = new Vector3(0, WorldManager.Instance.MaxWorldHeight, 0);
-            return Physics.Raycast(InitialPosition, Vector3.down, out RaycastHit hitInfo, InitialPosition.y * rayHitSpawnOffset)
-                   ? hitInfo.point + new Vector3(0, playerSpawnOffset, 0)
-                   : InitialPosition;
+            return InitializeAndSpawnPlayer(GetPosition(), Quaternion.identity);
         }
 
         private Transform InitializeAndSpawnPlayer(Vector3 position, Quaternion rotation)
@@ -86,6 +80,22 @@ namespace Voxel.Player
             InitializeUI();
             InventoryManager.Instance.Load();
             return ActivePlayer;
+        }
+
+        private Vector3 GetPosition()
+        {
+            int searchSize = WorldManager.Instance.ChunkSize * WorldManager.Instance.Radius / 4;
+            Vector2 randomCoord = Random.insideUnitCircle * searchSize;
+            InitialPosition = new Vector3(randomCoord.x, WorldManager.Instance.MaxWorldHeight, randomCoord.y);
+
+            Physics.Raycast(InitialPosition, Vector3.down, out RaycastHit hitInfo, InitialPosition.y * rayHitSpawnOffset);
+            while (hitInfo.collider != null
+                   && hitInfo.collider.name.Contains(fluidGameObjectIdentifier))
+            {
+                Physics.Raycast(InitialPosition, Vector3.down, out hitInfo, InitialPosition.y * rayHitSpawnOffset);
+            }
+
+            return hitInfo.point + new Vector3(0, playerSpawnOffset, 0);
         }
 
         private void InitializeUI()

@@ -351,11 +351,17 @@ namespace Voxel.Player
                 if (adjustedBlock?.BlockType == BlockType.Air
                     || adjustedBlock?.BlockType == BlockType.Fluid)
                 {
-                    adjustedBlock.UpdateBlockAndChunk(selectedBlockType);
-                    adjustedBlock.TryActivateFluidDynamic(false);
-                    InventoryManager.Instance.Remove(selectedBlockType);
+                    UpdateBlockEvent(adjustedBlock);
                 }
             }
+        }
+
+        private void UpdateBlockEvent(Block adjustedBlock)
+        {
+            adjustedBlock.UpdateBlockAndChunk(selectedBlockType);
+            adjustedBlock.TryActivateFluidDynamic(false);
+            adjustedBlock.TryActivateFallingBlockDynamic();
+            InventoryManager.Instance.Remove(selectedBlockType);
         }
         #endregion
 

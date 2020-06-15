@@ -14,7 +14,10 @@ namespace Voxel.World
         Diamond,
         Bedrock,
         Fluid,
-        Sand
+        Sand,
+        TreeBase,
+        Wood,
+        Leaf
     }
 
     public enum BlockSide
@@ -84,7 +87,10 @@ namespace Voxel.World
             9, // Diamond
             0, // Bedrock
             0, // Water
-            3 // Sand
+            3, // Sand
+            5, // TreeBase
+            5, // Wood
+            2 // Leaf
         };
 
         // UV coordinates for different blocks on the UV atlas
@@ -145,6 +151,20 @@ namespace Voxel.World
                 new Vector2(0.0625f, 0.25f),
                 new Vector2(0, 0.3125f),
                 new Vector2(0.0625f, 0.3125f)
+            },
+            // Wood
+            {
+                new Vector2(0.25f, 0.875f),
+                new Vector2(0.3125f, 0.875f),
+                new Vector2(0.25f, 0.9375f),
+                new Vector2(0.3125f, 0.9375f)
+            },
+            // Leaf
+            {
+                new Vector2(0.25f, 0.75f),
+                new Vector2(0.3125f, 0.75f),
+                new Vector2(0.25f, 0.8125f),
+                new Vector2(0.3125f, 0.8125f)
             }
         };
 
@@ -228,15 +248,15 @@ namespace Voxel.World
         /// <summary>
         /// See if this block has conditions to activate fluid (water) dynamic ("physics")
         /// </summary>
-        /// <param name="updateThisBlock"></param>
+        /// <param name="updateThisBlockToFluid">Whether or not make update this block to fluid also.</param>
         /// <returns>True if dynamic can be activated.</returns>
-        public bool TryActivateFluidDynamic(bool updateThisBlock)
+        public bool TryActivateFluidDynamic(bool updateThisBlockToFluid)
         {
             if ((BlockType == BlockType.Fluid
                 || GetBlockNeighbour(Neighbour.Top).BlockType == BlockType.Fluid)
                 && GetBlockNeighbour(Neighbour.Bottom).BlockType == BlockType.Air)
             {
-                if (updateThisBlock)
+                if (updateThisBlockToFluid)
                 {
                     UpdateBlockAndChunk(BlockType.Fluid);
                 }
@@ -251,10 +271,15 @@ namespace Voxel.World
         public bool TryActivateFallingBlockDynamic()
         {
             Block topNeighbour = GetBlockNeighbour(Neighbour.Top);
-            if (topNeighbour.BlockType == BlockType.Sand)
+            if (topNeighbour.BlockType == BlockType.Sand
+                && BlockType == BlockType.Air)
             {
-                GlobalChunk.Instance.StartBlockFallingDynamic(topNeighbour);
+                GlobalChunk.Instance.StartBlockFallingDynamic(this, topNeighbour.BlockType);
                 return true;
+            }
+            else if (BlockType == BlockType.Sand)
+            {
+                GlobalChunk.Instance.StartBlockFallingDynamic(this, BlockType);
             }
 
             return false;
@@ -280,6 +305,11 @@ namespace Voxel.World
             BlockType = type;
             UpdateSolidity();
             ChunkOwner.GetBlockTypeData()[Position.x, Position.y, Position.z] = type;
+            UpdateGameObject(type);
+        }
+
+        private void UpdateGameObject(BlockType type)
+        {
             if (type == BlockType.Fluid)
             {
                 ChunkGameObject = ChunkOwner.FluidGameObject;
@@ -487,9 +517,9 @@ namespace Voxel.World
                                                   + new Vector3((x - Position.x) * chunkSize,
                                                                 (y - Position.y) * chunkSize,
                                                                 (z - Position.z) * chunkSize);
-                x = CheckBlockEdge(x, chunkSize);
-                y = CheckBlockEdge(y, chunkSize);
-                z = CheckBlockEdge(z, chunkSize);
+                x = ConvertBlockCoordinates(x, chunkSize);
+                y = ConvertBlockCoordinates(y, chunkSize);
+                z = ConvertBlockCoordinates(z, chunkSize);
 
                 Chunk chunk = WorldManager.Instance.GetChunk(neighbouringChunkPosition);
                 if (chunk != null)
@@ -520,9 +550,10 @@ namespace Voxel.World
             return null;
         }
 
-        // Checks if a given axis is not a local coordinate, but a neighbouring one (chunk). 
-        // Axis must be in between 0 and ChunkSize for it to be a local chunk.
-        private int CheckBlockEdge(int index, int chunkSize)
+        /// <summary>
+        /// Convert the given block coordinate from local to neighbour if needed.
+        /// </summary>
+        private int ConvertBlockCoordinates(int index, int chunkSize)
         {
             if (index <= -1)
             {
@@ -634,23 +665,25 @@ namespace Voxel.World
                 uvs[3] = uvAtlasMap[6, 3];
             }
             else if (blockType == BlockType.Grass && (side == BlockSide.Back
-                                             || side == BlockSide.Front
-                                             || side == BlockSide.Left
-                                             || side == BlockSide.Right))
+                                                      || side == BlockSide.Front
+                                                      || side == BlockSide.Left
+                                                      || side == BlockSide.Right))
             {
                 uvs[0] = uvAtlasMap[5, 0];
                 uvs[1] = uvAtlasMap[5, 1];
                 uvs[2] = uvAtlasMap[5, 2];
                 uvs[3] = uvAtlasMap[5, 3];
             }
-            else if (blockType == BlockType.Grass && side == BlockSide.Top)
+            else if (blockType == BlockType.Grass
+                     && side == BlockSide.Top)
             {
                 uvs[0] = uvAtlasMap[0, 0];
                 uvs[1] = uvAtlasMap[0, 1];
                 uvs[2] = uvAtlasMap[0, 2];
                 uvs[3] = uvAtlasMap[0, 3];
             }
-            else if (blockType == BlockType.Dirt || blockType == BlockType.Grass)
+            else if (blockType == BlockType.Dirt
+                     || blockType == BlockType.Grass)
             {
                 uvs[0] = uvAtlasMap[1, 0];
                 uvs[1] = uvAtlasMap[1, 1];
@@ -684,6 +717,20 @@ namespace Voxel.World
                 uvs[1] = uvAtlasMap[7, 1];
                 uvs[2] = uvAtlasMap[7, 2];
                 uvs[3] = uvAtlasMap[7, 3];
+            }
+            else if (blockType == BlockType.TreeBase)
+            {
+                uvs[0] = uvAtlasMap[8, 0];
+                uvs[1] = uvAtlasMap[8, 1];
+                uvs[2] = uvAtlasMap[8, 2];
+                uvs[3] = uvAtlasMap[8, 3];
+            }
+            else if (blockType == BlockType.Leaf)
+            {
+                uvs[0] = uvAtlasMap[9, 0];
+                uvs[1] = uvAtlasMap[9, 1];
+                uvs[2] = uvAtlasMap[9, 2];
+                uvs[3] = uvAtlasMap[9, 3];
             }
             else
             {

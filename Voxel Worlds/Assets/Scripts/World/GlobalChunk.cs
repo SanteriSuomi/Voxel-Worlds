@@ -13,6 +13,7 @@ namespace Voxel.World
     {
         private WaitForSeconds waterDynamicWFS;
         private WaitForSeconds blockFallingDynamicWFS;
+        private WaitForSeconds blockFallingDynamicInitialWFS;
         [SerializeField]
         private float waterDynamicUpdateInterval = 0.75f;
         [SerializeField]
@@ -25,6 +26,7 @@ namespace Voxel.World
             base.Awake();
             waterDynamicWFS = new WaitForSeconds(waterDynamicUpdateInterval);
             blockFallingDynamicWFS = new WaitForSeconds(blockFallingDynamicUpdateInterval);
+            blockFallingDynamicInitialWFS = new WaitForSeconds(blockFallingDynamicUpdateInterval / 2);
         }
 
         #region Water Dynamics
@@ -68,33 +70,56 @@ namespace Voxel.World
         }
         #endregion
 
-        public void StartBlockFallingDynamic(Block block) => StartCoroutine(BlockFallingDown(block));
+        public void StartBlockFallingDynamic(Block block, BlockType blockType) => StartCoroutine(BlockFallingDown(block, blockType));
 
-        // TODO: block falling down
-        private IEnumerator BlockFallingDown(Block block)
+        private IEnumerator BlockFallingDown(Block block, BlockType blockType)
         {
-            Block currentBlock = block;
-            Block downBlock = currentBlock.GetBlockNeighbour(Neighbour.Bottom);
-            while (downBlock.BlockType == BlockType.Air)
-            {
-                currentBlock.UpdateBlockType(BlockType.Air);
-                downBlock.UpdateBlockType(block.BlockType);
+            yield return blockFallingDynamicInitialWFS;
 
-                if (Mathf.Approximately(currentBlock.ChunkOwner.GameObject.transform.position.sqrMagnitude,
-                                        downBlock.ChunkOwner.GameObject.transform.position.sqrMagnitude))
+            List<Block> topBlocks = GetUpdateableTopBlocks(block);
+            for (int i = 0; i < topBlocks.Count; i++)
+            {
+                Block topBlock = topBlocks[i];
+                Block downBlock = topBlocks[i].GetBlockNeighbour(Neighbour.Bottom);
+                do
                 {
-                    currentBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
-                }
-                else
-                {
-                    currentBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
-                    downBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
-                }
-                
-                currentBlock = downBlock;
-                downBlock = currentBlock.GetBlockNeighbour(Neighbour.Bottom);
-                yield return blockFallingDynamicWFS;
+                    topBlock.UpdateBlockAndChunk(BlockType.Air);
+                    downBlock.UpdateBlockAndChunk(blockType);
+
+                    if (Mathf.Approximately(topBlock.ChunkOwner.GameObject.transform.position.sqrMagnitude,
+                                            downBlock.ChunkOwner.GameObject.transform.position.sqrMagnitude))
+                    {
+                        topBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
+                    }
+                    else
+                    {
+                        topBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
+                        downBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
+                    }
+
+                    topBlock = downBlock;
+                    downBlock = topBlock.GetBlockNeighbour(Neighbour.Bottom);
+                    yield return blockFallingDynamicWFS;
+                } while (downBlock.BlockType == BlockType.Air);
             }
+        }
+
+        private static List<Block> GetUpdateableTopBlocks(Block block)
+        {
+            List<Block> blocksToBeUpdated = new List<Block>();
+            if (block.GetBlockNeighbour(Neighbour.Bottom).BlockType == BlockType.Air)
+            {
+                blocksToBeUpdated.Add(block);
+            }
+
+            Block topBlock = block.GetBlockNeighbour(Neighbour.Top);
+            while (topBlock.BlockType == BlockType.Sand)
+            {
+                blocksToBeUpdated.Add(topBlock);
+                topBlock = topBlock.GetBlockNeighbour(Neighbour.Top);
+            }
+
+            return blocksToBeUpdated;
         }
     }
 }

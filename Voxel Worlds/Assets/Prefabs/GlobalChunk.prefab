@@ -43,4 +43,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a06123abd8665514fa571d81e99c9c0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterPhysicsLoopTime: 0.75
+  waterDynamicUpdateInterval: 0.75
+  blockFallingDynamicUpdateInterval: 0.75
+  maxWaterExpansion: 25

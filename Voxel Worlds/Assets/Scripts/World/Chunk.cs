@@ -220,10 +220,11 @@ namespace Voxel.World
                             continue;
                         }
 
+                        float noise3D;
                         // Underground layer (stone, diamond, etc)
                         if (worldPositionY <= undergroundLayerStart)
                         {
-                            float noise3D = NoiseUtils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
+                            noise3D = NoiseUtils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
                             if (noise3D >= 0.135f && noise3D <= 0.1325f)
                             {
                                 NewLocalBlock(BlockType.Diamond, localPosition);
@@ -249,7 +250,19 @@ namespace Voxel.World
                         else
                         {
                             WorldManager.Instance.AddSandBlock(GameObject.transform, localPosition);
-                            NewLocalBlock(BlockType.Grass, localPosition);
+                            noise3D = NoiseUtils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
+                            if ((noise3D >= 0.705f && noise3D <= 0.707f)
+                                || (noise3D >= 0.145f && noise3D <= 0.147f)
+                                || (noise3D >= 0.245f && noise3D <= 0.247f)
+                                || (noise3D >= 0.345f && noise3D <= 0.347f))
+                            {
+                                NewLocalBlock(BlockType.TreeBase, localPosition);
+                            }
+                            else
+                            {
+                                NewLocalBlock(BlockType.Grass, localPosition);
+                            }
+                            
                             surfaceBlockAlreadyPlaced = true;
                         }
                     }
