@@ -1,64 +1,54 @@
-﻿using UnityEngine;
+﻿
+using UnityEngine;
 
 namespace Voxel.World
 {
     public class Tree
     {
         private const int treeStemLength = 3;
-        private const int treeLeavesLength = 3;
+        private const int treeLeavesLengthX = 2;
+        private const int treeLeavesLengthY = 1;
+        private const int treeLeavesLengthZ = 2;
 
-        public Chunk Chunk { get; }
         public Block[,,] Blocks { get; }
+        public Block Block { get; private set; }
 
-        public Tree(Chunk chunkOwner, Block[,,] chunkBlocks, Block initialBlock)
+        public Tree(Block[,,] chunkBlocks, Block initialBlock)
         {
-            Chunk = chunkOwner;
             Blocks = chunkBlocks;
-            GenerateTree(initialBlock);
+            Block = initialBlock;
         }
 
-        private void GenerateTree(Block initialBlock)
+        public void GenerateTree()
         {
-            initialBlock = TreeStem(initialBlock);
-            TreeLeaves(initialBlock);
+            TreeStem();
+            TreeLeaves();
         }
 
-        private static Block TreeStem(Block initialBlock)
+        private void TreeStem()
         {
             for (int i = 0; i < treeStemLength; i++)
             {
-                initialBlock.UpdateBlockType(BlockType.Wood);
-                Block newBlock = initialBlock.GetBlockNeighbour(Neighbour.Top);
-                if (newBlock != null)
-                {
-                    initialBlock = newBlock;
-                    continue;
-                }
-
-                break;
+                Block.UpdateBlockType(BlockType.Wood);
+                Block = Block.GetBlockNeighbour(Neighbour.Top);
             }
-
-            return initialBlock;
         }
 
-        private void TreeLeaves(Block initialBlock)
+        private void TreeLeaves()
         {
-            Vector3Int position = initialBlock.Position;
-            for (int x = -treeLeavesLength; x < treeLeavesLength; x++)
+            Vector3Int position = Block.Position;
+            for (int x = -treeLeavesLengthX; x < treeLeavesLengthX; x++)
             {
-                for (int y = -treeLeavesLength; y < treeLeavesLength; y++)
+                for (int y = -treeLeavesLengthY; y < treeLeavesLengthY; y++)
                 {
-                    for (int z = -treeLeavesLength; z < treeLeavesLength; z++)
+                    for (int z = -treeLeavesLengthZ; z < treeLeavesLengthZ; z++)
                     {
-                        LeafifyBlock(initialBlock);
-                        Block newLeafInitialBlock = initialBlock.GetBlock(position.x + x, position.y + y, position.z + z);
-                        if (newLeafInitialBlock != null)
+                        LeafifyBlock(Block);
+                        Block newBlock = Block.GetBlock(position.x + x, position.y + y, position.z + z);
+                        if (newBlock != null)
                         {
-                            initialBlock = newLeafInitialBlock;
-                            continue;
+                            Block = newBlock;
                         }
-
-                        break;
                     }
                 }
             }

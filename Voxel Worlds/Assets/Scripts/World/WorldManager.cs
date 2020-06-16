@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -291,6 +290,18 @@ namespace Voxel.World
                     {
                         yield return obj;
                     }
+                }
+            }
+
+            // Build trees
+            for (int i = 0; i < chunkDatabase.Count; i++)
+            {
+                Chunk chunk = chunkDatabase.ElementAt(i).Value;
+                chunk.TryStartTreeGeneration();
+                object obj = CheckForFrameWait(ref waitFrameCounter);
+                if (obj is null)
+                {
+                    yield return obj;
                 }
             }
 

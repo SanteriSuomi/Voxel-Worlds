@@ -29,7 +29,7 @@ namespace Voxel.World
             blockFallingDynamicInitialWFS = new WaitForSeconds(blockFallingDynamicUpdateInterval / 2);
         }
 
-        #region Water Dynamics
+        #region Dynamics
         public void StartWaterDynamic(Block block) => StartCoroutine(WaterDynamicDown(block));
 
         private IEnumerator WaterDynamicDown(Block block)
@@ -68,7 +68,6 @@ namespace Voxel.World
                 yield return waterDynamicWFS;
             }
         }
-        #endregion
 
         public void StartBlockFallingDynamic(Block block, BlockType blockType) => StartCoroutine(BlockFallingDown(block, blockType));
 
@@ -121,5 +120,6 @@ namespace Voxel.World
 
             return blocksToBeUpdated;
         }
+        #endregion
     }
 }

@@ -309,6 +309,7 @@ namespace Voxel.World
             UpdateSolidity();
             ChunkOwner.GetBlockTypeData()[Position.x, Position.y, Position.z] = type;
             UpdateGameObject(type);
+            ResetBlockHealth();
         }
 
         private void UpdateGameObject(BlockType type)

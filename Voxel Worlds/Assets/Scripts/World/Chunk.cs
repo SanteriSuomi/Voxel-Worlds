@@ -47,7 +47,7 @@ namespace Voxel.World
         private readonly BlockType[,,] blockTypeData;
         public BlockType[,,] GetBlockTypeData() => blockTypeData;
 
-        private readonly List<Tree> trees;
+        public List<Tree> Trees { get; }
         public bool TreesCreated { get; private set; }
 
         public Chunk(Vector3 position, Transform parent)
@@ -76,7 +76,7 @@ namespace Voxel.World
             int chunkSize = WorldManager.Instance.ChunkSize;
             chunkData = new Block[chunkSize, chunkSize, chunkSize];
             blockTypeData = new BlockType[chunkSize, chunkSize, chunkSize];
-            trees = new List<Tree>();
+            Trees = new List<Tree>();
             ChunkStatus = ChunkStatus.None;
         }
 
@@ -156,23 +156,33 @@ namespace Voxel.World
             (bool saveExists, ChunkSaveData chunkData) = SaveManager.Instance.Load(this);
             if (saveExists)
             {
-                LoadChunk(chunkData);
                 TreesCreated = chunkData.TreesCreated;
+                LoadChunk(chunkData);
                 return;
             }
 
-            int chunkSize = WorldManager.Instance.ChunkSize - 1;
-            GenerateChunk(chunkSize);
+            GenerateChunk();
+        }
 
-            if (!TreesCreated)
+        private void LoadChunk(ChunkSaveData chunkData)
+        {
+            int chunkSize = WorldManager.Instance.ChunkSize - 1;
+            for (int x = 0; x < chunkSize; x++)
             {
-                TreesCreated = true;
-                GenerateTrees(chunkSize);
+                for (int y = 0; y < chunkSize; y++)
+                {
+                    for (int z = 0; z < chunkSize; z++)
+                    {
+                        Vector3Int localPosition = new Vector3Int(x, y, z);
+                        NewLocalBlock(chunkData.BlockTypeData[x, y, z], localPosition);
+                    }
+                }
             }
         }
 
-        private void GenerateChunk(int chunkSize)
+        private void GenerateChunk()
         {
+            int chunkSize = WorldManager.Instance.ChunkSize - 1;
             for (int x = 0; x < chunkSize; x++)
             {
                 for (int z = 0; z < chunkSize; z++)
@@ -273,7 +283,8 @@ namespace Voxel.World
                                 || (noise3D >= 0.245f && noise3D <= 0.247f)
                                 || (noise3D >= 0.345f && noise3D <= 0.347f))
                             {
-                                NewLocalBlock(BlockType.TreeBase, localPosition);
+                                Block treeBase = NewLocalBlock(BlockType.TreeBase, localPosition);
+                                Trees.Add(new Tree(chunkData, treeBase));
                             }
                             else
                             {
@@ -318,38 +329,14 @@ namespace Voxel.World
             }
         }
 
-        private void GenerateTrees(int chunkSize)
+        public void TryStartTreeGeneration()
         {
-            for (int x = 0; x < chunkSize; x++)
+            if (!TreesCreated)
             {
-                for (int y = 0; y < chunkSize; y++)
+                TreesCreated = true;
+                for (int i = 0; i < Trees.Count; i++)
                 {
-                    for (int z = 0; z < chunkSize; z++)
-                    {
-                        Block block = GetChunkData()[x, y, z];
-                        Block topBlock = block.GetBlockNeighbour(Neighbour.Top);
-                        if (block.BlockType == BlockType.TreeBase
-                            && topBlock != null)
-                        {
-                            trees.Add(new Tree(this, chunkData, topBlock));
-                        }
-                    }
-                }
-            }
-        }
-
-        private void LoadChunk(ChunkSaveData chunkData)
-        {
-            int chunkSize = WorldManager.Instance.ChunkSize - 1;
-            for (int x = 0; x < chunkSize; x++)
-            {
-                for (int y = 0; y < chunkSize; y++)
-                {
-                    for (int z = 0; z < chunkSize; z++)
-                    {
-                        Vector3Int localPosition = new Vector3Int(x, y, z);
-                        NewLocalBlock(chunkData.BlockTypeData[x, y, z], localPosition);
-                    }
+                    Trees[i].GenerateTree();
                 }
             }
         }
