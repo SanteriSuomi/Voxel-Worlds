@@ -79,7 +79,7 @@ namespace Voxel.World
         }
 
         /// <summary>
-        /// Get a chunk from a world position.
+        /// Approximately get a chunk from a world position.
         /// </summary>
         /// <param name="position"></param>
         /// <returns>The chunk.</returns>

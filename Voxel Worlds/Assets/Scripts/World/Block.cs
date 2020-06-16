@@ -191,6 +191,9 @@ namespace Voxel.World
         private const int maxQuadCount = 6;
         #endregion
 
+        /// <summary>
+        /// If a block is solid, blocks neighbouring the block won't draw faces towards it.
+        /// </summary>
         public bool IsSolid { get; set; }
         public BlockType BlockType { get; private set; }
 
@@ -322,7 +325,7 @@ namespace Voxel.World
 
         public void ResetBlockHealth() => BlockHealth = blockHealthMap[(int)BlockType];
 
-        private void UpdateSolidity() => IsSolid = BlockType != BlockType.Air;
+        private void UpdateSolidity() => IsSolid = BlockType != BlockType.Air && BlockType != BlockType.Leaf;
 
         /// <returns>Block as a GameObject</returns>
         /// <summary>
@@ -718,7 +721,8 @@ namespace Voxel.World
                 uvs[2] = uvAtlasMap[7, 2];
                 uvs[3] = uvAtlasMap[7, 3];
             }
-            else if (blockType == BlockType.TreeBase)
+            else if (blockType == BlockType.TreeBase
+                     || blockType == BlockType.Wood)
             {
                 uvs[0] = uvAtlasMap[8, 0];
                 uvs[1] = uvAtlasMap[8, 1];

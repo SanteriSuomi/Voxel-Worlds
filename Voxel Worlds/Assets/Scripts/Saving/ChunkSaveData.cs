@@ -7,12 +7,14 @@ namespace Voxel.Saving
     public class ChunkSaveData
     {
         public BlockType[,,] BlockTypeData { get; }
+        public bool TreesCreated { get; }
 
         public ChunkSaveData() { }
 
-        public ChunkSaveData(BlockType[,,] blockTypeData)
+        public ChunkSaveData(BlockType[,,] blockTypeData, bool treesCreated)
         {
             BlockTypeData = blockTypeData;
+            TreesCreated = treesCreated;
         }
     }
 }

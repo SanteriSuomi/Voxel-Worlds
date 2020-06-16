@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using Voxel.Saving;
 using Voxel.Utility;
 
@@ -46,6 +47,9 @@ namespace Voxel.World
         private readonly BlockType[,,] blockTypeData;
         public BlockType[,,] GetBlockTypeData() => blockTypeData;
 
+        private readonly List<Tree> trees;
+        public bool TreesCreated { get; private set; }
+
         public Chunk(Vector3 position, Transform parent)
         {
             GameObject = new GameObject
@@ -72,6 +76,7 @@ namespace Voxel.World
             int chunkSize = WorldManager.Instance.ChunkSize;
             chunkData = new Block[chunkSize, chunkSize, chunkSize];
             blockTypeData = new BlockType[chunkSize, chunkSize, chunkSize];
+            trees = new List<Tree>();
             ChunkStatus = ChunkStatus.None;
         }
 
@@ -152,10 +157,22 @@ namespace Voxel.World
             if (saveExists)
             {
                 LoadChunk(chunkData);
+                TreesCreated = chunkData.TreesCreated;
                 return;
             }
 
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
+            GenerateChunk(chunkSize);
+
+            if (!TreesCreated)
+            {
+                TreesCreated = true;
+                GenerateTrees(chunkSize);
+            }
+        }
+
+        private void GenerateChunk(int chunkSize)
+        {
             for (int x = 0; x < chunkSize; x++)
             {
                 for (int z = 0; z < chunkSize; z++)
@@ -262,7 +279,7 @@ namespace Voxel.World
                             {
                                 NewLocalBlock(BlockType.Grass, localPosition);
                             }
-                            
+
                             surfaceBlockAlreadyPlaced = true;
                         }
                     }
@@ -298,6 +315,26 @@ namespace Voxel.World
             else if (topBlockBack?.BlockType == BlockType.Fluid)
             {
                 topBlockFront?.UpdateBlockType(BlockType.Sand);
+            }
+        }
+
+        private void GenerateTrees(int chunkSize)
+        {
+            for (int x = 0; x < chunkSize; x++)
+            {
+                for (int y = 0; y < chunkSize; y++)
+                {
+                    for (int z = 0; z < chunkSize; z++)
+                    {
+                        Block block = GetChunkData()[x, y, z];
+                        Block topBlock = block.GetBlockNeighbour(Neighbour.Top);
+                        if (block.BlockType == BlockType.TreeBase
+                            && topBlock != null)
+                        {
+                            trees.Add(new Tree(this, chunkData, topBlock));
+                        }
+                    }
+                }
             }
         }
 
