@@ -121,33 +121,5 @@ namespace Voxel.World
             return blocksToBeUpdated;
         }
         #endregion
-
-        //public void TreeGenerationLeaves(Block block) => StartCoroutine(TreeGenerationLeavesCoroutine(block));
-
-        //private IEnumerator TreeGenerationLeavesCoroutine(Block block)
-        //{
-        //    Block[] neighbours = new Block[]
-        //    {
-        //        block.GetBlockNeighbour(Neighbour.Left),
-        //        block.GetBlockNeighbour(Neighbour.Right),
-        //        block.GetBlockNeighbour(Neighbour.Bottom),
-        //        block.GetBlockNeighbour(Neighbour.Top)
-        //    };
-
-        //    for (int i = 0; i < neighbours.Length; i++)
-        //    {
-        //        var neighbourNeighbours = neighbours[i].GetAllBlockNeighbours().Values;
-        //        for (int j = 0; j < neighbourNeighbours.Count; j++)
-        //        {
-        //            Block neighbour = neighbourNeighbours.ElementAt(j);
-        //            if (neighbour.BlockType == BlockType.Air)
-        //            {
-        //                neighbour.UpdateBlockType(BlockType.Leaf);
-        //            }
-        //        }
-        //    }
-
-        //    yield break;
-        //}
     }
 }
