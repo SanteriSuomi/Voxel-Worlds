@@ -1,14 +1,18 @@
-﻿
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Voxel.World
 {
     public class Tree
     {
-        private const int treeStemLength = 3;
-        private const int treeLeavesLengthX = 2;
-        private const int treeLeavesLengthY = 1;
-        private const int treeLeavesLengthZ = 2;
+        private const int treeStemLengthBase = 4;
+
+        private const int treeLeavesSize = 2;
+
+        // 0 for no variation
+        private const int treeStemLengthVariation = 1;
+        private const int treeLeavesSizeVariation = 0;
 
         public Block[,,] Blocks { get; }
         public Block Block { get; private set; }
@@ -27,7 +31,8 @@ namespace Voxel.World
 
         private void TreeStem()
         {
-            for (int i = 0; i < treeStemLength; i++)
+            int length = treeStemLengthBase + Random.Range(0, treeStemLengthVariation + 1);
+            for (int i = 0; i < length; i++)
             {
                 Block.UpdateBlockType(BlockType.Wood);
                 Block = Block.GetBlockNeighbour(Neighbour.Top);
@@ -36,27 +41,46 @@ namespace Voxel.World
 
         private void TreeLeaves()
         {
-            Vector3Int position = Block.Position;
-            for (int x = -treeLeavesLengthX; x < treeLeavesLengthX; x++)
+            List<Block> sideNeighbours = new List<Block>();
+            int size = treeLeavesSize + Random.Range(0, treeLeavesSizeVariation + 1);
+            AddSides(sideNeighbours, Neighbour.Left, size);
+            AddSides(sideNeighbours, Neighbour.Right, size);
+            AddSides(sideNeighbours, Neighbour.Back, size);
+            AddSides(sideNeighbours, Neighbour.Front, size);
+            AddSides(sideNeighbours, Neighbour.Top, size);
+
+            for (int i = 0; i < sideNeighbours.Count; i++)
             {
-                for (int y = -treeLeavesLengthY; y < treeLeavesLengthY; y++)
+                Block sideNeighbour = sideNeighbours[i];
+                if (sideNeighbour != null)
                 {
-                    for (int z = -treeLeavesLengthZ; z < treeLeavesLengthZ; z++)
+                    var sideNeighbourNeighbours = sideNeighbour.GetAllBlockNeighbours().Values;
+                    for (int j = 0; j < sideNeighbourNeighbours.Count; j++)
                     {
-                        LeafifyBlock(Block);
-                        Block newBlock = Block.GetBlock(position.x + x, position.y + y, position.z + z);
-                        if (newBlock != null)
-                        {
-                            Block = newBlock;
-                        }
+                        Block sideNeighboursNeighbour = sideNeighbourNeighbours.ElementAt(j);
+                        Leafify(sideNeighboursNeighbour);
                     }
                 }
             }
         }
 
-        private void LeafifyBlock(Block block)
+        private void AddSides(List<Block> sideNeighbours, Neighbour neighbour, int size)
         {
-            if (block.BlockType == BlockType.Air)
+            Block block = Block;
+            for (int i = 0; i < size; i++)
+            {
+                Block newBlock = block.GetBlockNeighbour(neighbour);
+                if (newBlock != null)
+                {
+                    block = newBlock;
+                    sideNeighbours.Add(block);
+                }
+            }
+        }
+
+        private static void Leafify(Block block)
+        {
+            if (block?.BlockType == BlockType.Air)
             {
                 block.UpdateBlockType(BlockType.Leaf);
             }
