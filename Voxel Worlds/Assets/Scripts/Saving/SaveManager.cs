@@ -62,9 +62,9 @@ namespace Voxel.Saving
 
         public IEnumerator SaveCoroutine(Chunk chunk)
         {
-            string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
-                                                                 (int)chunk.GameObject.transform.position.y,
-                                                                 (int)chunk.GameObject.transform.position.z));
+            string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.BlockGameObject.transform.position.x,
+                                                                 (int)chunk.BlockGameObject.transform.position.y,
+                                                                 (int)chunk.BlockGameObject.transform.position.z));
             ValidateDirectory(chunkFile);
             ChunkSaveData newChunkData = new ChunkSaveData(chunk.GetBlockTypeData(), chunk.TreesCreated);
             using (var fs = new FileStream(chunkFile, FileMode.Create))
@@ -82,9 +82,9 @@ namespace Voxel.Saving
         /// <returns>Tuple that includes whether or not the load was succesfull and the chunk's data if so.</returns>
         public (bool, ChunkSaveData) Load(Chunk chunk)
         {
-            string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
-                                                                 (int)chunk.GameObject.transform.position.y,
-                                                                 (int)chunk.GameObject.transform.position.z));
+            string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.BlockGameObject.transform.position.x,
+                                                                 (int)chunk.BlockGameObject.transform.position.y,
+                                                                 (int)chunk.BlockGameObject.transform.position.z));
             if (File.Exists(chunkFile))
             {
                 ChunkSaveData chunkData;
@@ -127,9 +127,9 @@ namespace Voxel.Saving
         /// <param name="chunk"></param>
         public bool Exists(Chunk chunk)
         {
-            return File.Exists(BuildChunkFilePath(new Vector3Int((int)chunk.GameObject.transform.position.x,
-                                                                 (int)chunk.GameObject.transform.position.y,
-                                                                 (int)chunk.GameObject.transform.position.z)));
+            return File.Exists(BuildChunkFilePath(new Vector3Int((int)chunk.BlockGameObject.transform.position.x,
+                                                                 (int)chunk.BlockGameObject.transform.position.y,
+                                                                 (int)chunk.BlockGameObject.transform.position.z)));
         }
 
         /// <summary>

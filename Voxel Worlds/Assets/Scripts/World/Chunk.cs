@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using Voxel.Characters.Enemy;
 using Voxel.Saving;
 using Voxel.Utility;
 
@@ -34,15 +35,16 @@ namespace Voxel.World
     {
         public ChunkStatus ChunkStatus { get; set; }
 
-        public GameObject GameObject { get; }
+        public GameObject BlockGameObject { get; }
         public GameObject FluidGameObject { get; }
+        public GameObject VegetationGameObject { get; }
 
         public MeshFilter[] MeshFilters { get; }
         public MeshRenderer[] MeshRenderers { get; }
         public Collider Collider { get; private set; }
 
-        private readonly Block[,,] chunkData;
-        public Block[,,] GetChunkData() => chunkData;
+        private readonly Block[,,] blockData;
+        public Block[,,] GetBlockData() => blockData;
 
         private readonly BlockType[,,] blockTypeData;
         public BlockType[,,] GetBlockTypeData() => blockTypeData;
@@ -50,16 +52,18 @@ namespace Voxel.World
         public List<Tree> Trees { get; }
         public bool TreesCreated { get; private set; }
 
+        public List<Enemy> Enemies { get; }
+
         public Chunk(Vector3 position, Transform parent)
         {
-            GameObject = new GameObject
+            BlockGameObject = new GameObject
             {
-                name = position.ToString(),
+                name = $"{position}",
                 tag = "Chunk"
             };
 
-            GameObject.transform.position = position;
-            GameObject.transform.SetParent(parent);
+            BlockGameObject.transform.position = position;
+            BlockGameObject.transform.SetParent(parent);
 
             FluidGameObject = new GameObject
             {
@@ -70,13 +74,23 @@ namespace Voxel.World
             FluidGameObject.transform.position = position;
             FluidGameObject.transform.SetParent(parent);
 
-            MeshFilters = new MeshFilter[2];
-            MeshRenderers = new MeshRenderer[2];
+            VegetationGameObject = new GameObject
+            {
+                name = $"{position}_Vegetation",
+                tag = "Chunk"
+            };
+
+            VegetationGameObject.transform.position = position;
+            VegetationGameObject.transform.SetParent(parent);
+
+            MeshFilters = new MeshFilter[3];
+            MeshRenderers = new MeshRenderer[3];
 
             int chunkSize = WorldManager.Instance.ChunkSize;
-            chunkData = new Block[chunkSize, chunkSize, chunkSize];
+            blockData = new Block[chunkSize, chunkSize, chunkSize];
             blockTypeData = new BlockType[chunkSize, chunkSize, chunkSize];
             Trees = new List<Tree>();
+            Enemies = new List<Enemy>();
             ChunkStatus = ChunkStatus.None;
         }
 
@@ -84,7 +98,7 @@ namespace Voxel.World
         {
             if (data.ResetBlock)
             {
-                Block block = GetChunkData()[data.Position.x, data.Position.y, data.Position.z];
+                Block block = GetBlockData()[data.Position.x, data.Position.y, data.Position.z];
                 if (HasFluidNeighbour(block))
                 {
                     block.UpdateBlockType(BlockType.Fluid);
@@ -126,7 +140,7 @@ namespace Voxel.World
         public Chunk GetChunkNeighbour(Neighbour neighbour)
         {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
-            Vector3 chunkPosition = GameObject.transform.position;
+            Vector3 chunkPosition = BlockGameObject.transform.position;
             switch (neighbour)
             {
                 case Neighbour.Left:
@@ -180,6 +194,9 @@ namespace Voxel.World
             }
         }
 
+        /// <summary>
+        /// Generate the bulk of the chunk, the blocks. Determine things such as biomes and where to spawn trees etc.
+        /// </summary>
         private void GenerateChunk()
         {
             int chunkSize = WorldManager.Instance.ChunkSize - 1;
@@ -192,7 +209,7 @@ namespace Voxel.World
                     for (int y = chunkTopIndex; y >= 0; y--) // Start from the top so we can easily place the top block
                     {
                         Vector3Int localPosition = new Vector3Int(x, y, z);
-                        int worldPositionY = (int)(y + GameObject.transform.position.y);
+                        int worldPositionY = (int)(y + BlockGameObject.transform.position.y);
 
                         // Bedrock
                         if (worldPositionY == 0)
@@ -201,13 +218,13 @@ namespace Voxel.World
                             continue;
                         }
 
-                        int worldPositionX = (int)(x + GameObject.transform.position.x);
-                        int worldPositionZ = (int)(z + GameObject.transform.position.z);
+                        int worldPositionX = (int)(x + BlockGameObject.transform.position.x);
+                        int worldPositionZ = (int)(z + BlockGameObject.transform.position.z);
                         int noise2D = (int)(NoiseUtils.FBM2D(worldPositionX, worldPositionZ)
                             * (WorldManager.Instance.MaxWorldHeight * 2)); // Multiply to match noise scale to world height scale
                         int undergroundLayerStart = noise2D - 6; // This is where underground layer starts
 
-                        bool containsSandBlock = WorldManager.Instance.ContainsSandBlock(GameObject.transform, localPosition);
+                        bool containsSandBlock = WorldManager.Instance.ContainsSandBlock(BlockGameObject.transform, localPosition);
 
                         // Between water and underground layer
                         if (worldPositionY == undergroundLayerStart + 1)
@@ -215,7 +232,6 @@ namespace Voxel.World
                             NewLocalBlock(BlockType.Dirt, localPosition);
                             continue;
                         }
-
                         else if (worldPositionY == undergroundLayerStart + 2
                                  && !containsSandBlock)
                         {
@@ -229,10 +245,10 @@ namespace Voxel.World
                         {
                             if (containsSandBlock)
                             {
-                                Block block = NewLocalBlock(BlockType.Sand, localPosition);
+                                Block sandBlock = NewLocalBlock(BlockType.Sand, localPosition);
 
                                 // "Beach"
-                                CalculateBeach(block);
+                                CalculateBeach(sandBlock);
                                 continue;
                             }
 
@@ -276,27 +292,71 @@ namespace Voxel.World
                         }
                         else
                         {
-                            WorldManager.Instance.AddSandBlock(GameObject.transform, localPosition);
+                            WorldManager.Instance.AddSandBlock(BlockGameObject.transform, localPosition);
                             noise3D = NoiseUtils.FBM3D(worldPositionX, worldPositionY, worldPositionZ);
-                            if ((noise3D >= 0.705f && noise3D <= 0.707f)
-                                || (noise3D >= 0.145f && noise3D <= 0.147f)
-                                || (noise3D >= 0.245f && noise3D <= 0.247f)
-                                || (noise3D >= 0.345f && noise3D <= 0.347f))
+                            Block biomeBlock; // Type of biome (== block)
+                            // "Biomes"
+                            if (noise2D >= 28 && noise2D <= 30)
                             {
-                                Block treeBase = NewLocalBlock(BlockType.TreeBase, localPosition);
-                                Trees.Add(new Tree(chunkData, treeBase));
+                                biomeBlock = NewLocalBlock(BlockType.Sand, localPosition);
                             }
                             else
                             {
-                                NewLocalBlock(BlockType.Grass, localPosition);
+                                biomeBlock = NewLocalBlock(BlockType.Grass, localPosition);
                             }
 
+                            //bool hasSandBlockNearby = HasSandBlocksNearby(x, z, y);
+                            if (biomeBlock.BlockType != BlockType.Sand
+                                /*&& !hasSandBlockNearby*/)
+                            {
+                                // Non-block grass (vegetation)
+                                if ((noise3D >= 0.08f && noise3D <= 0.082f)
+                                    || (noise3D >= 0.16f && noise3D <= 0.162f)
+                                    || (noise3D >= 0.24f && noise3D <= 0.242f)
+                                    || (noise3D >= 0.3f && noise3D <= 0.32f)
+                                    || (noise3D >= 0.35f && noise3D <= 0.352f)
+                                    || (noise3D >= 0.45f && noise3D <= 0.452f)
+                                    || (noise3D >= 0.65f && noise3D <= 0.652f))
+                                {
+                                    NewLocalBlock(BlockType.GrassNonBlock, new Vector3Int(x, y + 1, z));
+                                }
+
+                                // Trees
+                                if ((noise3D >= 0.145f && noise3D <= 0.147f)
+                                    || (noise3D >= 0.245f && noise3D <= 0.247f)
+                                    || (noise3D >= 0.345f && noise3D <= 0.347f)
+                                    || (noise3D >= 0.705f && noise3D <= 0.707f))
+                                {
+                                    Block treeBase = NewLocalBlock(BlockType.TreeBase, localPosition);
+                                    Trees.Add(new Tree(blockData, treeBase));
+                                }
+                            }
+
+                            TrySpawnEnemy(localPosition);
                             surfaceBlockAlreadyPlaced = true;
                         }
                     }
                 }
             }
         }
+
+        // TODO: refactor for better performance
+        //private bool HasSandBlocksNearby(int x, int z, int y)
+        //{
+        //    bool hasSandBlocksNearby = false;
+        //    var neighbours = blockData[x, y, z].GetAllBlockNeighbours();
+        //    for (int i = 0; i < neighbours.Count; i++)
+        //    {
+        //        Block neighbourBlock = neighbours.ElementAt(i).Value;
+        //        if (neighbourBlock?.BlockType == BlockType.Sand)
+        //        {
+        //            hasSandBlocksNearby = true;
+        //            break;
+        //        }
+        //    }
+
+        //    return hasSandBlocksNearby;
+        //}
 
         private static void CalculateBeach(Block block)
         {
@@ -343,9 +403,37 @@ namespace Voxel.World
 
         private Block NewLocalBlock(BlockType type, Vector3Int position)
         {
-            GameObject chunkGameObj = type == BlockType.Fluid ? FluidGameObject : GameObject;
-            blockTypeData[position.x, position.y, position.z] = type;
-            return chunkData[position.x, position.y, position.z] = new Block(type, position, chunkGameObj, this);
+            if (position.x >= 0 && position.x <= blockData.GetUpperBound(0)
+                && position.y >= 0 && position.y <= blockData.GetUpperBound(1)
+                && position.z >= 0 && position.z <= blockData.GetUpperBound(2))
+            {
+                GameObject chunkGameObj;
+                if (type == BlockType.Fluid)
+                {
+                    chunkGameObj = FluidGameObject;
+                }
+                else if (type == BlockType.GrassNonBlock)
+                {
+                    chunkGameObj = VegetationGameObject;
+                }
+                else
+                {
+                    chunkGameObj = BlockGameObject;
+                }
+
+                blockTypeData[position.x, position.y, position.z] = type;
+                return blockData[position.x, position.y, position.z] = new Block(type, position, chunkGameObj, this);
+            }
+
+            return null;
+        }
+
+        private void TrySpawnEnemy(Vector3Int localPosition)
+        {
+            if (Random.Range(0, EnemySpawner.Instance.EnemySpawnChance) == EnemySpawner.Instance.EnemySpawnChance / 2)
+            {
+                EnemySpawner.Instance.Spawn(EnemyType.Spider, BlockGameObject.transform.position + (localPosition + Vector3.up));
+            }
         }
 
         public void BuildBlocks()
@@ -357,17 +445,18 @@ namespace Voxel.World
                 {
                     for (int z = 0; z < chunkSize; z++)
                     {
-                        chunkData[x, y, z].BuildBlock();
+                        blockData[x, y, z].BuildBlock();
                     }
                 }
             }
 
-            FinalizeChunk();
+            FinalizeMeshes();
+            ChunkStatus = ChunkStatus.Keep;
         }
 
-        private void FinalizeChunk()
+        private void FinalizeMeshes()
         {
-            MeshComponents dataChunk = MeshUtils.CombineMesh<MeshCollider>(GameObject, ReferenceManager.Instance.BlockAtlas);
+            MeshComponents dataChunk = MeshUtils.CombineMesh<MeshCollider>(BlockGameObject, ReferenceManager.Instance.BlockAtlas);
             MeshFilters[0] = dataChunk.MeshFilter;
             MeshRenderers[0] = dataChunk.MeshRenderer;
             Collider = dataChunk.Collider;
@@ -376,7 +465,9 @@ namespace Voxel.World
             MeshFilters[1] = dataFluidChunk.MeshFilter;
             MeshRenderers[1] = dataFluidChunk.MeshRenderer;
 
-            ChunkStatus = ChunkStatus.Keep;
+            MeshComponents dataVegetationChunk = MeshUtils.CombineMesh(VegetationGameObject, ReferenceManager.Instance.BlockAtlas);
+            MeshFilters[2] = dataVegetationChunk.MeshFilter;
+            MeshRenderers[2] = dataVegetationChunk.MeshRenderer;
         }
     }
 }

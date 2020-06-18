@@ -85,8 +85,8 @@ namespace Voxel.World
                     topBlock.UpdateBlockAndChunk(BlockType.Air);
                     downBlock.UpdateBlockAndChunk(blockType);
 
-                    if (Mathf.Approximately(topBlock.ChunkOwner.GameObject.transform.position.sqrMagnitude,
-                                            downBlock.ChunkOwner.GameObject.transform.position.sqrMagnitude))
+                    if (Mathf.Approximately(topBlock.ChunkOwner.BlockGameObject.transform.position.sqrMagnitude,
+                                            downBlock.ChunkOwner.BlockGameObject.transform.position.sqrMagnitude))
                     {
                         topBlock.ChunkOwner.RebuildChunk(ChunkResetData.GetEmpty());
                     }

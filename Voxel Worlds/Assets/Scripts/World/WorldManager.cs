@@ -322,9 +322,9 @@ namespace Voxel.World
                 chunk.ChunkStatus = ChunkStatus.Done;
                 chunkStatusDoneAmount++;
 
-                if (PlayerManager.Instance.ActivePlayer != null && chunk.GameObject != null)
+                if (PlayerManager.Instance.ActivePlayer != null && chunk.BlockGameObject != null)
                 {
-                    float distanceToChunk = (PlayerManager.Instance.ActivePlayer.position - chunk.GameObject.transform.position).magnitude;
+                    float distanceToChunk = (PlayerManager.Instance.ActivePlayer.position - chunk.BlockGameObject.transform.position).magnitude;
                     if (distanceToChunk > ChunkSize * removeOldChunksDistanceMultiplier)
                     {
                         chunksToRemove.Push(chunkDatabase.ElementAt(i).Key);
@@ -344,7 +344,7 @@ namespace Voxel.World
                 if (chunkDatabase.TryGetValue(chunkToRemoveID, out Chunk chunk))
                 {
                     chunkDatabase.TryRemove(chunkToRemoveID, out _);
-                    Destroy(chunk.GameObject);
+                    Destroy(chunk.BlockGameObject);
                     object obj = CheckForFrameWait(ref waitFrameCounter);
                     if (obj is null)
                     {

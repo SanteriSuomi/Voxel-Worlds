@@ -199,7 +199,7 @@ namespace Voxel.Player
             Chunk hitChunk = WorldManager.Instance.GetChunk(hitChunkPosition);
             if (hitChunk != null)
             {
-                Block hitBlock = hitChunk.GetChunkData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
+                Block hitBlock = hitChunk.GetBlockData()[currentLocalBlockPosition.x, currentLocalBlockPosition.y, currentLocalBlockPosition.z];
                 if (checkPermission && IsPermittedBlock(hitBlock))
                 {
                     onValidatedAction(new BlockActionData(hitChunk, hitBlock, hitInfo));
@@ -335,19 +335,19 @@ namespace Voxel.Player
         private void UpdateBlock(BlockActionData actionData, BlockUpdateData updateData)
         {
             Chunk chunk = actionData.Chunk;
-            Vector3Int adjustedBlockPosition = actionData.AdjustedBlockPosition;
+            Vector3Int adjustedBlockPos = actionData.AdjustedBlockPosition;
             if (updateData.Update)
             {
                 chunk = actionData.Chunk.GetChunkNeighbour(updateData.Neighbour);
-                adjustedBlockPosition += updateData.Offset;
+                adjustedBlockPos += updateData.Offset;
             }
 
-            Block[,,] chunkData = chunk.GetChunkData();
-            if (adjustedBlockPosition.x >= 0 && adjustedBlockPosition.x <= chunkData.GetUpperBound(0)
-                && adjustedBlockPosition.y >= 0 && adjustedBlockPosition.y <= chunkData.GetUpperBound(1)
-                && adjustedBlockPosition.z >= 0 && adjustedBlockPosition.z <= chunkData.GetUpperBound(2))
+            Block[,,] chunkData = chunk.GetBlockData();
+            if (adjustedBlockPos.x >= 0 && adjustedBlockPos.x <= chunkData.GetUpperBound(0)
+                && adjustedBlockPos.y >= 0 && adjustedBlockPos.y <= chunkData.GetUpperBound(1)
+                && adjustedBlockPos.z >= 0 && adjustedBlockPos.z <= chunkData.GetUpperBound(2))
             {
-                Block adjustedBlock = chunkData[adjustedBlockPosition.x, adjustedBlockPosition.y, adjustedBlockPosition.z];
+                Block adjustedBlock = chunkData[adjustedBlockPos.x, adjustedBlockPos.y, adjustedBlockPos.z];
                 if (adjustedBlock?.BlockType == BlockType.Air
                     || adjustedBlock?.BlockType == BlockType.Fluid)
                 {

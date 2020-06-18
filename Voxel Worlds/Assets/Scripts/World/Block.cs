@@ -17,7 +17,8 @@ namespace Voxel.World
         Sand,
         TreeBase,
         Wood,
-        Leaf
+        Leaf,
+        GrassNonBlock
     }
 
     public enum BlockSide
@@ -90,7 +91,8 @@ namespace Voxel.World
             3, // Sand
             5, // TreeBase
             5, // Wood
-            2 // Leaf
+            2, // Leaf
+            1 // Grass (non-block)
         };
 
         // UV coordinates for different blocks on the UV atlas
@@ -165,6 +167,13 @@ namespace Voxel.World
                 new Vector2(0.3125f, 0.75f),
                 new Vector2(0.25f, 0.8125f),
                 new Vector2(0.3125f, 0.8125f)
+            },
+            // Grass (non-block)
+            {
+                new Vector2(0.6875f, 0.625f),
+                new Vector2(0.75f, 0.625f),
+                new Vector2(0.6875f, 0.6875f),
+                new Vector2(0.75f, 0.6875f)
             }
         };
 
@@ -235,6 +244,12 @@ namespace Voxel.World
             BlockHealth--;
             if (BlockHealth <= 0)
             {
+                Block topBlock = GetBlockNeighbour(Neighbour.Top);
+                if (topBlock.BlockType == BlockType.GrassNonBlock)
+                {
+                    topBlock.UpdateBlockType(BlockType.Air);
+                }
+
                 if (!TryActivateFluidDynamic(true))
                 {
                     ChunkOwner.RebuildChunk(new ChunkResetData(true, Position));
@@ -318,15 +333,21 @@ namespace Voxel.World
             {
                 ChunkGameObject = ChunkOwner.FluidGameObject;
             }
+            else if (type == BlockType.GrassNonBlock)
+            {
+                ChunkGameObject = ChunkOwner.VegetationGameObject;
+            }
             else
             {
-                ChunkGameObject = ChunkOwner.GameObject;
+                ChunkGameObject = ChunkOwner.BlockGameObject;
             }
         }
 
         public void ResetBlockHealth() => BlockHealth = blockHealthMap[(int)BlockType];
 
-        private void UpdateSolidity() => IsSolid = BlockType != BlockType.Air && BlockType != BlockType.Leaf;
+        private void UpdateSolidity() => IsSolid = BlockType != BlockType.Air
+                                                && BlockType != BlockType.Leaf
+                                                && BlockType != BlockType.GrassNonBlock;
 
         /// <returns>Block as a GameObject</returns>
         /// <summary>
@@ -445,13 +466,16 @@ namespace Voxel.World
             currentQuadPos = new Vector3Int(Position.x + 1, Position.y, Position.z);
             CheckSide(quadPositions, currentQuadPos, BlockSide.Right);
 
-            // Top quad
-            currentQuadPos = new Vector3Int(Position.x, Position.y + 1, Position.z);
-            CheckSide(quadPositions, currentQuadPos, BlockSide.Top);
+            if (BlockType != BlockType.GrassNonBlock) // Don't create top and bottom on vegetation
+            {
+                // Top quad
+                currentQuadPos = new Vector3Int(Position.x, Position.y + 1, Position.z);
+                CheckSide(quadPositions, currentQuadPos, BlockSide.Top);
 
-            // Bottom quad
-            currentQuadPos = new Vector3Int(Position.x, Position.y - 1, Position.z);
-            CheckSide(quadPositions, currentQuadPos, BlockSide.Bottom);
+                // Bottom quad
+                currentQuadPos = new Vector3Int(Position.x, Position.y - 1, Position.z);
+                CheckSide(quadPositions, currentQuadPos, BlockSide.Bottom);
+            }
 
             CalculateBlockPositionAverage(quadPositions);
         }
@@ -461,9 +485,9 @@ namespace Voxel.World
             Vector3 blockPositionAverageTemp = Vector3.zero;
             for (int i = 0; i < quadPositions.Count; i++)
             {
-                blockPositionAverageTemp.x += ChunkOwner.GameObject.transform.position.x + quadPositions[i].x;
-                blockPositionAverageTemp.y += ChunkOwner.GameObject.transform.position.y + quadPositions[i].y;
-                blockPositionAverageTemp.z += ChunkOwner.GameObject.transform.position.z + quadPositions[i].z;
+                blockPositionAverageTemp.x += ChunkOwner.BlockGameObject.transform.position.x + quadPositions[i].x;
+                blockPositionAverageTemp.y += ChunkOwner.BlockGameObject.transform.position.y + quadPositions[i].y;
+                blockPositionAverageTemp.z += ChunkOwner.BlockGameObject.transform.position.z + quadPositions[i].z;
             }
 
             blockPositionAverageTemp.x /= maxQuadCount;
@@ -480,6 +504,7 @@ namespace Voxel.World
             bool fluidWorldEdge = neighbourBlock != null && (!isSolid || (BlockType != BlockType.Fluid && neighbourBlock.BlockType == BlockType.Fluid));
             // Conditions for reating faces at the edge of the world when there is sand (fixes a invisible face bug)
             bool otherWorldEdge = BlockType != BlockType.Fluid && neighbourBlock == null;
+
             if (fluidWorldEdge || otherWorldEdge)
             {
                 CreateQuad(new BlockCreationData(ChunkGameObject.transform, BlockType, side)
@@ -528,7 +553,7 @@ namespace Voxel.World
                 Chunk chunk = WorldManager.Instance.GetChunk(neighbouringChunkPosition);
                 if (chunk != null)
                 {
-                    chunkData = chunk.GetChunkData();
+                    chunkData = chunk.GetBlockData();
                 }
                 else
                 {
@@ -537,7 +562,7 @@ namespace Voxel.World
             }
             else
             {
-                chunkData = ChunkOwner.GetChunkData();
+                chunkData = ChunkOwner.GetBlockData();
             }
 
             if (chunkData != null
@@ -586,32 +611,32 @@ namespace Voxel.World
                 switch (data.BlockSide)
                 {
                     case BlockSide.Bottom:
-                        AssignVertices(vertices, new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 });
+                        AssignVertices(data.BlockType, vertices, new Vector3[] { leftBottom0, rightBottom0, rightBottom1, leftBottom1 });
                         AssignNormals(normals, Vector3.down);
                         break;
 
                     case BlockSide.Top:
-                        AssignVertices(vertices, new Vector3[] { leftTop1, rightTop1, rightTop0, leftTop0 });
+                        AssignVertices(data.BlockType, vertices, new Vector3[] { leftTop1, rightTop1, rightTop0, leftTop0 });
                         AssignNormals(normals, Vector3.up);
                         break;
 
                     case BlockSide.Left:
-                        AssignVertices(vertices, new Vector3[] { leftTop1, leftTop0, leftBottom0, leftBottom1 });
+                        AssignVertices(data.BlockType, vertices, new Vector3[] { leftTop1, leftTop0, leftBottom0, leftBottom1 });
                         AssignNormals(normals, Vector3.left);
                         break;
 
                     case BlockSide.Right:
-                        AssignVertices(vertices, new Vector3[] { rightTop0, rightTop1, rightBottom1, rightBottom0 });
+                        AssignVertices(data.BlockType, vertices, new Vector3[] { rightTop0, rightTop1, rightBottom1, rightBottom0 });
                         AssignNormals(normals, Vector3.right);
                         break;
 
                     case BlockSide.Front:
-                        AssignVertices(vertices, new Vector3[] { leftTop0, rightTop0, rightBottom0, leftBottom0 });
+                        AssignVertices(data.BlockType, vertices, new Vector3[] { leftTop0, rightTop0, rightBottom0, leftBottom0 });
                         AssignNormals(normals, Vector3.forward);
                         break;
 
                     case BlockSide.Back:
-                        AssignVertices(vertices, new Vector3[] { rightTop1, leftTop1, leftBottom1, rightBottom1 });
+                        AssignVertices(data.BlockType, vertices, new Vector3[] { rightTop1, leftTop1, leftBottom1, rightBottom1 });
                         AssignNormals(normals, Vector3.back);
                         break;
                 }
@@ -643,8 +668,26 @@ namespace Voxel.World
             }
         }
 
-        private static void AssignVertices(List<Vector3> vertices, Vector3[] verticesToAssign)
+        private static void AssignVertices(BlockType type, List<Vector3> vertices, Vector3[] verticesToAssign)
         {
+            if (type == BlockType.GrassNonBlock) // Vegetation/grass needs to have vertices assigned upside down due to the UV map
+            {
+                Vector3[] tempVerticesToAssign = new Vector3[]
+                {
+                    verticesToAssign[3],
+                    verticesToAssign[2],
+                    verticesToAssign[1],
+                    verticesToAssign[0]
+                };
+
+                for (int i = 0; i < tempVerticesToAssign.Length; i++)
+                {
+                    vertices.Add(tempVerticesToAssign[i]);
+                }
+
+                return;
+            }
+
             for (int i = 0; i < verticesToAssign.Length; i++)
             {
                 vertices.Add(verticesToAssign[i]);
@@ -669,9 +712,9 @@ namespace Voxel.World
                 uvs[3] = uvAtlasMap[6, 3];
             }
             else if (blockType == BlockType.Grass && (side == BlockSide.Back
-                                                      || side == BlockSide.Front
-                                                      || side == BlockSide.Left
-                                                      || side == BlockSide.Right))
+                                                   || side == BlockSide.Front
+                                                   || side == BlockSide.Left
+                                                   || side == BlockSide.Right))
             {
                 uvs[0] = uvAtlasMap[5, 0];
                 uvs[1] = uvAtlasMap[5, 1];
@@ -736,6 +779,13 @@ namespace Voxel.World
                 uvs[1] = uvAtlasMap[9, 1];
                 uvs[2] = uvAtlasMap[9, 2];
                 uvs[3] = uvAtlasMap[9, 3];
+            }
+            else if (blockType == BlockType.GrassNonBlock)
+            {
+                uvs[0] = uvAtlasMap[10, 0];
+                uvs[1] = uvAtlasMap[10, 1];
+                uvs[2] = uvAtlasMap[10, 2];
+                uvs[3] = uvAtlasMap[10, 3];
             }
             else
             {

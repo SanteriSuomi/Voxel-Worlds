@@ -150,12 +150,12 @@ namespace Voxel.Player
             Chunk chunk = WorldManager.Instance.GetChunkFromWorldPosition(transform.position);
             Vector3Int blockPosition = new Vector3Int
             {
-                x = Mathf.Clamp(Mathf.RoundToInt(transform.position.x - chunk.GameObject.transform.position.x), 0, chunkSize),
-                y = Mathf.Clamp(Mathf.RoundToInt(transform.position.y - chunk.GameObject.transform.position.y), 0, chunkSize),
-                z = Mathf.Clamp(Mathf.RoundToInt(transform.position.z - chunk.GameObject.transform.position.z), 0, chunkSize)
+                x = Mathf.Clamp(Mathf.RoundToInt(transform.position.x - chunk.BlockGameObject.transform.position.x), 0, chunkSize),
+                y = Mathf.Clamp(Mathf.RoundToInt(transform.position.y - chunk.BlockGameObject.transform.position.y), 0, chunkSize),
+                z = Mathf.Clamp(Mathf.RoundToInt(transform.position.z - chunk.BlockGameObject.transform.position.z), 0, chunkSize)
             };
 
-            Block block = chunk.GetChunkData()[blockPosition.x, blockPosition.y, blockPosition.z];
+            Block block = chunk.GetBlockData()[blockPosition.x, blockPosition.y, blockPosition.z];
             if (block.BlockType == BlockType.Fluid)
             {
                 isSwimming = true;
