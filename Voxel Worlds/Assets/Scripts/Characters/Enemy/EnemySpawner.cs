@@ -24,6 +24,22 @@ namespace Voxel.Characters.Enemy
         }
     }
 
+    public struct EnemySpawnData
+    {
+        public EnemyType Type { get; }
+        public Vector3 Position { get; }
+        public Quaternion Rotation { get; }
+        public int Health { get; }
+
+        public EnemySpawnData(EnemyType type, Vector3 position, Quaternion rotation, int health)
+        {
+            Type = type;
+            Position = position;
+            Rotation = rotation;
+            Health = health;
+        }
+    }
+
     public class EnemySpawner : Singleton<EnemySpawner>
     {
         [SerializeField, Tooltip("Bigger value means smaller chance. e.g 2500 means 1 in 2500 chance, for every top block.")]
@@ -49,10 +65,18 @@ namespace Voxel.Characters.Enemy
         [SerializeField]
         private Enemies enemies = default;
 
-        public void Spawn(EnemyType type, Vector3 position)
+        /// <summary>
+        /// Spawn an enemy with the provided data.
+        /// </summary>
+        /// <param name="data">Data which with the enemy construction happens.</param>
+        /// <returns>The enemy class.</returns>
+        public Enemy Spawn(EnemySpawnData data)
         {
-            Enemy instantiatedEnemy = Instantiate(enemies.GetEnemy(type), position, Quaternion.identity);
-            instantiatedEnemy.transform.position = position;
+            Enemy enemy = Instantiate(enemies.GetEnemy(data.Type), data.Position, data.Rotation);
+            enemy.name = $"{enemy.name}_{data.Position}";
+            enemy.Health = data.Health;
+            enemy.transform.position = data.Position;
+            return enemy;
         }
     }
 }

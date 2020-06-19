@@ -1,8 +1,11 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
+using Voxel.Characters.Enemy;
+using Voxel.Characters.Saving;
 using Voxel.Utility;
 using Voxel.World;
 
@@ -66,13 +69,33 @@ namespace Voxel.Saving
                                                                  (int)chunk.BlockGameObject.transform.position.y,
                                                                  (int)chunk.BlockGameObject.transform.position.z));
             ValidateDirectory(chunkFile);
-            ChunkSaveData newChunkData = new ChunkSaveData(chunk.GetBlockTypeData(), chunk.TreesCreated);
+            ChunkSaveData newChunkData = new ChunkSaveData(chunk.GetBlockTypeData(), chunk.TreesCreated, GetCharacterData(chunk));
             using (var fs = new FileStream(chunkFile, FileMode.Create))
             {
                 bf.Serialize(fs, newChunkData);
             }
 
             yield break;
+        }
+
+        private static List<CharacterData> GetCharacterData(Chunk chunk)
+        {
+            List<CharacterData> characterData = new List<CharacterData>();
+            for (int i = 0; i < chunk.Enemies.Count; i++)
+            {
+                Enemy enemy = chunk.Enemies[i];
+                EnemyData enemyData = new EnemyData(enemy.Type, enemy.Health, enemy.transform.position, enemy.transform.rotation);
+                DestroyEnemy(i, enemy);
+                characterData.Add(enemyData);
+            }
+
+            return characterData;
+
+            void DestroyEnemy(int i, Enemy enemy)
+            {
+                chunk.Enemies.RemoveAt(i);
+                DestroyImmediate(enemy.gameObject);
+            }
         }
 
         /// <summary>

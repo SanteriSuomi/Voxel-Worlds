@@ -435,6 +435,15 @@ namespace Voxel.World
                    { Neighbour.Front, GetBlockNeighbour(Neighbour.Front) }
                };
 
+        public Dictionary<Neighbour, Block> GetAllBlockSideNeighbours()
+               => new Dictionary<Neighbour, Block>
+               {
+                   { Neighbour.Left, GetBlockNeighbour(Neighbour.Left) },
+                   { Neighbour.Right, GetBlockNeighbour(Neighbour.Right) },
+                   { Neighbour.Back, GetBlockNeighbour(Neighbour.Back) },
+                   { Neighbour.Front, GetBlockNeighbour(Neighbour.Front) }
+               };
+
         public void BuildBlock()
         {
             if (BlockType == BlockType.Air)

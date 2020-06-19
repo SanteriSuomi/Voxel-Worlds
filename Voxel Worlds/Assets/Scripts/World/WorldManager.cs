@@ -200,9 +200,10 @@ namespace Voxel.World
                 float distanceFromLastBuildPosition = (lastBuildPosition - playerTransform.position).magnitude;
                 if (distanceFromLastBuildPosition > ChunkSize * buildNearPlayerDistanceMultiplier)
                 {
+                    Vector3 playerVelocityNormalized = PlayerManager.Instance.CharacterController.velocity.normalized;
                     PlayerManager.Instance.Save();
                     lastBuildPosition = playerTransform.position;
-                    Vector3 directionMultiplier = playerTransform.forward * ChunkSize * buildForwardMultiplier;
+                    Vector3 directionMultiplier = playerVelocityNormalized * ChunkSize * buildForwardMultiplier;
                     Vector3Int playerChunkPosition = new Vector3Int((int)(lastBuildPosition.x + directionMultiplier.x),
                                                                     (int)lastBuildPosition.y,
                                                                     (int)(lastBuildPosition.z + directionMultiplier.z)) / ChunkSize;

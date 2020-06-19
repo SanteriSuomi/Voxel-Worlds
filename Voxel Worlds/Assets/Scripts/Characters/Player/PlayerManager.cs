@@ -13,6 +13,8 @@ namespace Voxel.Player
         private GameObject playerPrefab = default;
         public Transform ActivePlayer { get; private set; }
 
+        public CharacterController CharacterController { get; private set; }
+
         [SerializeField]
         private Canvas mainUICanvas = default;
 
@@ -77,6 +79,7 @@ namespace Voxel.Player
         {
             GameObject player = Instantiate(playerPrefab, position, rotation);
             ActivePlayer = player.transform;
+            CharacterController = ActivePlayer.GetComponent<CharacterController>();
             InitializeUI();
             InventoryManager.Instance.Load();
             return ActivePlayer;

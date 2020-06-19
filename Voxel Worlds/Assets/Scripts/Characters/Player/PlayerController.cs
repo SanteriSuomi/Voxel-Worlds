@@ -148,6 +148,8 @@ namespace Voxel.Player
             int chunkSize = WorldManager.Instance.ChunkSize;
 
             Chunk chunk = WorldManager.Instance.GetChunkFromWorldPosition(transform.position);
+            if (chunk == null || chunk.BlockGameObject == null) return Vector3.zero;
+
             Vector3Int blockPosition = new Vector3Int
             {
                 x = Mathf.Clamp(Mathf.RoundToInt(transform.position.x - chunk.BlockGameObject.transform.position.x), 0, chunkSize),
@@ -156,7 +158,7 @@ namespace Voxel.Player
             };
 
             Block block = chunk.GetBlockData()[blockPosition.x, blockPosition.y, blockPosition.z];
-            if (block.BlockType == BlockType.Fluid)
+            if (block?.BlockType == BlockType.Fluid)
             {
                 isSwimming = true;
 

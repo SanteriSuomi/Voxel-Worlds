@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Voxel.Characters.Enemy;
+using Voxel.Characters.Saving;
 using Voxel.Saving;
 using Voxel.Utility;
 
@@ -116,21 +118,23 @@ namespace Voxel.World
 
         private static bool HasFluidNeighbour(Block block)
         {
-            return block?.GetBlockNeighbour(Neighbour.Right).BlockType == BlockType.Fluid
-                   || block?.GetBlockNeighbour(Neighbour.Left).BlockType == BlockType.Fluid
-                   || block?.GetBlockNeighbour(Neighbour.Front).BlockType == BlockType.Fluid
-                   || block?.GetBlockNeighbour(Neighbour.Back).BlockType == BlockType.Fluid;
+            return block?.GetBlockNeighbour(Neighbour.Right)?.BlockType == BlockType.Fluid
+                   || block?.GetBlockNeighbour(Neighbour.Left)?.BlockType == BlockType.Fluid
+                   || block?.GetBlockNeighbour(Neighbour.Front)?.BlockType == BlockType.Fluid
+                   || block?.GetBlockNeighbour(Neighbour.Back)?.BlockType == BlockType.Fluid;
         }
 
         private void DestroyChunkMesh()
         {
             for (int i = 0; i < MeshFilters.Length; i++)
             {
+                Object.DestroyImmediate(MeshFilters[i].mesh);
                 Object.DestroyImmediate(MeshFilters[i]);
             }
 
             for (int i = 0; i < MeshRenderers.Length; i++)
             {
+                Object.DestroyImmediate(MeshRenderers[i].material);
                 Object.DestroyImmediate(MeshRenderers[i]);
             }
 
@@ -172,6 +176,7 @@ namespace Voxel.World
             {
                 TreesCreated = chunkData.TreesCreated;
                 LoadChunk(chunkData);
+                LoadEnemies(chunkData);
                 return;
             }
 
@@ -191,6 +196,16 @@ namespace Voxel.World
                         NewLocalBlock(chunkData.BlockTypeData[x, y, z], localPosition);
                     }
                 }
+            }
+        }
+
+        private static void LoadEnemies(ChunkSaveData chunkData)
+        {
+            List<CharacterData> enemies = chunkData.Enemies;
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                EnemyData data = (EnemyData)enemies[i];
+                EnemySpawner.Instance.Spawn(new EnemySpawnData(data.Type, data.Position, data.Rotation, data.Health));
             }
         }
 
@@ -305,9 +320,9 @@ namespace Voxel.World
                                 biomeBlock = NewLocalBlock(BlockType.Grass, localPosition);
                             }
 
-                            //bool hasSandBlockNearby = HasSandBlocksNearby(x, z, y);
+                            bool hasSandBlockNearby = HasSandBlocksNearby(x, y, z);
                             if (biomeBlock.BlockType != BlockType.Sand
-                                /*&& !hasSandBlockNearby*/)
+                                && !hasSandBlockNearby)
                             {
                                 // Non-block grass (vegetation)
                                 if ((noise3D >= 0.08f && noise3D <= 0.082f)
@@ -340,23 +355,22 @@ namespace Voxel.World
             }
         }
 
-        // TODO: refactor for better performance
-        //private bool HasSandBlocksNearby(int x, int z, int y)
-        //{
-        //    bool hasSandBlocksNearby = false;
-        //    var neighbours = blockData[x, y, z].GetAllBlockNeighbours();
-        //    for (int i = 0; i < neighbours.Count; i++)
-        //    {
-        //        Block neighbourBlock = neighbours.ElementAt(i).Value;
-        //        if (neighbourBlock?.BlockType == BlockType.Sand)
-        //        {
-        //            hasSandBlocksNearby = true;
-        //            break;
-        //        }
-        //    }
+        private bool HasSandBlocksNearby(int x, int y, int z)
+        {
+            bool hasSandBlocksNearby = false;
+            var neighbours = blockData[x, y, z].GetAllBlockSideNeighbours();
+            for (int i = 0; i < neighbours.Count; i++)
+            {
+                Block neighbourBlock = neighbours.ElementAt(i).Value;
+                if (neighbourBlock?.BlockType == BlockType.Sand)
+                {
+                    hasSandBlocksNearby = true;
+                    break;
+                }
+            }
 
-        //    return hasSandBlocksNearby;
-        //}
+            return hasSandBlocksNearby;
+        }
 
         private static void CalculateBeach(Block block)
         {
@@ -432,7 +446,13 @@ namespace Voxel.World
         {
             if (Random.Range(0, EnemySpawner.Instance.EnemySpawnChance) == EnemySpawner.Instance.EnemySpawnChance / 2)
             {
-                EnemySpawner.Instance.Spawn(EnemyType.Spider, BlockGameObject.transform.position + (localPosition + Vector3.up));
+                Enemy enemy = EnemySpawner.Instance.Spawn(new EnemySpawnData(EnemyType.Spider,
+                                                          BlockGameObject.transform.position + (localPosition + Vector3.up),
+                                                          Quaternion.identity,
+                                                          Enemy.StartingHealth));
+                enemy.gameObject.SetActive(false); // Deactivate object, gets reactivated during block construction so it doesn't just appear as a floating enemy.
+                enemy.CurrentChunk = this;
+                Enemies.Add(enemy);
             }
         }
 
@@ -452,6 +472,7 @@ namespace Voxel.World
 
             FinalizeMeshes();
             ChunkStatus = ChunkStatus.Keep;
+            ActivateEnemies();
         }
 
         private void FinalizeMeshes()
@@ -468,6 +489,14 @@ namespace Voxel.World
             MeshComponents dataVegetationChunk = MeshUtils.CombineMesh(VegetationGameObject, ReferenceManager.Instance.BlockAtlas);
             MeshFilters[2] = dataVegetationChunk.MeshFilter;
             MeshRenderers[2] = dataVegetationChunk.MeshRenderer;
+        }
+
+        private void ActivateEnemies()
+        {
+            for (int i = 0; i < Enemies.Count; i++)
+            {
+                Enemies[i].gameObject.SetActive(true);
+            }
         }
     }
 }
