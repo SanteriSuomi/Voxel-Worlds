@@ -34,14 +34,18 @@ namespace Voxel.Characters.Enemy
                     CurrentChunk = chunk;
                 }
 
-                if (chunk != CurrentChunk)
+                if (chunk?.BlockGameObject != null
+                    && CurrentChunk?.BlockGameObject != null
+                    && !Mathf.Approximately(chunk.BlockGameObject.transform.position.sqrMagnitude,
+                                            CurrentChunk.BlockGameObject.transform.position.sqrMagnitude))
                 {
                     CurrentChunk.Enemies.Remove(this);
                     CurrentChunk = chunk;
-                    Debug.Log(CurrentChunk);
+
                     #if UNITY_EDITOR
-                    gameObject.name = $"{gameObject.name}_{CurrentChunk?.BlockGameObject.transform.position}";
+                    name = $"{Type}_{CurrentChunk?.BlockGameObject.transform.position}";
                     #endif
+
                     CurrentChunk.Enemies.Add(this);
                 }
 

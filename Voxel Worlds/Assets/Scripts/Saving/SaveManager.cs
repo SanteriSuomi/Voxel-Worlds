@@ -1,11 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using Voxel.Characters.Enemy;
 using Voxel.Characters.Saving;
+using Voxel.Items.Inventory;
+using Voxel.Player;
 using Voxel.Utility;
 using Voxel.World;
 
@@ -45,8 +48,9 @@ namespace Voxel.Saving
         /// <summary>
         /// Save a chunk to it's own dedicated file.
         /// </summary>
-        /// <param name="chunk">Chunk to save</param>
-        public void Save(Chunk chunk) => StartCoroutine(SaveCoroutine(chunk));
+        /// <param name="chunk">Chunk to save.</param>
+        /// <param name="destroyEnemies">If there are enemies to be saved on this chunk, destroy them after saving?</param>
+        public void Save(Chunk chunk, bool destroyEnemies) => StartCoroutine(SaveCoroutine(chunk, destroyEnemies));
 
         /// <summary>
         /// Save any object to a path of your choosing.
@@ -63,13 +67,13 @@ namespace Voxel.Saving
             }
         }
 
-        public IEnumerator SaveCoroutine(Chunk chunk)
+        public IEnumerator SaveCoroutine(Chunk chunk, bool destroyEnemies)
         {
             string chunkFile = BuildChunkFilePath(new Vector3Int((int)chunk.BlockGameObject.transform.position.x,
                                                                  (int)chunk.BlockGameObject.transform.position.y,
                                                                  (int)chunk.BlockGameObject.transform.position.z));
             ValidateDirectory(chunkFile);
-            ChunkSaveData newChunkData = new ChunkSaveData(chunk.GetBlockTypeData(), chunk.TreesCreated, GetCharacterData(chunk));
+            ChunkSaveData newChunkData = new ChunkSaveData(chunk.GetBlockTypeData(), chunk.TreesCreated, GetCharacterData(chunk, destroyEnemies));
             using (var fs = new FileStream(chunkFile, FileMode.Create))
             {
                 bf.Serialize(fs, newChunkData);
@@ -78,23 +82,47 @@ namespace Voxel.Saving
             yield break;
         }
 
-        private static List<CharacterData> GetCharacterData(Chunk chunk)
+        private static CharacterData[] GetCharacterData(Chunk chunk, bool destroyEnemies)
         {
             List<CharacterData> characterData = new List<CharacterData>();
             for (int i = 0; i < chunk.Enemies.Count; i++)
             {
                 Enemy enemy = chunk.Enemies[i];
                 EnemyData enemyData = new EnemyData(enemy.Type, enemy.Health, enemy.transform.position, enemy.transform.rotation);
-                DestroyEnemy(i, enemy);
+                if (destroyEnemies)
+                {
+                    DestroyEnemy(i, enemy);
+                }
+
                 characterData.Add(enemyData);
             }
 
-            return characterData;
+            return characterData.ToArray();
 
             void DestroyEnemy(int i, Enemy enemy)
             {
                 chunk.Enemies.RemoveAt(i);
                 DestroyImmediate(enemy.gameObject);
+            }
+        }
+
+        public void SaveAll()
+        {
+            PlayerManager.Instance.Save();
+            InventoryManager.Instance.Save();
+            SaveChunkEnemies();
+
+            void SaveChunkEnemies()
+            {
+                var chunks = WorldManager.Instance.GetAllChunks();
+                for (int i = 0; i < chunks.Count; i++)
+                {
+                    Chunk chunk = chunks.ElementAt(i).Value;
+                    if (chunk.Enemies.Count > 0)
+                    {
+                        Save(chunk, false);
+                    }
+                }
             }
         }
 

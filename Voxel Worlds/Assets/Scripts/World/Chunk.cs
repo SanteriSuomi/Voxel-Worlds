@@ -113,7 +113,7 @@ namespace Voxel.World
 
             DestroyChunkMesh();
             BuildBlocks();
-            SaveManager.Instance.Save(this);
+            SaveManager.Instance.Save(this, false);
         }
 
         private static bool HasFluidNeighbour(Block block)
@@ -128,17 +128,24 @@ namespace Voxel.World
         {
             for (int i = 0; i < MeshFilters.Length; i++)
             {
-                Object.DestroyImmediate(MeshFilters[i].mesh);
-                Object.DestroyImmediate(MeshFilters[i]);
+                if (MeshFilters[i] != null)
+                {
+                    Object.DestroyImmediate(MeshFilters[i]);
+                }
             }
 
             for (int i = 0; i < MeshRenderers.Length; i++)
             {
-                Object.DestroyImmediate(MeshRenderers[i].material);
-                Object.DestroyImmediate(MeshRenderers[i]);
+                if (MeshRenderers[i] != null)
+                {
+                    Object.DestroyImmediate(MeshRenderers[i]);
+                }
             }
 
-            Object.DestroyImmediate(Collider);
+            if (Collider != null)
+            {
+                Object.DestroyImmediate(Collider);
+            }
         }
 
         public Chunk GetChunkNeighbour(Neighbour neighbour)
@@ -201,8 +208,8 @@ namespace Voxel.World
 
         private static void LoadEnemies(ChunkSaveData chunkData)
         {
-            List<CharacterData> enemies = chunkData.Enemies;
-            for (int i = 0; i < enemies.Count; i++)
+            CharacterData[] enemies = chunkData.Enemies;
+            for (int i = 0; i < enemies.Length; i++)
             {
                 EnemyData data = (EnemyData)enemies[i];
                 EnemySpawner.Instance.Spawn(new EnemySpawnData(data.Type, data.Position, data.Rotation, data.Health));

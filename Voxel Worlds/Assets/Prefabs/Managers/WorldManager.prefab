@@ -52,5 +52,6 @@ MonoBehaviour:
   buildNearPlayerDistanceMultiplier: 1
   removeOldChunksDistanceMultiplier: 10
   amountOfBuildsUntilRemoving: 2
-  loopsUntilWaitingAFrame: 2
   buildForwardMultiplier: 4.5
+  autosaveInterval: 60
+  maxSkippedFramesUntilWait: 3

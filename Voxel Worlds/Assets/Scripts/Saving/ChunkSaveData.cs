@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Voxel.Characters.Saving;
 using Voxel.World;
 
@@ -10,11 +9,11 @@ namespace Voxel.Saving
     {
         public BlockType[,,] BlockTypeData { get; }
         public bool TreesCreated { get; }
-        public List<CharacterData> Enemies { get; }
+        public CharacterData[] Enemies { get; }
 
         public ChunkSaveData() { }
 
-        public ChunkSaveData(BlockType[,,] blockTypeData, bool treesCreated, List<CharacterData> enemies)
+        public ChunkSaveData(BlockType[,,] blockTypeData, bool treesCreated, CharacterData[] enemies)
         {
             BlockTypeData = blockTypeData;
             TreesCreated = treesCreated;

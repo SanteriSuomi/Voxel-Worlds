@@ -1,16 +1,9 @@
-﻿using Voxel.Items.Inventory;
-using Voxel.Player;
+﻿using Voxel.Saving;
 
 namespace Voxel.UI.Menu.Buttons
 {
     public class SaveButton : Button
     {
-        private void Awake() => AddOnClickAction(SavePlayerState);
-
-        private void SavePlayerState()
-        {
-            PlayerManager.Instance.Save();
-            InventoryManager.Instance.Save();
-        }
+        private void Awake() => AddOnClickAction(SaveManager.Instance.SaveAll);
     }
 }

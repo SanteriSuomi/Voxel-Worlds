@@ -11,7 +11,7 @@ namespace Voxel.Characters.Saving
         public int Health { get; }
 
         public EnemyData(EnemyType type, int health, Vector3 position, Quaternion rotation)
-            : base(position, rotation)
+                        : base(position, rotation)
         {
             Type = type;
             Health = health;
