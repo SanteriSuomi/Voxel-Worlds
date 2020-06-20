@@ -8,7 +8,6 @@ using Voxel.Other;
 using Voxel.Player;
 using Voxel.Saving;
 using Voxel.Utility;
-using Voxel.Utility.YieldInstructions;
 
 namespace Voxel.World
 {
@@ -134,6 +133,7 @@ namespace Voxel.World
         private float autoSaveTimer;
         [SerializeField, Tooltip("Number of frames to skip until waiting a frame. Used by all the chunk update functions concecutively.")]
         private int maxSkippedFramesUntilWait = 3;
+        private int skipFrameCounter;
 
         public WorldStatus WorldStatus { get; private set; }
         public int Radius { get { return buildRadius; } }
@@ -144,8 +144,6 @@ namespace Voxel.World
         private int chunkStatusDoneAmount; // Amount of chunks with the "completed" status, used by loading bar.
         private int removeOldChunksIndex;
         private Vector3 lastBuildPosition; // Keep track of where chunks we build around player last time
-        private WaitFrames chunkUpdateWaitFrames;
-        private Coroutine processChunksNearPlayerCoroutine;
 
         protected override void Awake()
         {
@@ -153,7 +151,6 @@ namespace Voxel.World
             chunkDatabase = new ConcurrentDictionary<string, Chunk>();
             HitDecalDatabase = new ConcurrentDictionary<string, HitDecal>();
             sandBlockDatabase = new ConcurrentDictionary<string, bool>();
-            chunkUpdateWaitFrames = new WaitFrames(maxSkippedFramesUntilWait);
             ChunkSize = chunkSize;
             chunkEdgeSize = ChunkSize - 1;
         }
@@ -209,8 +206,7 @@ namespace Voxel.World
             {
                 float distanceFromLastBuildPosition = (lastBuildPosition - playerTransform.position).magnitude;
                 TryAutosave(distanceFromLastBuildPosition);
-                if (distanceFromLastBuildPosition > ChunkSize * buildNearPlayerDistanceMultiplier
-                    && WorldStatus == WorldStatus.Idle)
+                if (distanceFromLastBuildPosition > ChunkSize * buildNearPlayerDistanceMultiplier)
                 {
 
                     Vector3 playerVelocityNormalized = (PlayerManager.Instance.CharacterController.velocity * 10).normalized;
@@ -221,7 +217,7 @@ namespace Voxel.World
                                                                     (int)lastBuildPosition.y,
                                                                     (int)(lastBuildPosition.z + directionMultiplier.z)) / ChunkSize;
 
-                    StartCoroutine(ProcessChunksNearPlayer(playerChunkPosition.x,
+                    yield return StartCoroutine(ProcessChunksNearPlayer(playerChunkPosition.x,
                                                            playerChunkPosition.y,
                                                            playerChunkPosition.z));
                 }
@@ -265,7 +261,11 @@ namespace Voxel.World
                     for (int zL = -radius; zL < radius; zL++)
                     {
                         InitializeChunkAt(x + xL, y + yL, z + zL);
-                        yield return chunkUpdateWaitFrames;
+                        object obj = TryGetWaitFrame();
+                        if (obj is null)
+                        {
+                            yield return null;
+                        }
                     }
                 }
             }
@@ -303,7 +303,11 @@ namespace Voxel.World
                 if (chunk.ChunkStatus == ChunkStatus.Draw)
                 {
                     chunk.BuildChunk();
-                    yield return chunkUpdateWaitFrames;
+                    object obj = TryGetWaitFrame();
+                    if (obj is null)
+                    {
+                        yield return null;
+                    }
                 }
             }
 
@@ -312,7 +316,11 @@ namespace Voxel.World
             {
                 Chunk chunk = chunkDatabase.ElementAt(i).Value;
                 chunk.TryStartTreeGeneration();
-                yield return chunkUpdateWaitFrames;
+                object obj = TryGetWaitFrame();
+                if (obj is null)
+                {
+                    yield return null;
+                }
             }
 
             // Build blocks
@@ -322,7 +330,11 @@ namespace Voxel.World
                 if (chunk.ChunkStatus == ChunkStatus.Draw)
                 {
                     chunk.BuildBlocks();
-                    yield return chunkUpdateWaitFrames;
+                    object obj = TryGetWaitFrame();
+                    if (obj is null)
+                    {
+                        yield return null;
+                    }
                 }
 
                 chunk.ChunkStatus = ChunkStatus.Done;
@@ -355,9 +367,25 @@ namespace Voxel.World
 
                     chunkDatabase.TryRemove(chunkToRemoveID, out _);
                     Destroy(chunk.BlockGameObject);
-                    yield return chunkUpdateWaitFrames;
+                    object obj = TryGetWaitFrame();
+                    if (obj is null)
+                    {
+                        yield return null;
+                    }
                 }
             }
+        }
+
+        private object TryGetWaitFrame()
+        {
+            skipFrameCounter++;
+            if (skipFrameCounter >= maxSkippedFramesUntilWait)
+            {
+                skipFrameCounter = 0;
+                return null;
+            }
+
+            return 0;
         }
     }
 }

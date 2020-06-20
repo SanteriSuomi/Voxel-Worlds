@@ -1,5 +1,19 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!64 &7766604576016691473
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1518079115132230497}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -9186107467895962136, guid: c178ae1e9058a9343a204b3ec9531c31, type: 3}
 --- !u!1 &1860027572263227038
 GameObject:
   m_ObjectHideFlags: 0
@@ -9,7 +23,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1860027572263227039}
-  - component: {fileID: -7572738241623248732}
+  - component: {fileID: 3635361828304744318}
+  - component: {fileID: 7215237582702129871}
+  - component: {fileID: -5595028675013588280}
+  - component: {fileID: 3673870376861278058}
+  - component: {fileID: 504868229203344532}
   m_Layer: 0
   m_Name: Spider
   m_TagString: Untagged
@@ -32,7 +50,23 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &-7572738241623248732
+--- !u!54 &3635361828304744318
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860027572263227038}
+  serializedVersion: 2
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &7215237582702129871
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,10 +75,50 @@ MonoBehaviour:
   m_GameObject: {fileID: 1860027572263227038}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b4d9c05a99b18d4daa1b45e49a596d3, type: 3}
+  m_Script: {fileID: 11500000, guid: db0cf7ea3c2d93145965b04b12854586, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  fsm: {fileID: -5595028675013588280}
+  wander: {fileID: 3673870376861278058}
+  attack: {fileID: 504868229203344532}
+  defend: {fileID: 0}
+--- !u!114 &-5595028675013588280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860027572263227038}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26b2eaab217b2b24d8fcf37aeadbe6a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3673870376861278058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860027572263227038}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1931255edd247a14198e2afb90d192e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &504868229203344532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860027572263227038}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 679c5817c071bce48b30d9270ff7c9fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1860027571142944304
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -114,6 +188,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c178ae1e9058a9343a204b3ec9531c31, type: 3}
+--- !u!1 &1518079115132230497 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: c178ae1e9058a9343a204b3ec9531c31,
+    type: 3}
+  m_PrefabInstance: {fileID: 1860027571142944304}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2187232393047638491 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c178ae1e9058a9343a204b3ec9531c31,

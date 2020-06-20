@@ -73,7 +73,7 @@ namespace Voxel.Characters.Enemy
         public Enemy Spawn(EnemySpawnData data)
         {
             Enemy enemy = Instantiate(enemies.GetEnemy(data.Type), data.Position, data.Rotation);
-            enemy.name = $"{enemy.name}_{data.Position}";
+            enemy.name = $"{data.Type}_{data.Position}";
             enemy.Health = data.Health;
             enemy.transform.position = data.Position;
             return enemy;

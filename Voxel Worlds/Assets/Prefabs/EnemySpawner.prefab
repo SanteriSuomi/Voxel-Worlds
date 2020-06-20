@@ -44,6 +44,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemySpawnChance: 2500
+  enemyChunkSaveUpdateLoopInterval: 1
   enemies:
     enemies:
-    - {fileID: -7572738241623248732, guid: 20e1807f1bb675a429b7ec2f889a4d86, type: 3}
+    - {fileID: 7215237582702129871, guid: 20e1807f1bb675a429b7ec2f889a4d86, type: 3}

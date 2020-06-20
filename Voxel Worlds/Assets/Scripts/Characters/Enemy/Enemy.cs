@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using Voxel.Characters.AI;
 using Voxel.World;
 
 namespace Voxel.Characters.Enemy
@@ -12,8 +13,19 @@ namespace Voxel.Characters.Enemy
     public class Enemy : Character
     {
         [SerializeField]
-        private EnemyType type = default;
+        protected EnemyType type = default;
         public EnemyType Type => type;
+
+        #region FSM/States
+        [SerializeField]
+        protected FSM fsm = default;
+        [SerializeField]
+        protected State wander = default;
+        [SerializeField]
+        protected State attack = default;
+        [SerializeField]
+        protected State defend = default;
+        #endregion
 
         public int Health { get; set; }
         public const int StartingHealth = 100;
@@ -39,18 +51,28 @@ namespace Voxel.Characters.Enemy
                     && !Mathf.Approximately(chunk.BlockGameObject.transform.position.sqrMagnitude,
                                             CurrentChunk.BlockGameObject.transform.position.sqrMagnitude))
                 {
-                    CurrentChunk.Enemies.Remove(this);
-                    CurrentChunk = chunk;
-
-                    #if UNITY_EDITOR
-                    name = $"{Type}_{CurrentChunk?.BlockGameObject.transform.position}";
-                    #endif
-
-                    CurrentChunk.Enemies.Add(this);
+                    UpdateSaveLocation(chunk);
                 }
 
                 yield return EnemySpawner.Instance.EnemyChunkSaveUpdateLoop;
             }
+        }
+
+        private void UpdateSaveLocation(Chunk chunk)
+        {
+            CurrentChunk.Enemies.Remove(this);
+            CurrentChunk = chunk;
+
+            #if UNITY_EDITOR
+            name = $"{Type}_{CurrentChunk?.BlockGameObject.transform.position}";
+            #endif
+
+            CurrentChunk.Enemies.Add(this);
+        }
+
+        private IEnumerator StateLoop()
+        {
+            yield return null;
         }
 
         private void OnDisable() => StopCoroutine(ChunkSaveUpdateLoop());
