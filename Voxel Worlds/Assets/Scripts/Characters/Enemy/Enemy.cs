@@ -70,11 +70,6 @@ namespace Voxel.Characters.Enemy
             CurrentChunk.Enemies.Add(this);
         }
 
-        private IEnumerator StateLoop()
-        {
-            yield return null;
-        }
-
         private void OnDisable() => StopCoroutine(ChunkSaveUpdateLoop());
     }
 }

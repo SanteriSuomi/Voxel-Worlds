@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using Voxel.Utility;
+using Voxel.World;
 
 namespace Voxel.Characters.Enemy
 {
@@ -30,13 +32,15 @@ namespace Voxel.Characters.Enemy
         public Vector3 Position { get; }
         public Quaternion Rotation { get; }
         public int Health { get; }
+        public Chunk Chunk { get; }
 
-        public EnemySpawnData(EnemyType type, Vector3 position, Quaternion rotation, int health)
+        public EnemySpawnData(EnemyType type, Vector3 position, Quaternion rotation, int health, Chunk chunk)
         {
             Type = type;
             Position = position;
             Rotation = rotation;
             Health = health;
+            Chunk = chunk;
         }
     }
 
@@ -45,6 +49,10 @@ namespace Voxel.Characters.Enemy
         [SerializeField, Tooltip("Bigger value means smaller chance. e.g 2500 means 1 in 2500 chance, for every top block.")]
         private int enemySpawnChance = 2500;
         public int EnemySpawnChance => enemySpawnChance;
+
+        [SerializeField]
+        private Vector3 enemySpawnOffset = new Vector3(0, 3, 0);
+        public Vector3 EnemySpawnOffset => enemySpawnOffset;
 
         [SerializeField]
         private int enemyChunkSaveUpdateLoopInterval = 1;
@@ -63,7 +71,17 @@ namespace Voxel.Characters.Enemy
         }
 
         [SerializeField]
+        private float enemyActivateDelay = 5;
+        private WaitForSeconds enemyActivateDelayWFS;
+
+        [SerializeField]
         private Enemies enemies = default;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            enemyActivateDelayWFS = new WaitForSeconds(enemyActivateDelay);
+        }
 
         /// <summary>
         /// Spawn an enemy with the provided data.
@@ -73,10 +91,21 @@ namespace Voxel.Characters.Enemy
         public Enemy Spawn(EnemySpawnData data)
         {
             Enemy enemy = Instantiate(enemies.GetEnemy(data.Type), data.Position, data.Rotation);
+            enemy.gameObject.SetActive(false);
+            enemy.CurrentChunk = data.Chunk;
+            enemy.CurrentChunk.Enemies.Add(enemy);
             enemy.name = $"{data.Type}_{data.Position}";
             enemy.Health = data.Health;
             enemy.transform.position = data.Position;
             return enemy;
+        }
+
+        public void ActivateEnemyDelay(Component obj) => StartCoroutine(ActivateEnemyDelayCoroutine(obj));
+
+        private IEnumerator ActivateEnemyDelayCoroutine(Component obj)
+        {
+            yield return enemyActivateDelayWFS;
+            obj.gameObject.SetActive(true);
         }
     }
 }

@@ -206,13 +206,13 @@ namespace Voxel.World
             }
         }
 
-        private static void LoadEnemies(ChunkSaveData chunkData)
+        private void LoadEnemies(ChunkSaveData chunkData)
         {
             CharacterData[] enemies = chunkData.Enemies;
             for (int i = 0; i < enemies.Length; i++)
             {
                 EnemyData data = (EnemyData)enemies[i];
-                EnemySpawner.Instance.Spawn(new EnemySpawnData(data.Type, data.Position, data.Rotation, data.Health));
+                EnemySpawner.Instance.Spawn(new EnemySpawnData(data.Type, data.Position, data.Rotation, data.Health, this));
             }
         }
 
@@ -453,13 +453,11 @@ namespace Voxel.World
         {
             if (Random.Range(0, EnemySpawner.Instance.EnemySpawnChance) == EnemySpawner.Instance.EnemySpawnChance / 2)
             {
-                Enemy enemy = EnemySpawner.Instance.Spawn(new EnemySpawnData(EnemyType.Spider,
-                                                          BlockGameObject.transform.position + (localPosition + Vector3.up),
-                                                          Quaternion.identity,
-                                                          Enemy.StartingHealth));
-                enemy.gameObject.SetActive(false); // Deactivate object, gets reactivated during block construction so it doesn't just appear as a floating enemy.
-                enemy.CurrentChunk = this;
-                Enemies.Add(enemy);
+                EnemySpawner.Instance.Spawn(new EnemySpawnData(EnemyType.Spider,
+                                            BlockGameObject.transform.position + localPosition + EnemySpawner.Instance.EnemySpawnOffset,
+                                            Quaternion.identity,
+                                            Enemy.StartingHealth,
+                                            this));
             }
         }
 
@@ -502,7 +500,7 @@ namespace Voxel.World
         {
             for (int i = 0; i < Enemies.Count; i++)
             {
-                Enemies[i].gameObject.SetActive(true);
+                EnemySpawner.Instance.ActivateEnemyDelay(Enemies[i]);
             }
         }
     }

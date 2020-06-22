@@ -1,18 +1,24 @@
 ﻿using UnityEngine;
-using Voxel.World;
+using Voxel.Characters.Enemy;
 
 namespace Voxel.Characters.AI
 {
     public class SpiderWander : Wander
     {
-        private Rigidbody rb;
-        private Vector3 currentWanderPoint;
+        [SerializeField]
+        private Rigidbody rb = default;
+        [SerializeField]
+        private Transform hasObjectsAheadStart = default;
+        private Vector3 currentDirection;
 
-        public override void Enter()
-        {
-            rb = GetComponent<Rigidbody>();
-            currentWanderPoint = GetRandomPoint();
-        }
+        private float moveTime;
+        private const float maxMoveTime = 4;
+        private float currentMaxMoveTime;
+
+        private readonly Collider[] objsAheadResults = new Collider[5];
+        private const float objsAheadRadius = 0.5f;
+
+        public override void Enter() => GetRandomDirection();
 
         public override void Tick()
         {
@@ -22,24 +28,33 @@ namespace Voxel.Characters.AI
 
         private void Rotation()
         {
-            Vector3 directionToWanderPoint = (currentWanderPoint - transform.position).normalized;
-            bool isFacingWanderPoint = Vector3.Dot(transform.forward, directionToWanderPoint) <= -0.9f;
-            if (!isFacingWanderPoint)
+            Quaternion lookRotation = Quaternion.LookRotation(currentDirection, Vector3.up);
+            if (Quaternion.Angle(transform.rotation, lookRotation) > Spider.MinAngleForRotation)
             {
-                transform.rotation = Quaternion.LookRotation(directionToWanderPoint, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Spider.RotationSpeedMultiplier * Time.deltaTime);
             }
         }
 
         private void Movement()
         {
-            float distanceToWanderPoint = (currentWanderPoint - transform.position).magnitude;
-            if (distanceToWanderPoint > 0.1f)
+            int numberOfObjsInFront = Physics.OverlapSphereNonAlloc(hasObjectsAheadStart.position, objsAheadRadius, objsAheadResults);
+            if (numberOfObjsInFront <= 0)
             {
-                rb.MovePosition(currentWanderPoint);
+                currentDirection = -transform.forward;
+                transform.rotation = Quaternion.LookRotation(-transform.forward, Vector3.up);
+                return;
             }
-            else if (distanceToWanderPoint <= 0.1f)
+
+            moveTime += Time.deltaTime;
+            if (moveTime <= currentMaxMoveTime)
             {
-                currentWanderPoint = GetRandomPoint();
+                rb.MovePosition(transform.position + (currentDirection * Spider.MoveSpeedMultiplier * Time.deltaTime));
+            }
+            else
+            {
+                moveTime = 0;
+                GetRandomDirection();
+                currentMaxMoveTime = Random.Range(1, maxMoveTime);
             }
         }
 
@@ -47,17 +62,11 @@ namespace Voxel.Characters.AI
         {
         }
 
-        private static Vector3 GetRandomPoint()
-        {
-            Vector2 randomPoint = Random.insideUnitCircle * 5;
-            Vector3 rayStart = new Vector3(randomPoint.x, WorldManager.Instance.MaxWorldHeight / 2, randomPoint.y);
-            Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, WorldManager.Instance.MaxWorldHeight);
-            if (hit.collider == null)
-            {
-                return GetRandomPoint();
-            }
-            Debug.Log(hit.point);
-            return hit.point;
-        }
+        private void GetRandomDirection() 
+            => currentDirection = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f));
+
+        #if UNITY_EDITOR
+        private void OnDrawGizmos() => Gizmos.DrawWireSphere(hasObjectsAheadStart.position, objsAheadRadius);
+        #endif
     }
 }

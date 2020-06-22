@@ -218,8 +218,8 @@ namespace Voxel.World
                                                                     (int)(lastBuildPosition.z + directionMultiplier.z)) / ChunkSize;
 
                     yield return StartCoroutine(ProcessChunksNearPlayer(playerChunkPosition.x,
-                                                           playerChunkPosition.y,
-                                                           playerChunkPosition.z));
+                                                                        playerChunkPosition.y,
+                                                                        playerChunkPosition.z));
                 }
 
                 yield return null;
@@ -264,7 +264,7 @@ namespace Voxel.World
                         object obj = TryGetWaitFrame();
                         if (obj is null)
                         {
-                            yield return null;
+                            yield return obj;
                         }
                     }
                 }
@@ -306,7 +306,7 @@ namespace Voxel.World
                     object obj = TryGetWaitFrame();
                     if (obj is null)
                     {
-                        yield return null;
+                        yield return obj;
                     }
                 }
             }
@@ -319,7 +319,7 @@ namespace Voxel.World
                 object obj = TryGetWaitFrame();
                 if (obj is null)
                 {
-                    yield return null;
+                    yield return obj;
                 }
             }
 
@@ -333,7 +333,7 @@ namespace Voxel.World
                     object obj = TryGetWaitFrame();
                     if (obj is null)
                     {
-                        yield return null;
+                        yield return obj;
                     }
                 }
 
@@ -370,7 +370,7 @@ namespace Voxel.World
                     object obj = TryGetWaitFrame();
                     if (obj is null)
                     {
-                        yield return null;
+                        yield return obj;
                     }
                 }
             }
