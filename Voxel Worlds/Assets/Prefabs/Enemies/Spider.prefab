@@ -27,7 +27,7 @@ GameObject:
   - component: {fileID: -5595028675013588280}
   - component: {fileID: 3673870376861278058}
   - component: {fileID: 504868229203344532}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Spider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -46,7 +46,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 2187232393047638491}
-  - {fileID: 7023142321490779795}
+  - {fileID: 6070990123903356181}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -64,7 +64,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 0
+  m_Constraints: 80
   m_CollisionDetection: 0
 --- !u!114 &7215237582702129871
 MonoBehaviour:
@@ -83,6 +83,9 @@ MonoBehaviour:
   wander: {fileID: 3673870376861278058}
   attack: {fileID: 504868229203344532}
   defend: {fileID: 0}
+  playerInRangeLayerMask:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!114 &-5595028675013588280
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109,7 +112,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 3635361828304744318}
-  hasObjectsAheadStart: {fileID: 7023142321490779795}
+  detectionLayerMask:
+    serializedVersion: 2
+    m_Bits: 823
+  objectsAheadStart: {fileID: 6070990123903356181}
 --- !u!114 &504868229203344532
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -122,7 +128,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 679c5817c071bce48b30d9270ff7c9fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &5559993960046490794
+--- !u!1 &5099934992648620075
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -130,23 +136,23 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7023142321490779795}
-  m_Layer: 0
+  - component: {fileID: 6070990123903356181}
+  m_Layer: 10
   m_Name: HasObjectsAhead
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7023142321490779795
+--- !u!4 &6070990123903356181
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5559993960046490794}
+  m_GameObject: {fileID: 5099934992648620075}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.25, z: 1}
+  m_LocalPosition: {x: 0, y: -0.65, z: 0.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1860027572263227039}
@@ -218,6 +224,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: spider_model
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c178ae1e9058a9343a204b3ec9531c31,
+        type: 3}
+      propertyPath: m_Layer
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c178ae1e9058a9343a204b3ec9531c31, type: 3}

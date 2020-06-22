@@ -44,7 +44,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemySpawnChance: 2500
+  enemySpawnOffset: {x: 0, y: 2, z: 0}
   enemyChunkSaveUpdateLoopInterval: 1
+  enemyActivateDelay: 5
   enemies:
     enemies:
     - {fileID: 7215237582702129871, guid: 20e1807f1bb675a429b7ec2f889a4d86, type: 3}

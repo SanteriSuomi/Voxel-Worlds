@@ -24,6 +24,11 @@ namespace Voxel.Characters.AI
             get => currentState;
             set
             {
+                if (value.Equals(currentState))
+                {
+                    return;
+                }
+
                 currentState?.Exit();
                 currentState = value;
                 currentState?.Enter();
@@ -41,9 +46,9 @@ namespace Voxel.Characters.AI
         }
 
         /// <summary>
-        /// Start FSM update (tick).
+        /// Start the FSM update.
         /// </summary>
-        /// <param name="actions">Methods that will be executed independently after each tick (so a late update).</param>
+        /// <param name="actions">Methods that will be executed independently after each tick.</param>
         public void StartTick(params Action[] actions)
         {
             TryStopTickCoroutine();
@@ -54,13 +59,17 @@ namespace Voxel.Characters.AI
         {
             while (true)
             {
+                ExecuteActions(actions);
                 currentState?.Tick();
-                for (int i = 0; i < actions.Length; i++)
-                {
-                    actions[i]();
-                }
-
                 yield return update;
+            }
+        }
+
+        private static void ExecuteActions(Action[] actions)
+        {
+            for (int i = 0; i < actions.Length; i++)
+            {
+                actions[i]();
             }
         }
 

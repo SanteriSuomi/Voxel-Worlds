@@ -89,12 +89,12 @@ namespace Voxel.Saving
             {
                 Enemy enemy = chunk.Enemies[i];
                 EnemyData enemyData = new EnemyData(enemy.Type, enemy.Health, enemy.transform.position, enemy.transform.rotation);
+                characterData.Add(enemyData);
+
                 if (destroyEnemies)
                 {
                     DestroyEnemy(i, enemy);
                 }
-
-                characterData.Add(enemyData);
             }
 
             return characterData.ToArray();

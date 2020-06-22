@@ -7,29 +7,56 @@ namespace Voxel.Characters.AI
     {
         [SerializeField]
         private Rigidbody rb = default;
-        [SerializeField]
-        private Transform hasObjectsAheadStart = default;
         private Vector3 currentDirection;
 
         private float moveTime;
-        private const float maxMoveTime = 4;
+        private const float minMoveTime = 2;
+        private const float maxMoveTime = 6;
         private float currentMaxMoveTime;
 
-        private readonly Collider[] objsAheadResults = new Collider[5];
-        private const float objsAheadRadius = 0.5f;
+        [SerializeField]
+        private LayerMask detectionLayerMask = default;
+
+        [SerializeField]
+        private Transform objectsAheadStart = default;
+        private readonly Collider[] aheadResults = new Collider[3];
+        private const float aheadRadius = 0.55f;
+
+        private readonly RaycastHit[] infrontResults = new RaycastHit[3];
+        private const float infrontDistance = 0.45f;
 
         public override void Enter() => GetRandomDirection();
 
         public override void Tick()
         {
+            // Check if there are no chunks where we're going to right now.
+            if (CheckEmptyAhead())
+            {
+                return;
+            }
+
             Rotation();
             Movement();
+        }
+
+        private bool CheckEmptyAhead()
+        {
+            int objsAheadAmount = Physics.OverlapSphereNonAlloc(transform.position + transform.forward, aheadRadius, aheadResults, detectionLayerMask);
+            if (objsAheadAmount <= 0)
+            {
+                currentDirection = -transform.forward;
+                transform.rotation = Quaternion.LookRotation(-transform.forward, Vector3.up);
+                return true;
+            }
+
+            return false;
         }
 
         private void Rotation()
         {
             Quaternion lookRotation = Quaternion.LookRotation(currentDirection, Vector3.up);
-            if (Quaternion.Angle(transform.rotation, lookRotation) > Spider.MinAngleForRotation)
+            float rotationAngle = Quaternion.Angle(transform.rotation, lookRotation);
+            if (rotationAngle > Spider.MinAngleForRotation)
             {
                 transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Spider.RotationSpeedMultiplier * Time.deltaTime);
             }
@@ -37,14 +64,21 @@ namespace Voxel.Characters.AI
 
         private void Movement()
         {
-            int numberOfObjsInFront = Physics.OverlapSphereNonAlloc(hasObjectsAheadStart.position, objsAheadRadius, objsAheadResults);
-            if (numberOfObjsInFront <= 0)
-            {
-                currentDirection = -transform.forward;
-                transform.rotation = Quaternion.LookRotation(-transform.forward, Vector3.up);
-                return;
-            }
+            TryJump();
+            TryMovePosition();
+        }
 
+        private void TryJump()
+        {
+            int objsInfrontAmount = Physics.RaycastNonAlloc(transform.position, transform.forward, infrontResults, infrontDistance, detectionLayerMask);
+            if (objsInfrontAmount > 0)
+            {
+                rb.AddForce(Vector3.up * Spider.JumpMultiplier, ForceMode.Impulse);
+            }
+        }
+
+        private void TryMovePosition()
+        {
             moveTime += Time.deltaTime;
             if (moveTime <= currentMaxMoveTime)
             {
@@ -54,7 +88,7 @@ namespace Voxel.Characters.AI
             {
                 moveTime = 0;
                 GetRandomDirection();
-                currentMaxMoveTime = Random.Range(1, maxMoveTime);
+                currentMaxMoveTime = Random.Range(minMoveTime, maxMoveTime);
             }
         }
 
@@ -62,11 +96,15 @@ namespace Voxel.Characters.AI
         {
         }
 
-        private void GetRandomDirection() 
+        private void GetRandomDirection()
             => currentDirection = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f));
 
         #if UNITY_EDITOR
-        private void OnDrawGizmos() => Gizmos.DrawWireSphere(hasObjectsAheadStart.position, objsAheadRadius);
+        private void OnDrawGizmos()
+        {
+            Gizmos.DrawWireSphere(objectsAheadStart.position, aheadRadius);
+            Gizmos.DrawRay(transform.position, transform.forward * infrontDistance);
+        }
         #endif
     }
 }
