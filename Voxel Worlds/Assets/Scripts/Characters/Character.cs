@@ -15,11 +15,11 @@ namespace Voxel.Characters
             set
             {
                 health = value;
-                OnHealthChanged(health);
+                OnHealthChanged();
             }
         }
 
-        protected virtual void OnHealthChanged(float health){}
+        protected virtual void OnHealthChanged(){}
 
         private void Awake() => health = startingHealth;
     }

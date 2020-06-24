@@ -1,5 +1,4 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿using UnityEngine.UI;
 using Voxel.Characters;
 using Voxel.Characters.Interfaces;
 using Voxel.Utility;
@@ -17,11 +16,11 @@ namespace Voxel.Player
             healthbar.value = StartingHealth;
         }
 
-        protected override void OnHealthChanged(float health) => healthbar.value = health;
-
+        // TODO: fix player instadeath
         public void Damage(float damage)
         {
             Health -= damage;
+            healthbar.value = Health;
             if (Health <= 0)
             {
                 PlayerManager.Instance.RespawnAndResetPlayer();

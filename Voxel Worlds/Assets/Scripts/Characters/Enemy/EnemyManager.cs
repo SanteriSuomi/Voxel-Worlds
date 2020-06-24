@@ -109,6 +109,7 @@ namespace Voxel.Characters.Enemy
         private IEnumerator ActivateEnemyDelayCoroutine(Component obj)
         {
             yield return enemyActivateDelayWFS;
+            if (obj == null || obj.gameObject == null) yield break;
             obj.gameObject.SetActive(true);
         }
     }

@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 using Voxel.Characters.Saving;
 using Voxel.Items.Inventory;
 using Voxel.Saving;
@@ -23,7 +22,13 @@ namespace Voxel.Player
         [SerializeField]
         private float playerSpawnOffset = 1;
         [SerializeField]
-        private string fluidGameObjectIdentifier = "Fluid";
+        private int getPositionRadius = 10;
+        [SerializeField]
+        private int getPositionMinBounds = 5;
+        [SerializeField]
+        private int minSpawnHeight = 10;
+        [SerializeField]
+        private int maxSpawnTries = 10;
         [SerializeField]
         private float rayHitSpawnOffset = 2;
         [SerializeField]
@@ -67,23 +72,10 @@ namespace Voxel.Player
             }
         }
 
-        // TODO: improve player respawning
         public void RespawnAndResetPlayer()
         {
-            var chunks = WorldManager.Instance.GetAllChunks();
-            for (int i = 0; i < chunks.Count; i++)
-            {
-                Chunk chunk = chunks.ElementAt(i).Value;
-                Vector3 chunkPos = chunk.BlockGameObject.transform.position;
-                float distance = (ActivePlayer.position - chunkPos).magnitude;
-                if (distance >= 25 && distance <= 50)
-                {
-                    Player.Health = Player.StartingHealth;
-                    Vector3 spawnPos = chunkPos;
-                    spawnPos.y = (float)WorldManager.Instance.MaxWorldHeight / 2;
-                    ActivePlayer.position = spawnPos;
-                }
-            }
+            Player.Health = Player.StartingHealth;
+            ActivePlayer.position = GetPositionInRadius(ActivePlayer.position, getPositionMinBounds, getPositionRadius);
         }
 
         public Transform SpawnPlayer()
@@ -93,7 +85,7 @@ namespace Voxel.Player
                 return InitializeAndSpawnPlayer(InitialPosition, InitialRotation);
             }
 
-            return InitializeAndSpawnPlayer(GetPosition(), Quaternion.identity);
+            return InitializeAndSpawnPlayer(GetPositionInRadius(Vector3.zero, getPositionMinBounds, getPositionRadius), Quaternion.identity);
         }
 
         private Transform InitializeAndSpawnPlayer(Vector3 position, Quaternion rotation)
@@ -107,21 +99,32 @@ namespace Voxel.Player
             return ActivePlayer;
         }
 
-        private Vector3 GetPosition()
+        /// <summary>
+        /// Get a position in radius where the hit point has a game object with a specific keyword in the name.
+        /// </summary>
+        public Vector3 GetPositionInRadius(Vector3 startPos, int minBounds, int radius)
         {
-            int searchSize = WorldManager.Instance.ChunkSize * WorldManager.Instance.Radius / 4;
-            Vector2 randomCoord = Random.insideUnitCircle * searchSize;
-            InitialPosition = new Vector3(randomCoord.x, WorldManager.Instance.MaxWorldHeight, randomCoord.y);
+            Vector2 randomCoord = Random.insideUnitCircle * radius;
+            randomCoord.x += minBounds;
+            randomCoord.y += minBounds;
+            startPos.x += RandomiseNegative(randomCoord.x);
+            startPos.z += RandomiseNegative(randomCoord.y);
 
-            Physics.Raycast(InitialPosition, Vector3.down, out RaycastHit hitInfo, InitialPosition.y * rayHitSpawnOffset);
-            while (hitInfo.collider != null
-                   && hitInfo.collider.name.Contains(fluidGameObjectIdentifier))
+            Vector3 rayPos = new Vector3(startPos.x, WorldManager.Instance.MaxWorldHeight, startPos.z);
+            Physics.Raycast(rayPos, Vector3.down, out RaycastHit hitInfo, rayPos.y * rayHitSpawnOffset);
+            int tries = 0;
+            while (hitInfo.collider == null
+                   || hitInfo.collider.transform.position.y < minSpawnHeight
+                   || tries <= maxSpawnTries)
             {
-                Physics.Raycast(InitialPosition, Vector3.down, out hitInfo, InitialPosition.y * rayHitSpawnOffset);
+                tries++;
+                Physics.Raycast(rayPos, Vector3.down, out hitInfo, rayPos.y * rayHitSpawnOffset);
             }
 
             return hitInfo.point + new Vector3(0, playerSpawnOffset, 0);
         }
+
+        private float RandomiseNegative(float value) => Random.Range(0, 2) == 0? -value : value;
 
         private void InitializeUI()
         {

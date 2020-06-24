@@ -16,6 +16,7 @@ namespace Voxel.Characters.Enemy
         public const float BaseDamageAmount = 10;
         public const float MaxDistanceFromTarget = 1;
         public const float MinDistanceForDamage = 1.1f;
+        public const float MaxDamageInterval = 5;
 
         public const float MoveSpeedMultiplier = 1;
         public const float AttackMoveSpeedMultiplier = 1.5f;

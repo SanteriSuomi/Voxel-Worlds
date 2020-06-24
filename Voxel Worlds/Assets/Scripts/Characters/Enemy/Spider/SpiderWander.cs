@@ -37,7 +37,7 @@ namespace Voxel.Characters.AI
 
         private bool CheckEmptyAhead()
         {
-            int objsAheadAmount = Physics.OverlapSphereNonAlloc(transform.position + transform.forward, aheadRadius, aheadResults, spiderBaseState.DetectionLayerMask);
+            int objsAheadAmount = Physics.OverlapSphereNonAlloc(objectsAheadStart.position, aheadRadius, aheadResults, spiderBaseState.DetectionLayerMask);
             if (objsAheadAmount <= 0)
             {
                 currentDirection = -transform.forward;

@@ -451,9 +451,7 @@ namespace Voxel.World
 
         private void TrySpawnEnemy(Vector3Int localPosition)
         {
-            Block topBlock = blockData[localPosition.x, localPosition.y, localPosition.z].GetBlockNeighbour(Neighbour.Top);
-            if (topBlock?.BlockType == BlockType.Air
-                && Random.Range(0, EnemyManager.Instance.EnemySpawnChance) == EnemyManager.Instance.EnemySpawnChance / 2)
+            if (Random.Range(0, EnemyManager.Instance.EnemySpawnChance) == EnemyManager.Instance.EnemySpawnChance / 2)
             {
                 Enemy enemy = EnemyManager.Instance.Enemies.GetRandomEnemy();
                 EnemyManager.Instance.Spawn(new EnemySpawnData(enemy.Type,

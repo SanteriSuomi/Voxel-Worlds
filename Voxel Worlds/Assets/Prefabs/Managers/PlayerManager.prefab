@@ -47,5 +47,10 @@ MonoBehaviour:
     type: 3}
   mainUICanvas: {fileID: 0}
   playerSpawnOffset: 1
+  getPositionRadius: 10
+  getPositionMinBounds: 5
+  minSpawnHeight: 10
+  maxSpawnTries: 10
   rayHitSpawnOffset: 2
+  cameraPlaneRenderDistance: 0.1
   playerSaveFileName: PlayerData.dat

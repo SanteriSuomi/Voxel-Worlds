@@ -9,6 +9,8 @@ namespace Voxel.Characters.AI
         private SpiderBase spiderBaseState;
         public Transform Target { get; set; }
 
+        private float damageTimer;
+
         private void OnEnable() => spiderBaseState = (SpiderBase)baseState;
 
         public override void Enter()
@@ -48,10 +50,13 @@ namespace Voxel.Characters.AI
 
         private void Damage(float distanceToTarget)
         {
+            damageTimer += Time.deltaTime;
             if (distanceToTarget <= Spider.MinDistanceForDamage
-                && Target.TryGetComponent(out IDamageable damageable))
+                && Target.TryGetComponent(out IDamageable damageable)
+                && damageTimer >= Spider.MaxDamageInterval)
             {
-                damageable.Damage(Spider.BaseDamageAmount * Time.deltaTime);
+                damageTimer = 0;
+                damageable.Damage(Spider.BaseDamageAmount);
             }
         }
 
