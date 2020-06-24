@@ -43,5 +43,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f94a91cb0e5f704b829ccd77c52022a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  blockAtlas: {fileID: 2100000, guid: c17e763c77fbfbc4d92a1c37437e2d60, type: 2}
+  blockAtlasTransparent: {fileID: 2100000, guid: 9a8538d6ef0ead54cac3e26d698ceaf4,
+    type: 2}
   uiCamera: {fileID: 0}
   crosshair: {fileID: 0}
+  playerHealthbar: {fileID: 0}

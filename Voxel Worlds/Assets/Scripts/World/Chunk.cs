@@ -212,7 +212,7 @@ namespace Voxel.World
             for (int i = 0; i < enemies.Length; i++)
             {
                 EnemyData data = (EnemyData)enemies[i];
-                EnemySpawner.Instance.Spawn(new EnemySpawnData(data.Type, data.Position, data.Rotation, data.Health, this));
+                EnemyManager.Instance.Spawn(new EnemySpawnData(data.Type, data.Position, data.Rotation, data.Health, this));
             }
         }
 
@@ -451,12 +451,15 @@ namespace Voxel.World
 
         private void TrySpawnEnemy(Vector3Int localPosition)
         {
-            if (Random.Range(0, EnemySpawner.Instance.EnemySpawnChance) == EnemySpawner.Instance.EnemySpawnChance / 2)
+            Block topBlock = blockData[localPosition.x, localPosition.y, localPosition.z].GetBlockNeighbour(Neighbour.Top);
+            if (topBlock?.BlockType == BlockType.Air
+                && Random.Range(0, EnemyManager.Instance.EnemySpawnChance) == EnemyManager.Instance.EnemySpawnChance / 2)
             {
-                EnemySpawner.Instance.Spawn(new EnemySpawnData(EnemyType.Spider,
-                                            BlockGameObject.transform.position + localPosition + EnemySpawner.Instance.EnemySpawnOffset,
+                Enemy enemy = EnemyManager.Instance.Enemies.GetRandomEnemy();
+                EnemyManager.Instance.Spawn(new EnemySpawnData(enemy.Type,
+                                            BlockGameObject.transform.position + localPosition + EnemyManager.Instance.EnemySpawnOffset,
                                             Quaternion.identity,
-                                            Enemy.StartingHealth,
+                                            enemy.StartingHealth,
                                             this));
             }
         }
@@ -500,7 +503,7 @@ namespace Voxel.World
         {
             for (int i = 0; i < Enemies.Count; i++)
             {
-                EnemySpawner.Instance.ActivateEnemyDelay(Enemies[i]);
+                EnemyManager.Instance.ActivateEnemyDelay(Enemies[i]);
             }
         }
     }

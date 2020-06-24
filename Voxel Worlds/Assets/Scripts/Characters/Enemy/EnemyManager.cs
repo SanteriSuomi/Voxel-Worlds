@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using Voxel.Utility;
 using Voxel.World;
+using Random = UnityEngine.Random;
 
 namespace Voxel.Characters.Enemy
 {
@@ -24,6 +25,8 @@ namespace Voxel.Characters.Enemy
 
             return null;
         }
+
+        public Enemy GetRandomEnemy() => enemies[Random.Range(0, enemies.Length)];
     }
 
     public struct EnemySpawnData
@@ -31,10 +34,10 @@ namespace Voxel.Characters.Enemy
         public EnemyType Type { get; }
         public Vector3 Position { get; }
         public Quaternion Rotation { get; }
-        public int Health { get; }
+        public float Health { get; }
         public Chunk Chunk { get; }
 
-        public EnemySpawnData(EnemyType type, Vector3 position, Quaternion rotation, int health, Chunk chunk)
+        public EnemySpawnData(EnemyType type, Vector3 position, Quaternion rotation, float health, Chunk chunk)
         {
             Type = type;
             Position = position;
@@ -44,7 +47,7 @@ namespace Voxel.Characters.Enemy
         }
     }
 
-    public class EnemySpawner : Singleton<EnemySpawner>
+    public class EnemyManager : Singleton<EnemyManager>
     {
         [SerializeField, Tooltip("Bigger value means smaller chance. e.g 2500 means 1 in 2500 chance, for every top block.")]
         private int enemySpawnChance = 2500;
@@ -76,6 +79,7 @@ namespace Voxel.Characters.Enemy
 
         [SerializeField]
         private Enemies enemies = default;
+        public Enemies Enemies => enemies;
 
         protected override void Awake()
         {

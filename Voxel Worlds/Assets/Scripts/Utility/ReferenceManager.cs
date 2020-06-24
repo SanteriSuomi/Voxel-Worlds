@@ -38,6 +38,10 @@ namespace Voxel.Utility
         private RawImage crosshair = default;
         public RawImage Crosshair => crosshair;
 
+        [SerializeField]
+        private Slider playerHealthbar = default;
+        public Slider PlayerHealthbar => playerHealthbar;
+
         private WaitForSeconds blockPickupWFS;
         public WaitForSeconds GetBlockPickupWFS(float time)
         {

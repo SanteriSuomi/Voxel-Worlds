@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 using Voxel.Characters.Saving;
 using Voxel.Items.Inventory;
 using Voxel.Saving;
@@ -12,6 +13,7 @@ namespace Voxel.Player
         [SerializeField]
         private GameObject playerPrefab = default;
         public Transform ActivePlayer { get; private set; }
+        public Player Player { get; set; }
 
         public CharacterController CharacterController { get; private set; }
 
@@ -65,6 +67,25 @@ namespace Voxel.Player
             }
         }
 
+        // TODO: improve player respawning
+        public void RespawnAndResetPlayer()
+        {
+            var chunks = WorldManager.Instance.GetAllChunks();
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                Chunk chunk = chunks.ElementAt(i).Value;
+                Vector3 chunkPos = chunk.BlockGameObject.transform.position;
+                float distance = (ActivePlayer.position - chunkPos).magnitude;
+                if (distance >= 25 && distance <= 50)
+                {
+                    Player.Health = Player.StartingHealth;
+                    Vector3 spawnPos = chunkPos;
+                    spawnPos.y = (float)WorldManager.Instance.MaxWorldHeight / 2;
+                    ActivePlayer.position = spawnPos;
+                }
+            }
+        }
+
         public Transform SpawnPlayer()
         {
             if (PlayerLoaded)
@@ -79,6 +100,7 @@ namespace Voxel.Player
         {
             GameObject player = Instantiate(playerPrefab, position, rotation);
             ActivePlayer = player.transform;
+            Player = ActivePlayer.GetComponent<Player>();
             CharacterController = ActivePlayer.GetComponent<CharacterController>();
             InitializeUI();
             InventoryManager.Instance.Load();

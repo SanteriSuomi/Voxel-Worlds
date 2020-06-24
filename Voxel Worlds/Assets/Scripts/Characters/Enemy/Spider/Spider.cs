@@ -1,44 +1,73 @@
 ﻿using UnityEngine;
+using Voxel.Characters.AI;
+using Voxel.Characters.Interfaces;
 
 namespace Voxel.Characters.Enemy
 {
-    public class Spider : Enemy
+    public class Spider : Enemy, IDamageable
     {
         [SerializeField]
         private LayerMask playerInRangeLayerMask = default;
-        private readonly Collider[] playerInRangeResults = new Collider[3];
+        private readonly Collider[] playerInRangeResults = new Collider[1];
 
-        private const float playerInRangeRadius = 2;
+        #region Spider Variables
+        private const float playerInRangeRadius = 2.6f;
 
-        public const float MoveSpeedMultiplier = 0.6f;
-        public const float MinAngleForRotation = 5;
-        public const float RotationSpeedMultiplier = 1.5f;
-        public const float JumpMultiplier = 0.35f;
+        public const float BaseDamageAmount = 10;
+        public const float MaxDistanceFromTarget = 1;
+        public const float MinDistanceForDamage = 1.1f;
+
+        public const float MoveSpeedMultiplier = 1;
+        public const float AttackMoveSpeedMultiplier = 1.5f;
+
+        public const float MinAngleForRotation = 3;
+        public const float RotationSpeedMultiplier = 1.8f;
+        public const float JumpMultiplier = 0.36f;
+        #endregion
+
+        private SpiderAttack spiderAttack;
+        private SpiderBase spiderBase;
+
+        public void Damage(float damage)
+        {
+            Health -= damage;
+            if (Health <= 0)
+            {
+                RemoveEnemy();
+            }
+        }
 
         private void Start()
         {
             fsm.CurrentState = wander;
-            fsm.StartTick(OnSpiderPreTick);
+            spiderAttack = (SpiderAttack)attack;
+            spiderBase = (SpiderBase)baseState;
+            fsm.StartTick(() =>
+            {
+                spiderBase.TryJump();
+                CheckState();
+                CheckOutOfMap();
+            });
         }
 
-        private void OnSpiderPreTick()
+        private void CheckState()
         {
-            if (CheckPlayerInRange())
+            (Collider player, bool inRange) = TryGetPlayerInRange();
+            if (inRange)
             {
+                spiderAttack.Target = player.transform;
                 fsm.CurrentState = attack;
             }
             else
             {
                 fsm.CurrentState = wander;
             }
-
-            CheckOutOfMap();
         }
 
-        private bool CheckPlayerInRange()
+        private (Collider player, bool inRange) TryGetPlayerInRange()
         {
-            int playerInRangeAmount = Physics.OverlapSphereNonAlloc(transform.position, playerInRangeRadius, playerInRangeResults, playerInRangeLayerMask);
-            return playerInRangeAmount >= 1;
+            int amount = Physics.OverlapSphereNonAlloc(transform.position, playerInRangeRadius, playerInRangeResults, playerInRangeLayerMask);
+            return (playerInRangeResults[0], amount > 0);
         }
 
         private void CheckOutOfMap()

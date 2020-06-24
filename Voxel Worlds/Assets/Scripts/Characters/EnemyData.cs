@@ -8,9 +8,9 @@ namespace Voxel.Characters.Saving
     public class EnemyData : CharacterData
     {
         public EnemyType Type { get; }
-        public int Health { get; }
+        public float Health { get; }
 
-        public EnemyData(EnemyType type, int health, Vector3 position, Quaternion rotation)
+        public EnemyData(EnemyType type, float health, Vector3 position, Quaternion rotation)
                         : base(position, rotation)
         {
             Type = type;

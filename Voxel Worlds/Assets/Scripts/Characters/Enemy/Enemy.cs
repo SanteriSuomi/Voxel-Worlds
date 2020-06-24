@@ -20,6 +20,8 @@ namespace Voxel.Characters.Enemy
         [SerializeField]
         protected FSM fsm = default;
         [SerializeField]
+        protected Base baseState = default;
+        [SerializeField]
         protected State wander = default;
         [SerializeField]
         protected State attack = default;
@@ -27,14 +29,15 @@ namespace Voxel.Characters.Enemy
         protected State defend = default;
         #endregion
 
-        public int Health { get; set; }
-        public const int StartingHealth = 100;
-
         public Chunk CurrentChunk { get; set; }
 
-        private void Awake() => Health = StartingHealth;
-
         private void OnEnable() => StartCoroutine(ChunkSaveUpdateLoop());
+
+        public void RemoveEnemy()
+        {
+            CurrentChunk.Enemies.Remove(this);
+            Destroy(gameObject);
+        }
 
         private IEnumerator ChunkSaveUpdateLoop()
         {
@@ -54,7 +57,7 @@ namespace Voxel.Characters.Enemy
                     UpdateSaveLocation(chunk);
                 }
 
-                yield return EnemySpawner.Instance.EnemyChunkSaveUpdateLoop;
+                yield return EnemyManager.Instance.EnemyChunkSaveUpdateLoop;
             }
         }
 
